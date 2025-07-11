@@ -26,6 +26,15 @@
             color: #1e40af; /* blue-800 */
             font-weight: 600;
         }
+        .remove-icon {
+            cursor: pointer;
+            color: #ef4444; /* red-500 */
+            font-weight: bold;
+            padding-right: 0.75rem;
+        }
+        .remove-icon:hover {
+            color: #b91c1c; /* red-700 */
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -63,7 +72,10 @@
 
             <!-- Nutrient Table -->
             <div class="mt-12">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-800">My Foods</h2>
+                <div class="flex justify-between items-center mb-4">
+                     <h2 class="text-2xl font-semibold text-gray-800">My Foods</h2>
+                     <button id="create-food-btn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Create New Food</button>
+                </div>
                 <div class="overflow-x-auto bg-white rounded-lg shadow">
                     <table id="nutrient-table" class="w-full text-sm text-left text-gray-500">
                         <thead id="table-head" class="text-xs text-gray-700 uppercase bg-gray-100">
@@ -81,9 +93,14 @@
             </div>
         </div>
 
-        <div id="content-targets" class="tab-content hidden p-4">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Nutrient Targets</h2>
-            <p>This section is under construction. Here you will be able to set your daily nutrient targets.</p>
+        <div id="content-targets" class="tab-content hidden p-4 bg-white rounded-lg shadow">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
+            <div id="targets-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Nutrient target inputs will be injected here -->
+            </div>
+            <div class="mt-6 text-right">
+                <button id="save-targets-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Save Targets</button>
+            </div>
         </div>
 
         <div id="content-diets" class="tab-content hidden p-4">
@@ -103,6 +120,9 @@
             const nutrientTable = document.getElementById('nutrient-table');
             const loadingSpinner = document.getElementById('loading-spinner');
             const clearAllBtn = document.getElementById('clear-all-btn');
+            const createFoodBtn = document.getElementById('create-food-btn');
+            const targetsListContainer = document.getElementById('targets-list');
+            const saveTargetsBtn = document.getElementById('save-targets-btn');
 
             // --- STATE VARIABLES ---
             let allFoods = [];
@@ -110,6 +130,7 @@
             let nutrientHeaders = [];
             let sortState = { column: 'description', direction: 'asc' };
             let searchTimeout;
+            let isCreatingFood = false;
 
             // --- TABS FUNCTIONALITY ---
             const tabs = document.querySelectorAll('.tab-btn');
@@ -125,6 +146,9 @@
                             content.classList.remove('hidden');
                         }
                     });
+                    if(tab.id === 'tab-targets') {
+                        renderNutrientTargets();
+                    }
                 });
             });
 
@@ -149,14 +173,8 @@
             function parseCSV(text) {
                 const lines = text.trim().split('\n');
                 const headerLine = lines[0];
-                
-                // Parse header correctly
                 nutrientHeaders = parseCsvLine(headerLine).map(h => h.toLowerCase() === 'food' ? 'description' : h.toLowerCase());
-
-                if (nutrientHeaders.indexOf('description') === -1) {
-                    throw new Error("CSV must have a 'food' column.");
-                }
-
+                if (nutrientHeaders.indexOf('description') === -1) throw new Error("CSV must have a 'food' column.");
                 allFoods = lines.slice(1).map(line => {
                     const values = parseCsvLine(line);
                     const entry = {};
@@ -234,7 +252,7 @@
                 searchResultsContainer.classList.remove('hidden');
             }
 
-            // --- ADDING FOOD ---
+            // --- FOOD MANAGEMENT (ADD, CREATE) ---
             function addFood(foodObject) {
                 if (storedFoods.some(food => food.description === foodObject.description)) {
                     alert('This food is already in your list.');
@@ -246,6 +264,77 @@
                 searchBar.value = '';
             }
 
+            createFoodBtn.addEventListener('click', () => {
+                if (isCreatingFood) return;
+                isCreatingFood = true;
+                showCreateFoodRow();
+            });
+
+            function showCreateFoodRow() {
+                const newRow = tableBody.insertRow(0);
+                newRow.id = 'new-food-row';
+
+                nutrientHeaders.forEach(header => {
+                    const cell = newRow.insertCell();
+                    cell.className = 'p-1';
+                    const input = document.createElement('input');
+                    input.type = header === 'description' ? 'text' : 'number';
+                    input.placeholder = header.replace(/_/g, ' ');
+                    input.className = 'w-full p-2 border rounded-md text-sm';
+                    input.dataset.header = header;
+                    cell.appendChild(input);
+                });
+
+                const actionCell = newRow.insertCell();
+                actionCell.className = 'p-1 whitespace-nowrap';
+                const saveBtn = document.createElement('button');
+                saveBtn.textContent = 'Save';
+                saveBtn.className = 'px-3 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600';
+                saveBtn.onclick = saveNewFood;
+                
+                const cancelBtn = document.createElement('button');
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.className = 'ml-2 px-3 py-1 bg-gray-500 text-white text-xs rounded-md hover:bg-gray-600';
+                cancelBtn.onclick = () => {
+                    isCreatingFood = false;
+                    renderTable();
+                };
+
+                actionCell.appendChild(saveBtn);
+                actionCell.appendChild(cancelBtn);
+            }
+
+            function saveNewFood() {
+                const newFood = {};
+                const newRow = document.getElementById('new-food-row');
+                const inputs = newRow.querySelectorAll('input');
+                let isValid = true;
+
+                inputs.forEach(input => {
+                    const header = input.dataset.header;
+                    if (header === 'description') {
+                        if (input.value.trim() === '') {
+                            alert('Food name cannot be empty.');
+                            isValid = false;
+                        }
+                        newFood[header] = input.value.trim();
+                    } else {
+                        newFood[header] = parseFloat(input.value) || 0;
+                    }
+                });
+
+                if (!isValid) return;
+
+                if (storedFoods.some(food => food.description.toLowerCase() === newFood.description.toLowerCase())) {
+                    alert('A food with this name already exists.');
+                    return;
+                }
+
+                storedFoods.unshift(newFood);
+                isCreatingFood = false;
+                saveAndRender();
+            }
+
             // --- TABLE RENDERING AND MANAGEMENT ---
             function renderTableHeader() {
                 tableHead.innerHTML = '';
@@ -255,12 +344,10 @@
                     th.scope = 'col';
                     th.className = 'px-6 py-3 cursor-pointer';
                     th.dataset.sort = headerText;
-                    th.textContent = headerText.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); // Prettify header text
-                    
+                    th.textContent = headerText.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                     const icon = document.createElement('span');
                     icon.className = 'sort-icon';
                     th.appendChild(icon);
-                    
                     th.addEventListener('click', () => {
                         if (sortState.column === headerText) {
                             sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
@@ -272,11 +359,6 @@
                     });
                     headerRow.appendChild(th);
                 });
-                const actionTh = document.createElement('th');
-                actionTh.scope = 'col';
-                actionTh.className = 'px-6 py-3';
-                actionTh.textContent = 'Actions';
-                headerRow.appendChild(actionTh);
                 tableHead.appendChild(headerRow);
             }
 
@@ -301,20 +383,22 @@
                     nutrientHeaders.forEach(header => {
                         const cell = row.insertCell();
                         cell.className = 'px-6 py-4';
+                        const value = food[header];
+                        
                         if (header === 'description') {
                             cell.className += ' font-medium text-gray-900 whitespace-nowrap';
+                            const removeBtn = document.createElement('span');
+                            removeBtn.className = 'remove-icon';
+                            removeBtn.innerHTML = '&times;';
+                            removeBtn.dataset.description = food.description;
+                            cell.appendChild(removeBtn);
+                            
+                            const textNode = document.createTextNode(value);
+                            cell.appendChild(textNode);
+                        } else {
+                            cell.textContent = typeof value === 'number' ? value.toFixed(2) : value;
                         }
-                        const value = food[header];
-                        cell.textContent = typeof value === 'number' ? value.toFixed(2) : value;
                     });
-
-                    const actionCell = row.insertCell();
-                    actionCell.className = 'px-6 py-4';
-                    const removeBtn = document.createElement('button');
-                    removeBtn.className = 'font-medium text-red-600 hover:underline';
-                    removeBtn.textContent = 'Remove';
-                    removeBtn.dataset.description = food.description;
-                    actionCell.appendChild(removeBtn);
                 });
                 updateSortIcons();
             }
@@ -340,19 +424,59 @@
             }
             
             function updateSortIcons() {
-                document.querySelectorAll('#table-head th .sort-icon').forEach(icon => {
-                    icon.innerHTML = '';
-                });
+                document.querySelectorAll('#table-head th .sort-icon').forEach(icon => icon.innerHTML = '');
                 const activeHeader = document.querySelector(`#table-head th[data-sort="${sortState.column}"]`);
                 if (activeHeader) {
-                    const icon = activeHeader.querySelector('.sort-icon');
-                    icon.innerHTML = sortState.direction === 'asc' ? '&#9650;' : '&#9660;';
+                    activeHeader.querySelector('.sort-icon').innerHTML = sortState.direction === 'asc' ? '&#9650;' : '&#9660;';
                 }
             }
 
+            // --- NUTRIENT TARGETS ---
+            function renderNutrientTargets() {
+                targetsListContainer.innerHTML = '';
+                const savedTargets = JSON.parse(localStorage.getItem('nutrientTargets')) || {};
+                const nutrientsToDisplay = nutrientHeaders.filter(h => h !== 'description');
+
+                nutrientsToDisplay.forEach(nutrient => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between';
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = `target-${nutrient}`;
+                    label.textContent = nutrient.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    label.className = 'text-sm font-medium text-gray-700';
+
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.id = `target-${nutrient}`;
+                    input.dataset.nutrient = nutrient;
+                    input.className = 'w-24 p-2 border rounded-md text-sm';
+                    input.placeholder = '0.00';
+                    input.value = savedTargets[nutrient] || '';
+
+                    div.appendChild(label);
+                    div.appendChild(input);
+                    targetsListContainer.appendChild(div);
+                });
+            }
+
+            saveTargetsBtn.addEventListener('click', () => {
+                const targets = {};
+                const inputs = targetsListContainer.querySelectorAll('input');
+                inputs.forEach(input => {
+                    const nutrient = input.dataset.nutrient;
+                    const value = parseFloat(input.value);
+                    if (!isNaN(value)) {
+                        targets[nutrient] = value;
+                    }
+                });
+                localStorage.setItem('nutrientTargets', JSON.stringify(targets));
+                alert('Nutrient targets saved!');
+            });
+
             // --- EVENT LISTENERS FOR ACTIONS ---
             tableBody.addEventListener('click', (e) => {
-                if (e.target.tagName === 'BUTTON' && e.target.dataset.description) {
+                if (e.target.classList.contains('remove-icon')) {
                     const descriptionToRemove = e.target.dataset.description;
                     storedFoods = storedFoods.filter(food => food.description !== descriptionToRemove);
                     saveAndRender();
