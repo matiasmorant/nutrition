@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Food Nutrient Finder</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍎</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -38,6 +39,9 @@
 
         /* Responsive Table to Card styles for mobile */
         @media (max-width: 768px) {
+            #table-container {
+                overflow-x: hidden; /* Prevent horizontal scroll on mobile */
+            }
             #nutrient-table thead {
                 display: none;
             }
@@ -85,6 +89,25 @@
                 flex-direction: column;
             }
         }
+
+        /* Desktop table styles: sticky column and overflow */
+        @media (min-width: 769px) {
+            #table-container {
+                overflow-x: auto;
+            }
+            .sticky-col {
+                position: -webkit-sticky; /* For Safari */
+                position: sticky;
+                left: 0;
+                z-index: 10;
+            }
+            #nutrient-table thead .sticky-col {
+                background-color: #f3f4f6; /* gray-100, same as thead */
+            }
+            #nutrient-table tbody tr .sticky-col {
+                background-color: #ffffff; /* white, same as row */
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -126,7 +149,7 @@
                      <h2 class="text-2xl font-semibold text-gray-800">My Foods</h2>
                      <button id="create-food-btn" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Create New Food</button>
                 </div>
-                <div class="overflow-x-auto bg-white rounded-lg shadow md:shadow-none md:bg-transparent">
+                <div id="table-container" class="bg-white rounded-lg shadow md:shadow-none md:bg-transparent">
                     <table id="nutrient-table" class="w-full text-base text-left text-gray-600">
                         <thead id="table-head" class="text-xs text-gray-700 uppercase bg-gray-100">
                             <!-- Headers will be injected here dynamically -->
@@ -393,6 +416,9 @@
                     const th = document.createElement('th');
                     th.scope = 'col';
                     th.className = 'px-6 py-3 cursor-pointer';
+                    if (headerText === 'description') {
+                        th.classList.add('sticky-col');
+                    }
                     th.dataset.sort = headerText;
                     th.textContent = headerText.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                     const icon = document.createElement('span');
@@ -437,7 +463,7 @@
                         cell.dataset.label = prettyHeader;
                         
                         if (header === 'description') {
-                            cell.className = 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap';
+                            cell.className = 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap sticky-col';
                             const removeBtn = document.createElement('span');
                             removeBtn.className = 'remove-icon';
                             removeBtn.innerHTML = '&times;';
