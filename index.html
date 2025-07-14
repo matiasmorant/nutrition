@@ -50,12 +50,17 @@
             position: sticky;
             left: 0;
             z-index: 10;
+            width: 250px;
+            min-width: 250px;
         }
         #nutrient-table thead .sticky-col {
             background-color: #f3f4f6; /* gray-100, same as thead */
         }
         #nutrient-table tbody tr .sticky-col {
             background-color: #ffffff; /* white, same as row */
+        }
+        .text-zero {
+            color: #d1d5db; /* gray-300 */
         }
         
     </style>
@@ -64,7 +69,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.1</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -100,8 +105,8 @@
                      <button id="create-food-btn" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Create New Food</button>
                 </div>
                 <div id="table-container" class="bg-white rounded-lg shadow">
-                    <table id="nutrient-table" class="w-full text-base text-left text-gray-600">
-                        <thead id="table-head" class="text-sm text-gray-700 uppercase bg-gray-100">
+                    <table id="nutrient-table" class="w-full text-sm text-left text-gray-600">
+                        <thead id="table-head" class="text-xs text-gray-700 uppercase bg-gray-100">
                             <!-- Headers will be injected here dynamically -->
                         </thead>
                         <tbody id="table-body">
@@ -118,7 +123,7 @@
 
         <div id="content-targets" class="tab-content hidden p-6 bg-white rounded-lg shadow">
             <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
-            <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+            <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
                 <!-- Nutrient target inputs will be injected here -->
             </div>
             <div class="mt-8 text-right">
@@ -262,10 +267,10 @@
                     listItem.className = 'p-3 border-b border-gray-100 flex justify-between items-center';
                     const foodDesc = document.createElement('span');
                     foodDesc.textContent = food.description;
-                    foodDesc.className = 'text-base text-gray-800 mr-2';
+                    foodDesc.className = 'text-sm text-gray-800 mr-2';
                     const addButton = document.createElement('button');
                     addButton.textContent = 'Add';
-                    addButton.className = 'px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded-full hover:bg-blue-600';
+                    addButton.className = 'px-3 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-600';
                     addButton.onclick = () => addFood(food);
                     listItem.appendChild(foodDesc);
                     listItem.appendChild(addButton);
@@ -303,7 +308,7 @@
                     const input = document.createElement('input');
                     input.type = header === 'description' ? 'text' : 'number';
                     input.placeholder = header.replace(/_/g, ' ');
-                    input.className = 'w-full p-2 border rounded-md text-base';
+                    input.className = 'w-full p-2 border rounded-md text-sm';
                     input.dataset.header = header;
                     cell.appendChild(input);
                 });
@@ -312,12 +317,12 @@
                 actionCell.className = 'p-1 whitespace-nowrap';
                 const saveBtn = document.createElement('button');
                 saveBtn.textContent = 'Save';
-                saveBtn.className = 'px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600';
+                saveBtn.className = 'px-3 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600';
                 saveBtn.onclick = saveNewFood;
                 
                 const cancelBtn = document.createElement('button');
                 cancelBtn.textContent = 'Cancel';
-                cancelBtn.className = 'ml-2 px-3 py-1 bg-gray-500 text-white text-sm rounded-md hover:bg-gray-600';
+                cancelBtn.className = 'ml-2 px-3 py-1 bg-gray-500 text-white text-xs rounded-md hover:bg-gray-600';
                 cancelBtn.onclick = () => {
                     isCreatingFood = false;
                     renderTable();
@@ -365,7 +370,7 @@
                 nutrientHeaders.forEach(headerText => {
                     const th = document.createElement('th');
                     th.scope = 'col';
-                    th.className = 'px-6 py-3 cursor-pointer text-sm';
+                    th.className = 'px-6 py-3 cursor-pointer text-xs';
                     if (headerText === 'description') {
                         th.classList.add('sticky-col');
                     }
@@ -411,7 +416,7 @@
                         const value = food[header];
                         
                         if (header === 'description') {
-                            cell.className = 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap sticky-col';
+                            cell.className = 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap sticky-col text-sm';
                             const removeBtn = document.createElement('span');
                             removeBtn.className = 'remove-icon';
                             removeBtn.innerHTML = '&times;';
@@ -421,8 +426,11 @@
                             const textNode = document.createTextNode(value);
                             cell.appendChild(textNode);
                         } else {
-                            cell.className = 'px-6 py-4';
+                            cell.className = 'px-6 py-4 text-sm';
                             cell.textContent = typeof value === 'number' ? value.toFixed(2) : value;
+                            if (typeof value === 'number' && value === 0) {
+                                cell.classList.add('text-zero');
+                            }
                         }
                     });
                 });
@@ -470,13 +478,13 @@
                     const label = document.createElement('label');
                     label.htmlFor = `target-${nutrient}`;
                     label.textContent = nutrient.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    label.className = 'text-base font-medium text-gray-700';
+                    label.className = 'text-sm font-medium text-gray-700';
 
                     const input = document.createElement('input');
                     input.type = 'number';
                     input.id = `target-${nutrient}`;
                     input.dataset.nutrient = nutrient;
-                    input.className = 'w-32 p-2 border rounded-md text-base';
+                    input.className = 'w-32 p-2 border rounded-md text-sm';
                     input.placeholder = '0.00';
                     input.value = savedTargets[nutrient] || '';
 
