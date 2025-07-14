@@ -52,6 +52,9 @@
             z-index: 10;
             width: 250px;
             min-width: 250px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         #nutrient-table thead .sticky-col {
             background-color: #f3f4f6; /* gray-100, same as thead */
@@ -73,7 +76,6 @@
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
-        <!-- Tabs Navigation -->
         <div class="border-b border-gray-200 mb-6">
             <nav class="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto" aria-label="Tabs">
                 <button id="tab-foods" class="tab-btn active whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base">Foods</button>
@@ -82,9 +84,7 @@
             </nav>
         </div>
 
-        <!-- Tabs Content -->
         <div id="content-foods" class="tab-content">
-            <!-- Search Bar -->
             <div class="relative mb-4">
                 <input type="text" id="search-bar" class="w-full p-3 pl-10 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base" placeholder="Search for a food...">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -95,10 +95,8 @@
                 </div>
             </div>
 
-            <!-- Search Results Dropdown -->
             <div id="search-results" class="absolute w-full md:w-1/2 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden"></div>
 
-            <!-- Nutrient Table -->
             <div class="mt-12">
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
                      <h2 class="text-2xl font-semibold text-gray-800">My Foods</h2>
@@ -107,11 +105,9 @@
                 <div id="table-container" class="bg-white rounded-lg shadow">
                     <table id="nutrient-table" class="w-full text-sm text-left text-gray-600">
                         <thead id="table-head" class="text-xs text-gray-700 uppercase bg-gray-100">
-                            <!-- Headers will be injected here dynamically -->
-                        </thead>
+                            </thead>
                         <tbody id="table-body">
-                            <!-- Food rows will be injected here -->
-                        </tbody>
+                            </tbody>
                     </table>
                     <div id="table-placeholder" class="text-center p-8 text-gray-500">
                         <p>Your added foods will appear here.</p>
@@ -124,8 +120,7 @@
         <div id="content-targets" class="tab-content hidden p-6 bg-white rounded-lg shadow">
             <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
             <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
-                <!-- Nutrient target inputs will be injected here -->
-            </div>
+                </div>
             <div class="mt-8 text-right">
                 <button id="save-targets-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Save Targets</button>
             </div>
@@ -416,7 +411,8 @@
                         const value = food[header];
                         
                         if (header === 'description') {
-                            cell.className = 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap sticky-col text-sm';
+                            cell.className = 'px-6 py-4 font-medium text-gray-900 sticky-col text-sm';
+                            cell.title = value;
                             const removeBtn = document.createElement('span');
                             removeBtn.className = 'remove-icon';
                             removeBtn.innerHTML = '&times;';
