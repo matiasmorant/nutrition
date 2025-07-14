@@ -41,95 +41,39 @@
             z-index: 20; /* Ensure search results are above the sticky column */
         }
 
-        /* Responsive Table to Card styles for mobile */
-        @media (max-width: 768px) {
-            #table-container {
-                overflow-x: hidden; /* Prevent horizontal scroll on mobile */
-            }
-            #nutrient-table thead {
-                display: none;
-            }
-            #nutrient-table, #nutrient-table tbody, #nutrient-table tr, #nutrient-table td {
-                display: block;
-                width: 100%;
-            }
-            #nutrient-table tr {
-                margin-bottom: 1.5rem;
-                border: 1px solid #e5e7eb; /* gray-200 */
-                border-radius: 0.5rem;
-                overflow: hidden;
-                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            }
-            #nutrient-table td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 1rem 1.25rem; /* Increased padding */
-                font-size: 1rem; /* Increased font size */
-                text-align: right;
-                border-bottom: 1px solid #f3f4f6; /* gray-100 */
-            }
-            #nutrient-table td:last-child {
-                border-bottom: none;
-            }
-            #nutrient-table td::before {
-                content: attr(data-label);
-                font-weight: 600;
-                text-align: left;
-                padding-right: 1rem;
-                color: #374151; /* gray-700 */
-            }
-            #nutrient-table td[data-label="Description"] {
-                background-color: #f9fafb; /* gray-50 */
-                font-size: 1.25rem; /* text-xl */
-                font-weight: 600;
-                padding: 1.25rem;
-                flex-direction: row-reverse; /* Puts remove icon on the left */
-                justify-content: flex-end;
-            }
-            #nutrient-table td[data-label="Description"]::before {
-                display: none; /* Hide the "Description:" label itself */
-            }
-            #new-food-row {
-                display: flex;
-                flex-direction: column;
-            }
-        }
-
         /* Desktop table styles: sticky column and overflow */
-        @media (min-width: 769px) {
-            #table-container {
-                overflow-x: auto;
-            }
-            .sticky-col {
-                position: -webkit-sticky; /* For Safari */
-                position: sticky;
-                left: 0;
-                z-index: 10;
-            }
-            #nutrient-table thead .sticky-col {
-                background-color: #f3f4f6; /* gray-100, same as thead */
-            }
-            #nutrient-table tbody tr .sticky-col {
-                background-color: #ffffff; /* white, same as row */
-            }
+        #table-container {
+            overflow-x: auto;
         }
+        .sticky-col {
+            position: -webkit-sticky; /* For Safari */
+            position: sticky;
+            left: 0;
+            z-index: 10;
+        }
+        #nutrient-table thead .sticky-col {
+            background-color: #f3f4f6; /* gray-100, same as thead */
+        }
+        #nutrient-table tbody tr .sticky-col {
+            background-color: #ffffff; /* white, same as row */
+        }
+        
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 text-base">
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-4xl sm:text-5xl font-bold text-gray-900">Food Nutrient Finder</h1>
-            <p class="text-lg sm:text-xl text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder</h1>
+            <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
         <!-- Tabs Navigation -->
         <div class="border-b border-gray-200 mb-6">
             <nav class="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto" aria-label="Tabs">
-                <button id="tab-foods" class="tab-btn active whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-lg">Foods</button>
-                <button id="tab-targets" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-lg text-gray-500 hover:text-gray-700 hover:border-gray-300">Nutrient Targets</button>
-                <button id="tab-diets" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-lg text-gray-500 hover:text-gray-700 hover:border-gray-300">Diets</button>
+                <button id="tab-foods" class="tab-btn active whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base">Foods</button>
+                <button id="tab-targets" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Nutrient Targets</button>
+                <button id="tab-diets" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Diets</button>
             </nav>
         </div>
 
@@ -137,12 +81,12 @@
         <div id="content-foods" class="tab-content">
             <!-- Search Bar -->
             <div class="relative mb-4">
-                <input type="text" id="search-bar" class="w-full p-4 pl-12 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg" placeholder="Search for a food...">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                <input type="text" id="search-bar" class="w-full p-3 pl-10 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base" placeholder="Search for a food...">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
                 </div>
-                <div id="loading-spinner" class="absolute inset-y-0 right-0 pr-4 flex items-center hidden">
-                    <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <div id="loading-spinner" class="absolute inset-y-0 right-0 pr-3 flex items-center hidden">
+                    <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 </div>
             </div>
 
@@ -152,10 +96,10 @@
             <!-- Nutrient Table -->
             <div class="mt-12">
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
-                     <h2 class="text-3xl font-semibold text-gray-800">My Foods</h2>
-                     <button id="create-food-btn" class="w-full sm:w-auto px-5 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-lg">Create New Food</button>
+                     <h2 class="text-2xl font-semibold text-gray-800">My Foods</h2>
+                     <button id="create-food-btn" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Create New Food</button>
                 </div>
-                <div id="table-container" class="bg-white rounded-lg shadow md:shadow-none md:bg-transparent">
+                <div id="table-container" class="bg-white rounded-lg shadow">
                     <table id="nutrient-table" class="w-full text-base text-left text-gray-600">
                         <thead id="table-head" class="text-sm text-gray-700 uppercase bg-gray-100">
                             <!-- Headers will be injected here dynamically -->
@@ -164,26 +108,26 @@
                             <!-- Food rows will be injected here -->
                         </tbody>
                     </table>
-                    <div id="table-placeholder" class="text-center p-8 text-lg text-gray-500 bg-white rounded-lg shadow md:shadow-none">
+                    <div id="table-placeholder" class="text-center p-8 text-gray-500">
                         <p>Your added foods will appear here.</p>
                     </div>
                 </div>
-                <button id="clear-all-btn" class="mt-4 px-5 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 text-lg" disabled>Clear All Foods</button>
+                <button id="clear-all-btn" class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50" disabled>Clear All Foods</button>
             </div>
         </div>
 
         <div id="content-targets" class="tab-content hidden p-6 bg-white rounded-lg shadow">
-            <h2 class="text-3xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
+            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
             <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
                 <!-- Nutrient target inputs will be injected here -->
             </div>
             <div class="mt-8 text-right">
-                <button id="save-targets-btn" class="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-lg">Save Targets</button>
+                <button id="save-targets-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Save Targets</button>
             </div>
         </div>
 
         <div id="content-diets" class="tab-content hidden p-6">
-            <h2 class="text-3xl font-semibold mb-4 text-gray-800">Diets</h2>
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Diets</h2>
             <p class="text-lg">This section is under construction. Here you will be able to create and manage different diets.</p>
         </div>
     </div>
@@ -460,13 +404,11 @@
 
                 sortedFoods.forEach((food) => {
                     const row = tableBody.insertRow();
-                    row.className = 'bg-white border-b md:border-b-0';
+                    row.className = 'bg-white border-b';
                     
                     nutrientHeaders.forEach(header => {
                         const cell = row.insertCell();
                         const value = food[header];
-                        const prettyHeader = header.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                        cell.dataset.label = prettyHeader;
                         
                         if (header === 'description') {
                             cell.className = 'px-6 py-4 font-medium text-gray-900 whitespace-nowrap sticky-col';
