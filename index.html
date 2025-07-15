@@ -73,7 +73,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.3</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.4</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -117,8 +117,8 @@
                     <table id="nutrient-table" class="w-full text-sm text-left text-gray-600">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                             <tr>
-                                <template x-for="header in nutrientHeaders" :key="header">
-                                    <th scope="col" class="px-6 py-3 cursor-pointer text-xs" :class="{'sticky-col': header === 'description'}" @click="changeSort(header)">
+                                <template x-for="header in displayHeaders" :key="header">
+                                    <th scope="col" class="px-6 py-2 cursor-pointer text-xs" :class="{'sticky-col': header === 'description'}" @click="changeSort(header)">
                                         <span x-text="header.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())"></span>
                                         <span class="sort-icon" x-html="sortColumn === header ? (sortDirection === 'asc' ? '&#9650;' : '&#9660;') : ''"></span>
                                     </th>
@@ -128,7 +128,7 @@
                         <tbody>
                             <template x-if="isCreatingFood">
                                 <tr id="new-food-row" class="bg-gray-50">
-                                    <template x-for="header in nutrientHeaders" :key="header">
+                                    <template x-for="header in displayHeaders" :key="header">
                                         <td class="p-1">
                                             <input :type="header === 'description' ? 'text' : 'number'" :placeholder="header.replace(/_/g, ' ')" x-model="newFood[header]" class="w-full p-2 border rounded-md text-sm">
                                         </td>
@@ -141,7 +141,7 @@
                             </template>
                             <template x-for="food in sortedStoredFoods" :key="food.description">
                                 <tr class="bg-white border-b">
-                                    <template x-for="header in nutrientHeaders" :key="header">
+                                    <template x-for="header in displayHeaders" :key="header">
                                         <td :class="{
                                             'px-6 py-4 font-medium text-gray-900 sticky-col text-sm': header === 'description',
                                             'px-6 py-4 text-sm': header !== 'description',
@@ -154,7 +154,7 @@
                                                 </div>
                                             </template>
                                             <template x-if="header !== 'description'">
-                                                <span x-text="typeof food[header] === 'number' ? food[header].toFixed(2) : food[header]"></span>
+                                                <span x-text="typeof food[header] === 'number' ? food[header].toFixed(2) : (food[header] || '0.00')"></span>
                                             </template>
                                         </td>
                                     </template>
@@ -174,7 +174,7 @@
         <div id="content-targets" class="tab-content p-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
             <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
             <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
-                <template x-for="nutrient in nutrientHeaders.filter(h => h !== 'description')" :key="nutrient">
+                <template x-for="nutrient in displayHeaders.filter(h => h !== 'description')" :key="nutrient">
                     <div class="flex items-center justify-between">
                         <label :for="`target-${nutrient}`" x-text="nutrient.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())" class="text-sm font-medium text-gray-700"></label>
                         <input type="number" :id="`target-${nutrient}`" x-model.number="nutrientTargets[nutrient]" class="w-32 p-2 border rounded-md text-sm" placeholder="0.00">
@@ -200,6 +200,7 @@
                 allFoods: [],
                 storedFoods: [],
                 nutrientHeaders: [],
+                displayHeaders: ['description'],
                 searchQuery: '',
                 searchResults: [],
                 isLoading: false,
@@ -226,42 +227,66 @@
                 },
 
                 // --- METHODS ---
-                init() {
+                async init() {
                     this.storedFoods = JSON.parse(localStorage.getItem('storedFoods')) || [];
                     this.nutrientTargets = JSON.parse(localStorage.getItem('nutrientTargets')) || {};
-                    this.loadFoodData();
+                    this.isLoading = true;
+                    await Promise.all([this.loadNutrientTree(), this.loadFoodData()]);
+                    this.isLoading = false;
                     this.$watch('searchQuery', () => {
                         this.searchFoods();
                     });
                 },
 
-                loadFoodData() {
-                    this.isLoading = true;
-                    Papa.parse('foodnutrient.csv', {
-                        download: true,
-                        header: true,
-                        skipEmptyLines: true,
-                        transformHeader: header => header.toLowerCase() === 'food' ? 'description' : header.toLowerCase(),
-                        complete: (results) => {
-                            this.nutrientHeaders = results.meta.fields;
-                            this.allFoods = results.data.map(row => {
-                                const food = {};
-                                this.nutrientHeaders.forEach(header => {
-                                    if (header === 'description') {
-                                        food[header] = row[header] || '';
-                                    } else {
-                                        food[header] = parseFloat(row[header]) || 0;
-                                    }
+                async loadNutrientTree() {
+                    try {
+                        const response = await fetch('nutrientTree.txt');
+                        if (!response.ok) throw new Error('nutrientTree.txt not found');
+                        const text = await response.text();
+                        const treeNutrients = text.split('\n')
+                            .map(line => line.trim())
+                            .filter(line => line.startsWith('+'))
+                            .map(line => line.substring(1).trim().toLowerCase());
+                        this.displayHeaders = ['description', ...treeNutrients];
+                    } catch (error) {
+                        console.error('Failed to load or parse nutrientTree.txt:', error);
+                        // If tree fails, maybe default to all headers? For now, it will just show 'description'.
+                        // Or we can populate displayHeaders with all nutrientHeaders later as a fallback.
+                    }
+                },
+
+                async loadFoodData() {
+                    return new Promise((resolve, reject) => {
+                        Papa.parse('foodnutrient.csv', {
+                            download: true,
+                            header: true,
+                            skipEmptyLines: true,
+                            transformHeader: header => header.toLowerCase() === 'food' ? 'description' : header.toLowerCase(),
+                            complete: (results) => {
+                                this.nutrientHeaders = results.meta.fields;
+                                this.allFoods = results.data.map(row => {
+                                    const food = {};
+                                    this.nutrientHeaders.forEach(header => {
+                                        if (header === 'description') {
+                                            food[header] = row[header] || '';
+                                        } else {
+                                            food[header] = parseFloat(row[header]) || 0;
+                                        }
+                                    });
+                                    return food;
                                 });
-                                return food;
-                            });
-                            this.isLoading = false;
-                        },
-                        error: (error) => {
-                            console.error('Papa Parse Error:', error);
-                            alert('Error: Could not load or parse food data. Please make sure the foodnutrient.csv file is present.');
-                            this.isLoading = false;
-                        }
+                                // Fallback if nutrientTree fails
+                                if (this.displayHeaders.length <= 1) {
+                                    this.displayHeaders = this.nutrientHeaders;
+                                }
+                                resolve();
+                            },
+                            error: (error) => {
+                                console.error('Papa Parse Error:', error);
+                                alert('Error: Could not load or parse food data. Please make sure the foodnutrient.csv file is present.');
+                                reject(error);
+                            }
+                        });
                     });
                 },
 
@@ -300,14 +325,11 @@
 
                 showCreateFoodRow() {
                     this.isCreatingFood = true;
-                    this.newFood = this.nutrientHeaders.reduce((acc, header) => {
-                        acc[header] = header === 'description' ? '' : 0;
-                        return acc;
-                    }, {});
+                    this.newFood = {};
                 },
 
                 saveNewFood() {
-                    const name = this.newFood.description.trim();
+                    const name = (this.newFood.description || '').trim();
                     if (!name) {
                         alert('Food name cannot be empty.');
                         return;
@@ -316,7 +338,14 @@
                         alert('A food with this name already exists.');
                         return;
                     }
-                    this.storedFoods.unshift({ ...this.newFood, description: name });
+                    
+                    const completeNewFood = {};
+                    this.nutrientHeaders.forEach(h => {
+                        completeNewFood[h] = this.newFood[h] || 0;
+                    });
+                    completeNewFood.description = name;
+
+                    this.storedFoods.unshift(completeNewFood);
                     this.saveStoredFoods();
                     this.cancelNewFood();
                 },
@@ -325,7 +354,6 @@
                     this.isCreatingFood = false;
                     this.newFood = {};
                 },
-
 
                 changeSort(column) {
                     if (this.sortColumn === column) {
