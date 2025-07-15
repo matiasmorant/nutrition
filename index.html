@@ -7,10 +7,15 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍎</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Papa Parse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Alpine.js for interactivity -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js" defer></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
+        [x-cloak] { display: none !important; }
         .sort-icon {
             display: inline-block;
             width: 1em;
@@ -40,8 +45,6 @@
         #search-results {
             z-index: 20; /* Ensure search results are above the sticky column */
         }
-
-        /* Desktop table styles: sticky column and overflow */
         #table-container {
             overflow-x: auto;
         }
@@ -64,469 +67,282 @@
         .text-zero {
             color: #d1d5db; /* gray-300 */
         }
-        
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 text-base">
+<body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-init="init()" x-cloak>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.1</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.2</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
         <div class="border-b border-gray-200 mb-6">
             <nav class="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto" aria-label="Tabs">
-                <button id="tab-foods" class="tab-btn active whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base">Foods</button>
-                <button id="tab-targets" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Nutrient Targets</button>
-                <button id="tab-diets" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Diets</button>
+                <button @click="activeTab = 'foods'" :class="{'active': activeTab === 'foods'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Foods</button>
+                <button @click="activeTab = 'targets'" :class="{'active': activeTab === 'targets'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Nutrient Targets</button>
+                <button @click="activeTab = 'diets'" :class="{'active': activeTab === 'diets'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Diets</button>
             </nav>
         </div>
 
-        <div id="content-foods" class="tab-content">
-            <div class="relative mb-4">
-                <input type="text" id="search-bar" class="w-full p-3 pl-10 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base" placeholder="Search for a food...">
+        <!-- Foods Tab -->
+        <div id="content-foods" class="tab-content" x-show="activeTab === 'foods'">
+            <div class="relative mb-4" @click.outside="searchResults = []">
+                <input type="text" x-model.debounce.300ms="searchQuery" @keyup="searchFoods" class="w-full p-3 pl-10 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base" placeholder="Search for a food...">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
                 </div>
-                <div id="loading-spinner" class="absolute inset-y-0 right-0 pr-3 flex items-center hidden">
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center" :class="{'hidden': !isLoading}">
                     <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 </div>
             </div>
 
-            <div id="search-results" class="absolute w-full md:w-1/2 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 hidden"></div>
+            <div id="search-results" class="absolute w-full md:w-1/2 bg-white border border-gray-200 rounded-lg shadow-lg mt-1" x-show="searchResults.length > 0 && searchQuery.length > 1">
+                <ul class="max-h-80 overflow-y-auto">
+                    <template x-for="food in searchResults.slice(0, 15)" :key="food.description">
+                        <li class="p-3 border-b border-gray-100 flex justify-between items-center">
+                            <span x-text="food.description" class="text-sm text-gray-800 mr-2"></span>
+                            <button @click="addFood(food)" class="px-3 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-600">Add</button>
+                        </li>
+                    </template>
+                </ul>
+            </div>
 
             <div class="mt-12">
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
                      <h2 class="text-2xl font-semibold text-gray-800">My Foods</h2>
-                     <button id="create-food-btn" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Create New Food</button>
+                     <button @click="showCreateFoodRow()" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Create New Food</button>
                 </div>
-                <div id="table-container" class="bg-white rounded-lg shadow">
+                <div id="table-container" class="bg-white rounded-lg shadow" x-show="storedFoods.length > 0 || isCreatingFood">
                     <table id="nutrient-table" class="w-full text-sm text-left text-gray-600">
-                        <thead id="table-head" class="text-xs text-gray-700 uppercase bg-gray-100">
-                            </thead>
-                        <tbody id="table-body">
-                            </tbody>
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                            <tr>
+                                <template x-for="header in nutrientHeaders" :key="header">
+                                    <th scope="col" class="px-6 py-3 cursor-pointer text-xs" :class="{'sticky-col': header === 'description'}" @click="changeSort(header)">
+                                        <span x-text="header.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())"></span>
+                                        <span class="sort-icon" x-html="sortColumn === header ? (sortDirection === 'asc' ? '&#9650;' : '&#9660;') : ''"></span>
+                                    </th>
+                                </template>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-if="isCreatingFood">
+                                <tr id="new-food-row" class="bg-gray-50">
+                                    <template x-for="header in nutrientHeaders" :key="header">
+                                        <td class="p-1">
+                                            <input :type="header === 'description' ? 'text' : 'number'" :placeholder="header.replace(/_/g, ' ')" x-model="newFood[header]" class="w-full p-2 border rounded-md text-sm">
+                                        </td>
+                                    </template>
+                                    <td class="p-1 whitespace-nowrap">
+                                        <button @click="saveNewFood()" class="px-3 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600">Save</button>
+                                        <button @click="cancelNewFood()" class="ml-2 px-3 py-1 bg-gray-500 text-white text-xs rounded-md hover:bg-gray-600">Cancel</button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template x-for="food in sortedStoredFoods" :key="food.description">
+                                <tr class="bg-white border-b">
+                                    <template x-for="header in nutrientHeaders" :key="header">
+                                        <td :class="{
+                                            'px-6 py-4 font-medium text-gray-900 sticky-col text-sm': header === 'description',
+                                            'px-6 py-4 text-sm': header !== 'description',
+                                            'text-zero': typeof food[header] === 'number' && food[header] === 0
+                                        }" :title="food[header]">
+                                            <template x-if="header === 'description'">
+                                                <div>
+                                                    <span @click="removeFood(food.description)" class="remove-icon">&times;</span>
+                                                    <span x-text="food[header]"></span>
+                                                </div>
+                                            </template>
+                                            <template x-if="header !== 'description'">
+                                                <span x-text="typeof food[header] === 'number' ? food[header].toFixed(2) : food[header]"></span>
+                                            </template>
+                                        </td>
+                                    </template>
+                                </tr>
+                            </template>
+                        </tbody>
                     </table>
-                    <div id="table-placeholder" class="text-center p-8 text-gray-500">
-                        <p>Your added foods will appear here.</p>
-                    </div>
                 </div>
-                <button id="clear-all-btn" class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50" disabled>Clear All Foods</button>
+                <div id="table-placeholder" class="text-center p-8 text-gray-500" x-show="storedFoods.length === 0 && !isCreatingFood">
+                    <p>Your added foods will appear here.</p>
+                </div>
+                <button @click="clearAll()" class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" :disabled="storedFoods.length === 0">Clear All Foods</button>
             </div>
         </div>
 
-        <div id="content-targets" class="tab-content hidden p-6 bg-white rounded-lg shadow">
+        <!-- Nutrient Targets Tab -->
+        <div id="content-targets" class="tab-content hidden p-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
             <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
             <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
-                </div>
+                <template x-for="nutrient in nutrientHeaders.filter(h => h !== 'description')" :key="nutrient">
+                    <div class="flex items-center justify-between">
+                        <label :for="`target-${nutrient}`" x-text="nutrient.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())" class="text-sm font-medium text-gray-700"></label>
+                        <input type="number" :id="`target-${nutrient}`" x-model.number="nutrientTargets[nutrient]" class="w-32 p-2 border rounded-md text-sm" placeholder="0.00">
+                    </div>
+                </template>
+            </div>
             <div class="mt-8 text-right">
-                <button id="save-targets-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Save Targets</button>
+                <button @click="saveTargets()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Save Targets</button>
             </div>
         </div>
 
-        <div id="content-diets" class="tab-content hidden p-6">
+        <!-- Diets Tab -->
+        <div id="content-diets" class="tab-content hidden p-6" x-show="activeTab === 'diets'">
             <h2 class="text-2xl font-semibold mb-4 text-gray-800">Diets</h2>
             <p class="text-lg">This section is under construction. Here you will be able to create and manage different diets.</p>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- DOM ELEMENTS ---
-            const searchBar = document.getElementById('search-bar');
-            const searchResultsContainer = document.getElementById('search-results');
-            const tableHead = document.getElementById('table-head');
-            const tableBody = document.getElementById('table-body');
-            const tablePlaceholder = document.getElementById('table-placeholder');
-            const nutrientTable = document.getElementById('nutrient-table');
-            const loadingSpinner = document.getElementById('loading-spinner');
-            const clearAllBtn = document.getElementById('clear-all-btn');
-            const createFoodBtn = document.getElementById('create-food-btn');
-            const targetsListContainer = document.getElementById('targets-list');
-            const saveTargetsBtn = document.getElementById('save-targets-btn');
+        function foodApp() {
+            return {
+                // --- STATE ---
+                allFoods: [],
+                storedFoods: [],
+                nutrientHeaders: [],
+                searchQuery: '',
+                searchResults: [],
+                isLoading: false,
+                isCreatingFood: false,
+                newFood: {},
+                sortColumn: 'description',
+                sortDirection: 'asc',
+                activeTab: 'foods',
+                nutrientTargets: {},
 
-            // --- STATE VARIABLES ---
-            let allFoods = [];
-            let storedFoods = JSON.parse(localStorage.getItem('storedFoods')) || [];
-            let nutrientHeaders = [];
-            let sortState = { column: 'description', direction: 'asc' };
-            let searchTimeout;
-            let isCreatingFood = false;
+                // --- COMPUTED PROPERTIES ---
+                get sortedStoredFoods() {
+                    return [...this.storedFoods].sort((a, b) => {
+                        let valA = a[this.sortColumn];
+                        let valB = b[this.sortColumn];
+                        if (typeof valA === 'string') {
+                            valA = valA.toLowerCase();
+                            valB = valB.toLowerCase();
+                        }
+                        if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+                        if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                },
 
-            // --- TABS FUNCTIONALITY ---
-            const tabs = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    const targetId = 'content-' + tab.id.split('-')[1];
-                    tabContents.forEach(content => {
-                        content.classList.add('hidden');
-                        if (content.id === targetId) {
-                            content.classList.remove('hidden');
+                // --- METHODS ---
+                init() {
+                    this.storedFoods = JSON.parse(localStorage.getItem('storedFoods')) || [];
+                    this.nutrientTargets = JSON.parse(localStorage.getItem('nutrientTargets')) || {};
+                    this.loadFoodData();
+                },
+
+                loadFoodData() {
+                    this.isLoading = true;
+                    Papa.parse('foodnutrient.csv', {
+                        download: true,
+                        header: true,
+                        skipEmptyLines: true,
+                        transformHeader: header => header.toLowerCase() === 'food' ? 'description' : header.toLowerCase(),
+                        complete: (results) => {
+                            this.nutrientHeaders = results.meta.fields;
+                            this.allFoods = results.data.map(row => {
+                                const food = {};
+                                this.nutrientHeaders.forEach(header => {
+                                    if (header === 'description') {
+                                        food[header] = row[header] || '';
+                                    } else {
+                                        food[header] = parseFloat(row[header]) || 0;
+                                    }
+                                });
+                                return food;
+                            });
+                            this.isLoading = false;
+                        },
+                        error: (error) => {
+                            console.error('Papa Parse Error:', error);
+                            alert('Error: Could not load or parse food data. Please make sure the foodnutrient.csv file is present.');
+                            this.isLoading = false;
                         }
                     });
-                    if(tab.id === 'tab-targets') {
-                        renderNutrientTargets();
+                },
+
+                searchFoods() {
+                    if (this.searchQuery.length < 2) {
+                        this.searchResults = [];
+                        return;
                     }
-                });
-            });
+                    this.searchResults = this.allFoods.filter(food => 
+                        food.description.toLowerCase().includes(this.searchQuery.toLowerCase())
+                    );
+                },
+
+                addFood(foodObject) {
+                    if (this.storedFoods.some(food => food.description === foodObject.description)) {
+                        alert('This food is already in your list.');
+                        return;
+                    }
+                    this.storedFoods.push(foodObject);
+                    this.saveStoredFoods();
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                },
+
+                removeFood(description) {
+                    this.storedFoods = this.storedFoods.filter(food => food.description !== description);
+                    this.saveStoredFoods();
+                },
+
+                clearAll() {
+                    if (confirm('Are you sure you want to remove all foods from your list?')) {
+                        this.storedFoods = [];
+                        this.saveStoredFoods();
+                    }
+                },
+
+                showCreateFoodRow() {
+                    this.isCreatingFood = true;
+                    this.newFood = this.nutrientHeaders.reduce((acc, header) => {
+                        acc[header] = header === 'description' ? '' : 0;
+                        return acc;
+                    }, {});
+                },
+
+                saveNewFood() {
+                    const name = this.newFood.description.trim();
+                    if (!name) {
+                        alert('Food name cannot be empty.');
+                        return;
+                    }
+                    if (this.storedFoods.some(food => food.description.toLowerCase() === name.toLowerCase())) {
+                        alert('A food with this name already exists.');
+                        return;
+                    }
+                    this.storedFoods.unshift({ ...this.newFood, description: name });
+                    this.saveStoredFoods();
+                    this.cancelNewFood();
+                },
+
+                cancelNewFood() {
+                    this.isCreatingFood = false;
+                    this.newFood = {};
+                },
 
 
-            // --- DATA LOADING AND PARSING ---
-            async function loadFoodData() {
-                loadingSpinner.classList.remove('hidden');
-                try {
-                    const response = await fetch('foodnutrient.csv');
-                    if (!response.ok) throw new Error('Network response was not ok. Make sure foodnutrient.csv is in the same folder.');
-                    const csvText = await response.text();
-                    parseCSV(csvText);
-                    renderTableHeader();
-                } catch (error) {
-                    console.error('Failed to load or parse foodnutrient.csv:', error);
-                    alert('Error: Could not load food data. Please make sure the foodnutrient.csv file is present.');
-                } finally {
-                    loadingSpinner.classList.add('hidden');
-                }
-            }
-
-            function parseCSV(text) {
-                const lines = text.trim().split('\n');
-                const headerLine = lines[0];
-                nutrientHeaders = parseCsvLine(headerLine).map(h => h.toLowerCase() === 'food' ? 'description' : h.toLowerCase());
-                if (nutrientHeaders.indexOf('description') === -1) throw new Error("CSV must have a 'food' column.");
-                allFoods = lines.slice(1).map(line => {
-                    const values = parseCsvLine(line);
-                    const entry = {};
-                    nutrientHeaders.forEach((header, index) => {
-                        const value = values[index] || '';
-                        entry[header] = header !== 'description' ? parseFloat(value) || 0 : value;
-                    });
-                    return entry;
-                });
-            }
-
-            function parseCsvLine(line) {
-                const values = [];
-                let currentVal = '';
-                let inQuotes = false;
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        values.push(currentVal.trim());
-                        currentVal = '';
+                changeSort(column) {
+                    if (this.sortColumn === column) {
+                        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
                     } else {
-                        currentVal += char;
+                        this.sortColumn = column;
+                        this.sortDirection = 'asc';
                     }
-                }
-                values.push(currentVal.trim());
-                return values;
-            }
+                },
 
-            // --- SEARCH FUNCTIONALITY ---
-            searchBar.addEventListener('keyup', () => {
-                clearTimeout(searchTimeout);
-                const query = searchBar.value.trim().toLowerCase();
-                if (query.length < 2) {
-                    searchResultsContainer.classList.add('hidden');
-                    return;
-                }
-                searchTimeout = setTimeout(() => {
-                    const results = allFoods.filter(food => food.description.toLowerCase().includes(query));
-                    displaySearchResults(results);
-                }, 300);
-            });
-            
-            document.addEventListener('click', (e) => {
-                if (!searchBar.contains(e.target) && !searchResultsContainer.contains(e.target)) {
-                    searchResultsContainer.classList.add('hidden');
-                }
-            });
-
-            function displaySearchResults(foods) {
-                searchResultsContainer.innerHTML = '';
-                if (!foods || foods.length === 0) {
-                    searchResultsContainer.innerHTML = `<div class="p-4 text-gray-500">No matches found.</div>`;
-                    searchResultsContainer.classList.remove('hidden');
-                    return;
-                }
-                const list = document.createElement('ul');
-                list.className = 'max-h-80 overflow-y-auto';
-                foods.slice(0, 15).forEach(food => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'p-3 border-b border-gray-100 flex justify-between items-center';
-                    const foodDesc = document.createElement('span');
-                    foodDesc.textContent = food.description;
-                    foodDesc.className = 'text-sm text-gray-800 mr-2';
-                    const addButton = document.createElement('button');
-                    addButton.textContent = 'Add';
-                    addButton.className = 'px-3 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-600';
-                    addButton.onclick = () => addFood(food);
-                    listItem.appendChild(foodDesc);
-                    listItem.appendChild(addButton);
-                    list.appendChild(listItem);
-                });
-                searchResultsContainer.appendChild(list);
-                searchResultsContainer.classList.remove('hidden');
-            }
-
-            // --- FOOD MANAGEMENT (ADD, CREATE) ---
-            function addFood(foodObject) {
-                if (storedFoods.some(food => food.description === foodObject.description)) {
-                    alert('This food is already in your list.');
-                    return;
-                }
-                storedFoods.push(foodObject);
-                saveAndRender();
-                searchResultsContainer.classList.add('hidden');
-                searchBar.value = '';
-            }
-
-            createFoodBtn.addEventListener('click', () => {
-                if (isCreatingFood) return;
-                isCreatingFood = true;
-                showCreateFoodRow();
-            });
-
-            function showCreateFoodRow() {
-                const newRow = tableBody.insertRow(0);
-                newRow.id = 'new-food-row';
-
-                nutrientHeaders.forEach(header => {
-                    const cell = newRow.insertCell();
-                    cell.className = 'p-1';
-                    const input = document.createElement('input');
-                    input.type = header === 'description' ? 'text' : 'number';
-                    input.placeholder = header.replace(/_/g, ' ');
-                    input.className = 'w-full p-2 border rounded-md text-sm';
-                    input.dataset.header = header;
-                    cell.appendChild(input);
-                });
-
-                const actionCell = newRow.insertCell();
-                actionCell.className = 'p-1 whitespace-nowrap';
-                const saveBtn = document.createElement('button');
-                saveBtn.textContent = 'Save';
-                saveBtn.className = 'px-3 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600';
-                saveBtn.onclick = saveNewFood;
+                saveTargets() {
+                    localStorage.setItem('nutrientTargets', JSON.stringify(this.nutrientTargets));
+                    alert('Nutrient targets saved!');
+                },
                 
-                const cancelBtn = document.createElement('button');
-                cancelBtn.textContent = 'Cancel';
-                cancelBtn.className = 'ml-2 px-3 py-1 bg-gray-500 text-white text-xs rounded-md hover:bg-gray-600';
-                cancelBtn.onclick = () => {
-                    isCreatingFood = false;
-                    renderTable();
-                };
-
-                actionCell.appendChild(saveBtn);
-                actionCell.appendChild(cancelBtn);
-            }
-
-            function saveNewFood() {
-                const newFood = {};
-                const newRow = document.getElementById('new-food-row');
-                const inputs = newRow.querySelectorAll('input');
-                let isValid = true;
-
-                inputs.forEach(input => {
-                    const header = input.dataset.header;
-                    if (header === 'description') {
-                        if (input.value.trim() === '') {
-                            alert('Food name cannot be empty.');
-                            isValid = false;
-                        }
-                        newFood[header] = input.value.trim();
-                    } else {
-                        newFood[header] = parseFloat(input.value) || 0;
-                    }
-                });
-
-                if (!isValid) return;
-
-                if (storedFoods.some(food => food.description.toLowerCase() === newFood.description.toLowerCase())) {
-                    alert('A food with this name already exists.');
-                    return;
-                }
-
-                storedFoods.unshift(newFood);
-                isCreatingFood = false;
-                saveAndRender();
-            }
-
-            // --- TABLE RENDERING AND MANAGEMENT ---
-            function renderTableHeader() {
-                tableHead.innerHTML = '';
-                const headerRow = document.createElement('tr');
-                nutrientHeaders.forEach(headerText => {
-                    const th = document.createElement('th');
-                    th.scope = 'col';
-                    th.className = 'px-6 py-3 cursor-pointer text-xs';
-                    if (headerText === 'description') {
-                        th.classList.add('sticky-col');
-                    }
-                    th.dataset.sort = headerText;
-                    th.textContent = headerText.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    const icon = document.createElement('span');
-                    icon.className = 'sort-icon';
-                    th.appendChild(icon);
-                    th.addEventListener('click', () => {
-                        if (sortState.column === headerText) {
-                            sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
-                        } else {
-                            sortState.column = headerText;
-                            sortState.direction = 'asc';
-                        }
-                        renderTable();
-                    });
-                    headerRow.appendChild(th);
-                });
-                tableHead.appendChild(headerRow);
-            }
-
-            function renderTable() {
-                tableBody.innerHTML = '';
-                if (storedFoods.length === 0 && !isCreatingFood) {
-                    tablePlaceholder.style.display = 'block';
-                    nutrientTable.classList.add('hidden');
-                    clearAllBtn.disabled = true;
-                    return;
-                }
-                tablePlaceholder.style.display = 'none';
-                nutrientTable.classList.remove('hidden');
-                clearAllBtn.disabled = false;
-
-                const sortedFoods = sortFoods(storedFoods, sortState.column, sortState.direction);
-
-                sortedFoods.forEach((food) => {
-                    const row = tableBody.insertRow();
-                    row.className = 'bg-white border-b';
-                    
-                    nutrientHeaders.forEach(header => {
-                        const cell = row.insertCell();
-                        const value = food[header];
-                        
-                        if (header === 'description') {
-                            cell.className = 'px-6 py-4 font-medium text-gray-900 sticky-col text-sm';
-                            cell.title = value;
-                            const removeBtn = document.createElement('span');
-                            removeBtn.className = 'remove-icon';
-                            removeBtn.innerHTML = '&times;';
-                            removeBtn.dataset.description = food.description;
-                            cell.appendChild(removeBtn);
-                            
-                            const textNode = document.createTextNode(value);
-                            cell.appendChild(textNode);
-                        } else {
-                            cell.className = 'px-6 py-4 text-sm';
-                            cell.textContent = typeof value === 'number' ? value.toFixed(2) : value;
-                            if (typeof value === 'number' && value === 0) {
-                                cell.classList.add('text-zero');
-                            }
-                        }
-                    });
-                });
-                updateSortIcons();
-            }
-            
-            function saveAndRender() {
-                localStorage.setItem('storedFoods', JSON.stringify(storedFoods));
-                renderTable();
-            }
-
-            // --- TABLE SORTING ---
-            function sortFoods(foods, column, direction) {
-                return [...foods].sort((a, b) => {
-                    let valA = a[column];
-                    let valB = b[column];
-                    if (typeof valA === 'string') {
-                        valA = valA.toLowerCase();
-                        valB = valB.toLowerCase();
-                    }
-                    if (valA < valB) return direction === 'asc' ? -1 : 1;
-                    if (valA > valB) return direction === 'asc' ? 1 : -1;
-                    return 0;
-                });
-            }
-            
-            function updateSortIcons() {
-                document.querySelectorAll('#table-head th .sort-icon').forEach(icon => icon.innerHTML = '');
-                const activeHeader = document.querySelector(`#table-head th[data-sort="${sortState.column}"]`);
-                if (activeHeader) {
-                    activeHeader.querySelector('.sort-icon').innerHTML = sortState.direction === 'asc' ? '&#9650;' : '&#9660;';
+                saveStoredFoods() {
+                    localStorage.setItem('storedFoods', JSON.stringify(this.storedFoods));
                 }
             }
-
-            // --- NUTRIENT TARGETS ---
-            function renderNutrientTargets() {
-                targetsListContainer.innerHTML = '';
-                const savedTargets = JSON.parse(localStorage.getItem('nutrientTargets')) || {};
-                const nutrientsToDisplay = nutrientHeaders.filter(h => h !== 'description');
-
-                nutrientsToDisplay.forEach(nutrient => {
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center justify-between';
-                    
-                    const label = document.createElement('label');
-                    label.htmlFor = `target-${nutrient}`;
-                    label.textContent = nutrient.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    label.className = 'text-sm font-medium text-gray-700';
-
-                    const input = document.createElement('input');
-                    input.type = 'number';
-                    input.id = `target-${nutrient}`;
-                    input.dataset.nutrient = nutrient;
-                    input.className = 'w-32 p-2 border rounded-md text-sm';
-                    input.placeholder = '0.00';
-                    input.value = savedTargets[nutrient] || '';
-
-                    div.appendChild(label);
-                    div.appendChild(input);
-                    targetsListContainer.appendChild(div);
-                });
-            }
-
-            saveTargetsBtn.addEventListener('click', () => {
-                const targets = {};
-                const inputs = targetsListContainer.querySelectorAll('input');
-                inputs.forEach(input => {
-                    const nutrient = input.dataset.nutrient;
-                    const value = parseFloat(input.value);
-                    if (!isNaN(value)) {
-                        targets[nutrient] = value;
-                    }
-                });
-                localStorage.setItem('nutrientTargets', JSON.stringify(targets));
-                alert('Nutrient targets saved!');
-            });
-
-            // --- EVENT LISTENERS FOR ACTIONS ---
-            tableBody.addEventListener('click', (e) => {
-                if (e.target.classList.contains('remove-icon')) {
-                    const descriptionToRemove = e.target.dataset.description;
-                    storedFoods = storedFoods.filter(food => food.description !== descriptionToRemove);
-                    saveAndRender();
-                }
-            });
-
-            clearAllBtn.addEventListener('click', () => {
-                if (confirm('Are you sure you want to remove all foods from your list?')) {
-                    storedFoods = [];
-                    saveAndRender();
-                }
-            });
-
-            // --- INITIALIZATION ---
-            async function init() {
-                await loadFoodData();
-                renderTable();
-            }
-
-            init();
-        });
+        }
     </script>
 
 </body>
