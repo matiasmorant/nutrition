@@ -73,7 +73,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.2</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.3</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -88,7 +88,7 @@
         <!-- Foods Tab -->
         <div id="content-foods" class="tab-content" x-show="activeTab === 'foods'">
             <div class="relative mb-4" @click.outside="searchResults = []">
-                <input type="text" x-model.debounce.300ms="searchQuery" @keyup="searchFoods" class="w-full p-3 pl-10 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base" placeholder="Search for a food...">
+                <input type="text" x-model.debounce.300ms="searchQuery" class="w-full p-3 pl-10 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base" placeholder="Search for a food...">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
                 </div>
@@ -171,7 +171,7 @@
         </div>
 
         <!-- Nutrient Targets Tab -->
-        <div id="content-targets" class="tab-content hidden p-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
+        <div id="content-targets" class="tab-content p-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
             <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
             <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
                 <template x-for="nutrient in nutrientHeaders.filter(h => h !== 'description')" :key="nutrient">
@@ -187,7 +187,7 @@
         </div>
 
         <!-- Diets Tab -->
-        <div id="content-diets" class="tab-content hidden p-6" x-show="activeTab === 'diets'">
+        <div id="content-diets" class="tab-content p-6" x-show="activeTab === 'diets'">
             <h2 class="text-2xl font-semibold mb-4 text-gray-800">Diets</h2>
             <p class="text-lg">This section is under construction. Here you will be able to create and manage different diets.</p>
         </div>
@@ -230,6 +230,9 @@
                     this.storedFoods = JSON.parse(localStorage.getItem('storedFoods')) || [];
                     this.nutrientTargets = JSON.parse(localStorage.getItem('nutrientTargets')) || {};
                     this.loadFoodData();
+                    this.$watch('searchQuery', () => {
+                        this.searchFoods();
+                    });
                 },
 
                 loadFoodData() {
