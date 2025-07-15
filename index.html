@@ -42,8 +42,8 @@
         .remove-icon:hover {
             color: #b91c1c; /* red-700 */
         }
-        #search-results {
-            z-index: 20; /* Ensure search results are above the sticky column */
+        #search-results, .modal {
+            z-index: 20;
         }
         #table-container {
             overflow-x: auto;
@@ -73,7 +73,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.4</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.5</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -111,7 +111,10 @@
             <div class="mt-12">
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
                      <h2 class="text-2xl font-semibold text-gray-800">My Foods</h2>
-                     <button @click="showCreateFoodRow()" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Create New Food</button>
+                     <div class="flex gap-2">
+                        <button @click="isAddingColumn = true" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Add Nutrient Column</button>
+                        <button @click="showCreateFoodRow()" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Create New Food</button>
+                     </div>
                 </div>
                 <div id="table-container" class="bg-white rounded-lg shadow" x-show="storedFoods.length > 0 || isCreatingFood">
                     <table id="nutrient-table" class="w-full text-sm text-left text-gray-600">
@@ -193,6 +196,37 @@
         </div>
     </div>
 
+    <!-- Add Column Modal -->
+    <div x-show="isAddingColumn" @keydown.escape.window="isAddingColumn = false" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
+        <div @click.outside="isAddingColumn = false" class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Add Nutrient Column</h3>
+                <div class="mt-2 px-7 py-3">
+                    <input type="text" x-model="nutrientSearchQuery" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Search for a nutrient...">
+                </div>
+                <div class="max-h-60 overflow-y-auto border rounded-md">
+                    <ul class="divide-y divide-gray-200">
+                        <template x-for="nutrient in filteredAvailableNutrients" :key="nutrient">
+                             <li class="p-3 flex justify-between items-center text-sm">
+                                <span x-text="nutrient.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())"></span>
+                                <button @click="addNutrientColumn(nutrient)" class="px-3 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-600">Add</button>
+                            </li>
+                        </template>
+                        <template x-if="filteredAvailableNutrients.length === 0">
+                            <li class="p-4 text-gray-500">No available nutrients found.</li>
+                        </template>
+                    </ul>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button @click="isAddingColumn = false" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <script>
         function foodApp() {
             return {
@@ -210,6 +244,8 @@
                 sortDirection: 'asc',
                 activeTab: 'foods',
                 nutrientTargets: {},
+                isAddingColumn: false,
+                nutrientSearchQuery: '',
 
                 // --- COMPUTED PROPERTIES ---
                 get sortedStoredFoods() {
@@ -223,6 +259,16 @@
                         if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
                         if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
                         return 0;
+                    });
+                },
+                get filteredAvailableNutrients() {
+                    if (!this.nutrientSearchQuery) {
+                        return this.nutrientHeaders.filter(h => h !== 'description' && !this.displayHeaders.includes(h));
+                    }
+                    return this.nutrientHeaders.filter(h => {
+                        return h !== 'description' &&
+                               !this.displayHeaders.includes(h) &&
+                               h.toLowerCase().includes(this.nutrientSearchQuery.toLowerCase());
                     });
                 },
 
@@ -250,8 +296,6 @@
                         this.displayHeaders = ['description', ...treeNutrients];
                     } catch (error) {
                         console.error('Failed to load or parse nutrientTree.txt:', error);
-                        // If tree fails, maybe default to all headers? For now, it will just show 'description'.
-                        // Or we can populate displayHeaders with all nutrientHeaders later as a fallback.
                     }
                 },
 
@@ -275,7 +319,6 @@
                                     });
                                     return food;
                                 });
-                                // Fallback if nutrientTree fails
                                 if (this.displayHeaders.length <= 1) {
                                     this.displayHeaders = this.nutrientHeaders;
                                 }
@@ -362,6 +405,15 @@
                         this.sortColumn = column;
                         this.sortDirection = 'asc';
                     }
+                },
+                
+                addNutrientColumn(nutrient) {
+                    if (!this.displayHeaders.includes(nutrient)) {
+                        this.displayHeaders.push(nutrient);
+                    }
+                    this.nutrientSearchQuery = '';
+                    // Optional: close modal after adding one
+                    // this.isAddingColumn = false; 
                 },
 
                 saveTargets() {
