@@ -119,7 +119,7 @@
                             <tr>
                                 <template x-for="header in displayHeaders" :key="header">
                                     <th scope="col" class="px-6 py-2 cursor-pointer text-xs" :class="{'sticky-col': header === 'name'}" @click="changeSort(header)">
-                                        <span x-text="header.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())"></span>
+                                        <span x-text="header"></span>
                                         <span class="sort-icon" x-html="sortColumn === header ? (sortDirection === 'asc' ? '&#9650;' : '&#9660;') : ''"></span>
                                     </th>
                                 </template>
@@ -130,7 +130,7 @@
                                 <tr id="new-food-row" class="bg-gray-50">
                                     <template x-for="header in displayHeaders" :key="header">
                                         <td class="p-1">
-                                            <input :type="header === 'name' ? 'text' : 'number'" :placeholder="header.replace(/_/g, ' ')" x-model="newFood[header]" class="w-full p-2 border rounded-md text-sm">
+                                            <input :type="header === 'name' ? 'text' : 'number'" :placeholder="header" x-model="newFood[header]" class="w-full p-2 border rounded-md text-sm">
                                         </td>
                                     </template>
                                     <td class="p-1 whitespace-nowrap">
@@ -178,7 +178,7 @@
                         <div class="flex items-center">
                             <!-- Task 3: Add remove icon for nutrients -->
                             <span @click="removeNutrientColumn(nutrient)" class="remove-icon opacity-0 group-hover:opacity-100 transition-opacity">&times;</span>
-                            <label :for="`target-${nutrient}`" x-text="nutrient.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())" class="text-sm font-medium text-gray-700"></label>
+                            <label :for="`target-${nutrient}`" x-text="nutrient" class="text-sm font-medium text-gray-700"></label>
                         </div>
                         <input type="number" :id="`target-${nutrient}`" x-model.number="nutrientTargets[nutrient]" class="w-32 p-2 border rounded-md text-sm" placeholder="0.00">
                     </div>
@@ -208,7 +208,7 @@
                     <ul class="divide-y divide-gray-200">
                         <template x-for="nutrient in filteredAvailableNutrients" :key="nutrient">
                              <li class="p-3 flex justify-between items-center text-sm">
-                                <span x-text="nutrient.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())"></span>
+                                <span x-text="nutrient"></span>
                                 <button @click="addNutrientColumn(nutrient)" class="px-3 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-600">Add</button>
                             </li>
                         </template>
