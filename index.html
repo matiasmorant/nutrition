@@ -34,7 +34,7 @@
             cursor: pointer;
             color: #ef4444; /* red-500 */
             font-weight: bold;
-            padding-right: 0.75rem;
+            padding-right: 0.25rem; /* Task 1: Smaller blank space */
             font-size: 1.25rem; /* Larger remove icon */
         }
         .remove-icon:hover {
@@ -71,7 +71,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.7</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.8</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -96,9 +96,9 @@
 
             <div id="search-results" class="absolute w-full md:w-1/2 bg-white border border-gray-200 rounded-lg shadow-lg mt-1" x-show="searchResults.length > 0 && searchQuery.length > 1">
                 <ul class="max-h-80 overflow-y-auto">
-                    <template x-for="food in searchResults.slice(0, 15)" :key="food.description">
+                    <template x-for="food in searchResults.slice(0, 15)" :key="food.name">
                         <li class="p-3 border-b border-gray-100 flex justify-between items-center">
-                            <span x-text="food.description" class="text-sm text-gray-800 mr-2"></span>
+                            <span x-text="food.name" class="text-sm text-gray-800 mr-2"></span>
                             <button @click="addFood(food)" class="px-3 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-600">Add</button>
                         </li>
                     </template>
@@ -109,7 +109,7 @@
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
                      <h2 class="text-2xl font-semibold text-gray-800">My Foods</h2>
                      <div class="flex gap-2">
-                        <button @click="isAddingColumn = true" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Add Nutrient Column</button>
+                        <button @click="isAddingColumn = true" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Add Nutrient</button>
                         <button @click="showCreateFoodRow()" class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Create New Food</button>
                      </div>
                 </div>
@@ -118,7 +118,7 @@
                         <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                             <tr>
                                 <template x-for="header in displayHeaders" :key="header">
-                                    <th scope="col" class="px-6 py-2 cursor-pointer text-xs" :class="{'sticky-col': header === 'description'}" @click="changeSort(header)">
+                                    <th scope="col" class="px-6 py-2 cursor-pointer text-xs" :class="{'sticky-col': header === 'name'}" @click="changeSort(header)">
                                         <span x-text="header.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())"></span>
                                         <span class="sort-icon" x-html="sortColumn === header ? (sortDirection === 'asc' ? '&#9650;' : '&#9660;') : ''"></span>
                                     </th>
@@ -130,7 +130,7 @@
                                 <tr id="new-food-row" class="bg-gray-50">
                                     <template x-for="header in displayHeaders" :key="header">
                                         <td class="p-1">
-                                            <input :type="header === 'description' ? 'text' : 'number'" :placeholder="header.replace(/_/g, ' ')" x-model="newFood[header]" class="w-full p-2 border rounded-md text-sm">
+                                            <input :type="header === 'name' ? 'text' : 'number'" :placeholder="header.replace(/_/g, ' ')" x-model="newFood[header]" class="w-full p-2 border rounded-md text-sm">
                                         </td>
                                     </template>
                                     <td class="p-1 whitespace-nowrap">
@@ -139,21 +139,21 @@
                                     </td>
                                 </tr>
                             </template>
-                            <template x-for="food in sortedStoredFoods" :key="food.description">
+                            <template x-for="food in sortedStoredFoods" :key="food.name">
                                 <tr class="bg-white border-b">
                                     <template x-for="header in displayHeaders" :key="header">
                                         <td :class="{
-                                            'px-6 py-4 font-medium text-gray-900 sticky-col text-sm': header === 'description',
-                                            'px-6 py-4 text-sm': header !== 'description',
+                                            'px-6 py-4 font-medium text-gray-900 sticky-col text-sm': header === 'name',
+                                            'px-6 py-4 text-sm': header !== 'name',
                                             'text-zero': typeof food[header] === 'number' && food[header] === 0
                                         }" :title="food[header]">
-                                            <template x-if="header === 'description'">
+                                            <template x-if="header === 'name'">
                                                 <div>
-                                                    <span @click="removeFood(food.description)" class="remove-icon">&times;</span>
+                                                    <span @click="removeFood(food.name)" class="remove-icon">&times;</span>
                                                     <span x-text="food[header]"></span>
                                                 </div>
                                             </template>
-                                            <template x-if="header !== 'description'">
+                                            <template x-if="header !== 'name'">
                                                 <span x-text="typeof food[header] === 'number' ? food[header].toFixed(2) : (food[header] || '0.00')"></span>
                                             </template>
                                         </td>
@@ -173,15 +173,21 @@
         <div id="content-targets" class="tab-content p-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
             <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
             <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
-                <template x-for="nutrient in displayHeaders.filter(h => h !== 'description')" :key="nutrient">
-                    <div class="flex items-center justify-between">
-                        <label :for="`target-${nutrient}`" x-text="nutrient.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())" class="text-sm font-medium text-gray-700"></label>
+                <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
+                    <div class="flex items-center justify-between group">
+                        <div class="flex items-center">
+                            <!-- Task 3: Add remove icon for nutrients -->
+                            <span @click="removeNutrientColumn(nutrient)" class="remove-icon opacity-0 group-hover:opacity-100 transition-opacity">&times;</span>
+                            <label :for="`target-${nutrient}`" x-text="nutrient.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())" class="text-sm font-medium text-gray-700"></label>
+                        </div>
                         <input type="number" :id="`target-${nutrient}`" x-model.number="nutrientTargets[nutrient]" class="w-32 p-2 border rounded-md text-sm" placeholder="0.00">
                     </div>
                 </template>
             </div>
-            <div class="mt-8 text-right">
-                <button @click="saveTargets()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Save Targets</button>
+            <!-- Task 2: Add "Add nutrient" button -->
+            <div class="mt-8 flex justify-end items-center gap-4">
+                <button @click="isAddingColumn = true" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Add Nutrient</button>
+                <button @click="saveTargets()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Save Targets</button>
             </div>
         </div>
 
@@ -229,13 +235,13 @@
                 storedFoods: [],
                 nutrientHeaders: [],
                 nutrientTreeNames: [], // Store all nutrient names from nutrientTree.txt
-                displayHeaders: ['description'],
+                displayHeaders: ['name'],
                 searchQuery: '',
                 searchResults: [],
                 isLoading: false,
                 isCreatingFood: false,
                 newFood: {},
-                sortColumn: 'description',
+                sortColumn: 'name',
                 sortDirection: 'asc',
                 activeTab: 'foods',
                 nutrientTargets: {},
@@ -311,7 +317,7 @@
                         });
                         
                         this.nutrientTreeNames = allNutrients;
-                        this.displayHeaders = ['description', ...defaultDisplayNutrients];
+                        this.displayHeaders = ['name', ...defaultDisplayNutrients];
                     } catch (error) {
                         console.error('Failed to load or parse nutrientTree.txt:', error);
                     }
@@ -323,14 +329,14 @@
                             download: true,
                             header: true,
                             skipEmptyLines: true,
-                            transformHeader: header => header.toLowerCase() === 'food' ? 'description' : header,
+                            transformHeader: header => header.toLowerCase() === 'food' ? 'name' : header,
                             complete: (results) => {
                                 this.nutrientHeaders = results.meta.fields;
                                 console.log(this.nutrientHeaders)
                                 this.allFoods = results.data.map(row => {
                                     const food = {};
                                     this.nutrientHeaders.forEach(header => {
-                                        if (header === 'description') {
+                                        if (header === 'name') {
                                             food[header] = row[header] || '';
                                         } else {
                                             food[header] = parseFloat(row[header]) || 0;
@@ -358,12 +364,12 @@
                         return;
                     }
                     this.searchResults = this.allFoods.filter(food => 
-                        food.description.toLowerCase().includes(this.searchQuery.toLowerCase())
+                        food.name.toLowerCase().includes(this.searchQuery.toLowerCase())
                     );
                 },
 
                 addFood(foodObject) {
-                    if (this.storedFoods.some(food => food.description === foodObject.description)) {
+                    if (this.storedFoods.some(food => food.name === foodObject.name)) {
                         alert('This food is already in your list.');
                         return;
                     }
@@ -373,8 +379,8 @@
                     this.searchResults = [];
                 },
 
-                removeFood(description) {
-                    this.storedFoods = this.storedFoods.filter(food => food.description !== description);
+                removeFood(name) {
+                    this.storedFoods = this.storedFoods.filter(food => food.name !== name);
                     this.saveStoredFoods();
                 },
 
@@ -391,12 +397,12 @@
                 },
 
                 saveNewFood() {
-                    const name = (this.newFood.description || '').trim();
+                    const name = (this.newFood.name || '').trim();
                     if (!name) {
                         alert('Food name cannot be empty.');
                         return;
                     }
-                    if (this.storedFoods.some(food => food.description.toLowerCase() === name.toLowerCase())) {
+                    if (this.storedFoods.some(food => food.name.toLowerCase() === name.toLowerCase())) {
                         alert('A food with this name already exists.');
                         return;
                     }
@@ -405,7 +411,7 @@
                     this.nutrientHeaders.forEach(h => {
                         completeNewFood[h] = this.newFood[h] || 0;
                     });
-                    completeNewFood.description = name;
+                    completeNewFood.name = name;
 
                     this.storedFoods.unshift(completeNewFood);
                     this.saveStoredFoods();
@@ -433,6 +439,12 @@
                     this.nutrientSearchQuery = '';
                     // Optional: close modal after adding one
                     // this.isAddingColumn = false; 
+                },
+
+                // Task 3: Add function to remove nutrient column
+                removeNutrientColumn(nutrient) {
+                    this.displayHeaders = this.displayHeaders.filter(h => h !== nutrient);
+                    delete this.nutrientTargets[nutrient];
                 },
 
                 saveTargets() {
