@@ -234,6 +234,7 @@
                 allFoods: [],
                 storedFoods: [],
                 nutrientHeaders: [],
+                nutrientTreeNames: [], // Store nutrient names from nutrientTree.txt
                 displayHeaders: ['description'],
                 searchQuery: '',
                 searchResults: [],
@@ -262,13 +263,16 @@
                     });
                 },
                 get filteredAvailableNutrients() {
+                    // Use nutrients that exist in both nutrientTree and CSV headers, but not in displayHeaders
+                    const availableNutrients = this.nutrientTreeNames.filter(h => 
+                        this.nutrientHeaders.includes(h) && !this.displayHeaders.includes(h)
+                    );
+                    
                     if (!this.nutrientSearchQuery) {
-                        return this.nutrientHeaders.filter(h => h !== 'description' && !this.displayHeaders.includes(h));
+                        return availableNutrients;
                     }
-                    return this.nutrientHeaders.filter(h => {
-                        return h !== 'description' &&
-                               !this.displayHeaders.includes(h) &&
-                               h.toLowerCase().includes(this.nutrientSearchQuery.toLowerCase());
+                    return availableNutrients.filter(h => {
+                        return h.toLowerCase().includes(this.nutrientSearchQuery.toLowerCase());
                     });
                 },
 
@@ -293,6 +297,8 @@
                             .map(line => line.trim())
                             .filter(line => line.startsWith('+'))
                             .map(line => line.substring(1).trim().toLowerCase());
+                        
+                        this.nutrientTreeNames = treeNutrients; // Store all nutrient tree names
                         this.displayHeaders = ['description', ...treeNutrients];
                     } catch (error) {
                         console.error('Failed to load or parse nutrientTree.txt:', error);
