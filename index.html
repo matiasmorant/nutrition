@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -100,13 +101,28 @@
             outline: none;
             box-shadow: 0 0 0 2px #bfdbfe;
         }
+        .optimize-btn {
+            background-color: #8b5cf6;
+            color: white;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .optimize-btn:hover {
+            background-color: #7c3aed;
+        }
+        .optimize-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #ddd6fe;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-init="init()" x-cloak>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.3</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.4</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -252,8 +268,9 @@
                             </div>
                         </template>
                     </div>
-                    <div class="mt-4">
+                    <div class="mt-4 flex gap-2">
                         <button @click="isAddingFood = true; addFoodContext = 'diet'" class="blue-btn">Add Food</button>
+                        <button @click="optimizeDiet()" class="optimize-btn">Optimize</button>
                     </div>
                 </div>
                 
@@ -672,6 +689,83 @@
                     if (target <= 0) return 0;
                     
                     return (total / target) * 100;
+                },
+                
+                // Optimize diet to hit nutrient targets
+                optimizeDiet() {
+                    if (!this.selectedDiet || this.selectedDiet.foods.length === 0) {
+                        alert("Please add foods to the diet first.");
+                        return;
+                    }
+                    
+                    // Get nutrients that have targets > 0
+                    const nutrients = this.displayHeaders.filter(h => 
+                        h !== 'name' && 
+                        this.nutrientTargets[h] > 0 &&
+                        this.selectedDiet.foods.some(foodItem => {
+                            const food = this.storedFoods.find(f => f.name === foodItem.foodName);
+                            return food && food[h] !== undefined;
+                        })
+                    );
+                    
+                    if (nutrients.length === 0) {
+                        alert("Please set targets for at least one nutrient in the Nutrient Targets tab.");
+                        return;
+                    }
+                    
+                    // Get foods in the diet
+                    const foods = this.selectedDiet.foods.map(foodItem => {
+                        return this.storedFoods.find(f => f.name === foodItem.foodName);
+                    }).filter(Boolean);
+                    
+                    if (foods.length === 0) {
+                        alert("No valid foods found in the diet.");
+                        return;
+                    }
+                    
+                    try {
+                        // Build the A matrix: nutrients x foods
+                        // Each element: (nutrient value per gram) / target
+                        const A = [];
+                        for (const nutrient of nutrients) {
+                            const target = this.nutrientTargets[nutrient];
+                            const row = [];
+                            for (const food of foods) {
+                                // Nutrient value per gram = (value per 100g) / 100
+                                const valuePerGram = (food[nutrient] || 0) / 100;
+                                row.push(valuePerGram / target);
+                            }
+                            A.push(row);
+                        }
+                        
+                        // Vector b: all ones (we want A*x ≈ 1)
+                        const b = math.ones(nutrients.length);
+                        
+                        // Solve least squares: minimize ||A*x - b||
+                        const x = math.lusolve(math.multiply(math.transpose(A), A), 
+                                              math.multiply(math.transpose(A), b));
+                        
+                        // Extract solution
+                        const solution = math.flatten(x).toArray();
+                        
+                        // Update quantities
+                        for (let i = 0; i < foods.length; i++) {
+                            const foodName = foods[i].name;
+                            const quantity = Math.max(0, solution[i] * 100); // Scale to reasonable quantities
+                            
+                            // Update the food quantity in the diet
+                            const foodIndex = this.selectedDiet.foods.findIndex(f => f.foodName === foodName);
+                            if (foodIndex >= 0) {
+                                this.selectedDiet.foods[foodIndex].quantity = Math.round(quantity);
+                            }
+                        }
+                        
+                        this.saveDiets();
+                        alert("Diet optimized successfully!");
+                    } catch (error) {
+                        console.error("Optimization error:", error);
+                        alert("Failed to optimize diet. Please check your inputs.");
+                    }
                 }
             }
         }
