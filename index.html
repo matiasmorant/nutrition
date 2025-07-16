@@ -70,13 +70,24 @@
             margin-right: 0.5rem;
             cursor: pointer;
         }
+        .nutrient-table th, .nutrient-table td {
+            padding: 8px 16px;
+            text-align: right;
+        }
+        .nutrient-table th:first-child, .nutrient-table td:first-child {
+            text-align: left;
+        }
+        .nutrient-table th {
+            font-weight: 600;
+            background-color: #f9fafb;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-init="init()" x-cloak>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.1</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.2</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -205,7 +216,7 @@
                 
                 <div class="mb-6">
                     <h4 class="text-lg font-medium mb-4">Diet Foods</h4>
-                    <div id="diet-foods-list" class="grid grid-cols-1 gap-y-4">
+                    <div id="diet-foods-list" class="grid grid-cols-1 gap-y-4 mb-8">
                         <template x-if="selectedDiet.foods.length === 0">
                             <p class="text-gray-500">No foods added to this diet yet.</p>
                         </template>
@@ -224,6 +235,29 @@
                     </div>
                     <div class="mt-4">
                         <button @click="isAddingFood = true; addFoodContext = 'diet'" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Add Food</button>
+                    </div>
+                </div>
+                
+                <!-- Nutrient Summary Section -->
+                <div x-show="selectedDiet.foods.length > 0">
+                    <h4 class="text-lg font-medium mb-4">Nutrient Summary</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full nutrient-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Nutrient</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
+                                    <tr>
+                                        <td class="text-left" x-text="nutrient"></td>
+                                        <td x-text="calculateNutrientTotal(nutrient).toFixed(2)"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -579,6 +613,21 @@
                 
                 saveDiets() {
                     localStorage.setItem('diets', JSON.stringify(this.diets));
+                },
+                
+                // Calculate total nutrient amount for the diet
+                calculateNutrientTotal(nutrient) {
+                    if (!this.selectedDiet) return 0;
+                    
+                    let total = 0;
+                    for (const foodItem of this.selectedDiet.foods) {
+                        const food = this.storedFoods.find(f => f.name === foodItem.foodName);
+                        if (food && food[nutrient] !== undefined) {
+                            // Calculate: (nutrient per 100g) * (quantity in grams) / 100
+                            total += (food[nutrient] * foodItem.quantity) / 100;
+                        }
+                    }
+                    return total;
                 }
             }
         }
