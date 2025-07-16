@@ -71,7 +71,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.6</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v0.7</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -257,15 +257,24 @@
                     });
                 },
                 get filteredAvailableNutrients() {
+                    // Guard against initialization issues where arrays might not be populated yet.
+                    if (!this.nutrientTreeNames || !this.nutrientHeaders) {
+                        return [];
+                    }
+
                     // Use nutrients that exist in both nutrientTree and CSV headers, but not in displayHeaders
                     const availableNutrients = this.nutrientTreeNames.filter(h => 
                         this.nutrientHeaders.includes(h) && !this.displayHeaders.includes(h)
                     );
                     
+                    // Ensure uniqueness to prevent Alpine.js key errors.
+                    const uniqueAvailableNutrients = [...new Set(availableNutrients)];
+
                     if (!this.nutrientSearchQuery) {
-                        return availableNutrients;
+                        return uniqueAvailableNutrients;
                     }
-                    return availableNutrients.filter(h => {
+
+                    return uniqueAvailableNutrients.filter(h => {
                         return h.toLowerCase().includes(this.nutrientSearchQuery.toLowerCase());
                     });
                 },
