@@ -569,9 +569,11 @@
                         try {
                             const foods = [];
                             const nutrientHeaders = new Set(['name']);
+                            const csvFile = await fetch('foodnutrient.csv');
+                            const csvString = await csvFile.text();
                             
                             csvParser()
-                                .fromString(await (await fetch('foodnutrient.csv')).text())
+                                .fromString(csvString)
                                 .subscribe((row) => {
                                     // Transform header names: 'food' becomes 'name'
                                     const transformedRow = {};
