@@ -865,7 +865,7 @@
                                               math.multiply(math.transpose(A), b));
                         
                         // Extract solution
-                        const solution = math.flatten(x).toArray();
+                        const solution = x.toArray().flat();
                         
                         // Update quantities for unlocked foods
                         let unlockedIndex = 0;
