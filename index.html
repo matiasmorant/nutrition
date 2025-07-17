@@ -872,17 +872,35 @@
                         for (let i = 0; i < this.selectedDiet.foods.length; i++) {
                             const foodItem = this.selectedDiet.foods[i];
                             if (!foodItem.locked) {
-                                const quantity = Math.max(0, solution[unlockedIndex] * 100); // Scale to reasonable quantities
+                                const quantity = Math.max(0, solution[unlockedIndex]);
                                 foodItem.quantity = Math.round(quantity);
                                 unlockedIndex++;
                             }
                         }
                         
                         this.saveDiets();
-                        alert("Diet optimized successfully!");
+                        if(solution.some(x=>x<0)){
+                            let unlockedIndex = 0;
+                            const foodsToLock = [];
+                            
+                            for (let i = 0; i < this.selectedDiet.foods.length; i++) {
+                                const foodItem = this.selectedDiet.foods[i];
+                                if (!foodItem.locked) {
+                                    if (solution[unlockedIndex] < 0) {
+                                        foodsToLock.push(i);
+                                        foodItem.locked = true;
+                                    }
+                                    unlockedIndex++;
+                                }
+                            }
+                            
+                            this.optimizeDiet();
+
+                            foodsToLock.forEach(i => {this.selectedDiet.foods[i].locked = false;});
+                        }
                     } catch (error) {
                         console.error("Optimization error:", error);
-                        alert("Failed to optimize diet. Please check your inputs.");
+                        alert("Failed to optimize diet.");
                     }
                 },
                 
