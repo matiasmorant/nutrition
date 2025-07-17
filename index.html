@@ -10,6 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -116,13 +117,30 @@
             outline: none;
             box-shadow: 0 0 0 2px #ddd6fe;
         }
+        .lock-icon {
+            cursor: pointer;
+            margin-left: 0.5rem;
+            color: #6b7280;
+            transition: color 0.2s;
+        }
+        .lock-icon:hover {
+            color: #3b82f6;
+        }
+        .lock-icon.locked {
+            color: #3b82f6;
+        }
+        .quantity-input:disabled {
+            background-color: #f3f4f6;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-init="init()" x-cloak>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.4</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.5</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -255,15 +273,32 @@
                         <template x-if="selectedDiet.foods.length === 0">
                             <p class="text-gray-500">No foods added to this diet yet.</p>
                         </template>
-                        <template x-for="foodItem in selectedDiet.foods" :key="foodItem.foodName">
+                        <template x-for="(foodItem, index) in selectedDiet.foods" :key="index">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center">
                                     <span @click="removeFoodFromDiet(foodItem.foodName)" class="remove-icon">&times;</span>
                                     <span x-text="foodItem.foodName" class="text-sm font-medium"></span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <input type="number" x-model.number="foodItem.quantity" min="0" step="1" class="w-24 p-2 border rounded-md text-sm" placeholder="Quantity">
+                                    <input type="number" 
+                                           x-model.number="foodItem.quantity" 
+                                           min="0" 
+                                           step="1" 
+                                           :disabled="foodItem.locked"
+                                           class="w-24 p-2 border rounded-md text-sm quantity-input" 
+                                           placeholder="Quantity">
                                     <span>grams</span>
+                                    <i 
+                                        :class="{
+                                            'fa-solid': true,
+                                            'fa-lock': foodItem.locked,
+                                            'fa-lock-open': !foodItem.locked,
+                                            'lock-icon': true,
+                                            'locked': foodItem.locked
+                                        }" 
+                                        @click="foodItem.locked = !foodItem.locked; saveDiets()"
+                                        title="Lock quantity for optimization"
+                                    ></i>
                                 </div>
                             </div>
                         </template>
@@ -645,10 +680,11 @@
                         // Update existing quantity
                         this.selectedDiet.foods[existingIndex].quantity += 100;
                     } else {
-                        // Add new food with default quantity
+                        // Add new food with default quantity and unlocked state
                         this.selectedDiet.foods.push({
                             foodName,
-                            quantity: 100
+                            quantity: 100,
+                            locked: false
                         });
                     }
                     
@@ -724,13 +760,41 @@
                     }
                     
                     try {
-                        // Build the A matrix: nutrients x foods
-                        // Each element: (nutrient value per gram) / target
+                        // Separate locked and unlocked foods
+                        const lockedFoods = [];
+                        const unlockedFoods = [];
+                        const lockedQuantities = [];
+                        
+                        for (let i = 0; i < this.selectedDiet.foods.length; i++) {
+                            const foodItem = this.selectedDiet.foods[i];
+                            if (foodItem.locked) {
+                                lockedFoods.push(foods[i]);
+                                lockedQuantities.push(foodItem.quantity);
+                            } else {
+                                unlockedFoods.push(foods[i]);
+                            }
+                        }
+                        
+                        // Calculate locked nutrients contribution
+                        const lockedNutrients = math.zeros(nutrients.length).toArray();
+                        for (let i = 0; i < nutrients.length; i++) {
+                            const nutrient = nutrients[i];
+                            let total = 0;
+                            for (let j = 0; j < lockedFoods.length; j++) {
+                                const food = lockedFoods[j];
+                                const valuePerGram = (food[nutrient] || 0) / 100;
+                                total += valuePerGram * lockedQuantities[j];
+                            }
+                            lockedNutrients[i] = total;
+                        }
+                        
+                        // Build the A matrix for unlocked foods: nutrients x foods
                         const A = [];
-                        for (const nutrient of nutrients) {
+                        for (let i = 0; i < nutrients.length; i++) {
+                            const nutrient = nutrients[i];
                             const target = this.nutrientTargets[nutrient];
                             const row = [];
-                            for (const food of foods) {
+                            for (const food of unlockedFoods) {
                                 // Nutrient value per gram = (value per 100g) / 100
                                 const valuePerGram = (food[nutrient] || 0) / 100;
                                 row.push(valuePerGram / target);
@@ -738,8 +802,14 @@
                             A.push(row);
                         }
                         
-                        // Vector b: all ones (we want A*x ≈ 1)
-                        const b = math.ones(nutrients.length);
+                        // Vector b: (1 - lockedNutrients[i]/target) for each nutrient
+                        const b = [];
+                        for (let i = 0; i < nutrients.length; i++) {
+                            const nutrient = nutrients[i];
+                            const target = this.nutrientTargets[nutrient];
+                            const lockedContribution = lockedNutrients[i] / target;
+                            b.push(1 - lockedContribution);
+                        }
                         
                         // Solve least squares: minimize ||A*x - b||
                         const x = math.lusolve(math.multiply(math.transpose(A), A), 
@@ -748,15 +818,14 @@
                         // Extract solution
                         const solution = math.flatten(x).toArray();
                         
-                        // Update quantities
-                        for (let i = 0; i < foods.length; i++) {
-                            const foodName = foods[i].name;
-                            const quantity = Math.max(0, solution[i] * 100); // Scale to reasonable quantities
-                            
-                            // Update the food quantity in the diet
-                            const foodIndex = this.selectedDiet.foods.findIndex(f => f.foodName === foodName);
-                            if (foodIndex >= 0) {
-                                this.selectedDiet.foods[foodIndex].quantity = Math.round(quantity);
+                        // Update quantities for unlocked foods
+                        let unlockedIndex = 0;
+                        for (let i = 0; i < this.selectedDiet.foods.length; i++) {
+                            const foodItem = this.selectedDiet.foods[i];
+                            if (!foodItem.locked) {
+                                const quantity = Math.max(0, solution[unlockedIndex] * 100); // Scale to reasonable quantities
+                                foodItem.quantity = Math.round(quantity);
+                                unlockedIndex++;
                             }
                         }
                         
