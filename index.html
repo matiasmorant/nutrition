@@ -7,7 +7,6 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍎</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@verysimple/csv-parser/dist/bundle.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -163,7 +162,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.7</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.8</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -565,61 +564,46 @@
                 },
 
                 async loadFoodData() {
-                    return new Promise(async (resolve, reject) => {
-                        try {
-                            const foods = [];
-                            const nutrientHeaders = new Set(['name']);
-                            const csvFile = await fetch('foodnutrient.csv');
-                            const csvString = await csvFile.text();
-                            
-                            csvParser()
-                                .fromString(csvString)
-                                .subscribe((row) => {
-                                    // Transform header names: 'food' becomes 'name'
-                                    const transformedRow = {};
-                                    for (const [key, value] of Object.entries(row)) {
-                                        const newKey = key.toLowerCase() === 'food' ? 'name' : key;
-                                        transformedRow[newKey] = value;
-                                        
-                                        // Track headers
-                                        if (newKey !== 'name') {
-                                            nutrientHeaders.add(newKey);
-                                        }
-                                    }
-                                    foods.push(transformedRow);
-                                })
-                                .on('done', (error) => {
-                                    if (error) {
-                                        reject(error);
-                                        return;
-                                    }
-                                    
-                                    this.nutrientHeaders = Array.from(nutrientHeaders);
-                                    this.allFoods = foods.map(row => {
-                                        const food = {};
-                                        this.nutrientHeaders.forEach(header => {
-                                            if (header === 'name') {
-                                                food[header] = row[header] || '';
-                                            } else {
-                                                food[header] = parseFloat(row[header]) || 0;
-                                            }
-                                        });
-                                        return food;
-                                    });
-                                    
-                                    if (this.displayHeaders.length <= 1) {
-                                        this.displayHeaders = this.nutrientHeaders;
-                                    }
-                                    resolve();
-                                });
-                        } catch (error) {
-                            console.error('CSV Parse Error:', error);
-                            alert('Error: Could not load or parse food data. Please make sure the foodnutrient.csv file is present.');
-                            reject(error);
+                    try {
+                        const response = await fetch('foodnutrient.json');
+                        if (!response.ok) throw new Error('foodnutrient.json not found');
+                        const foodData = await response.json();
+                        
+                        if (!Array.isArray(foodData)) {
+                            throw new Error('Invalid JSON format');
                         }
-                    });
+                        
+                        // Extract headers: all keys except 'food'
+                        const nutrientHeaders = [];
+                        foodData.forEach(food => {
+                            Object.keys(food).forEach(key => {
+                                if (key !== 'food' && !nutrientHeaders.includes(key)) {
+                                    nutrientHeaders.push(key);
+                                }
+                            });
+                        });
+                        
+                        this.nutrientHeaders = ['name', ...nutrientHeaders];
+                        
+                        // Transform data to match previous structure
+                        this.allFoods = foodData.map(food => {
+                            const foodObj = { name: food.food || '' };
+                            nutrientHeaders.forEach(nutrient => {
+                                foodObj[nutrient] = parseFloat(food[nutrient]) || 0;
+                            });
+                            return foodObj;
+                        });
+                        
+                        // Ensure display headers are set
+                        if (this.displayHeaders.length <= 1) {
+                            this.displayHeaders = this.nutrientHeaders;
+                        }
+                    } catch (error) {
+                        console.error('Error loading food data:', error);
+                        alert('Error: Could not load or parse food data. Please make sure the foodnutrient.json file is present and valid.');
+                    }
                 },
-                
+
                 searchFoods() {
                     // Always show results regardless of query length
                     if (this.searchQuery === '') {
