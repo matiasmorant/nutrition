@@ -134,13 +134,32 @@
             color: #6b7280;
             cursor: not-allowed;
         }
+        .create-food-btn {
+            background-color: #f3f4f6;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+            text-align: left;
+            width: 100%;
+            margin-bottom: 0.5rem;
+            color: #3b82f6;
+            font-weight: 500;
+        }
+        .create-food-btn:hover {
+            background-color: #e5e7eb;
+        }
+        .modal-food-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-init="init()" x-cloak>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.5</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.6</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -359,23 +378,32 @@
                     <input type="text" x-model.debounce.300ms="searchQuery" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Search for a food...">
                 </div>
                 <div class="max-h-60 overflow-y-auto border rounded-md">
+                    <!-- Create new food button -->
+                    <button 
+                        x-show="searchQuery" 
+                        @click="createNewFoodFromSearch()" 
+                        class="create-food-btn"
+                    >
+                        <i class="fas fa-plus-circle mr-2"></i> Create new food: <span x-text="searchQuery"></span>
+                    </button>
+                    
                     <ul class="divide-y divide-gray-200">
                         <template x-for="food in searchResults.slice(0, 15)" :key="food.name">
-                             <li class="p-3 flex justify-between items-center text-sm">
-                                <span x-text="food.name" class="text-left flex-1 mr-2"></span>
-                                <button 
-                                    @click="addFoodContext === 'diet' ? addFoodToDiet(food.name) : addFood(food)" 
-                                    class="blue-btn text-xs px-3 py-1"
+                            <li class="modal-food-item">
+                                <input 
+                                    type="checkbox" 
+                                    :id="'food-'+food.name" 
+                                    :checked="addFoodContext === 'diet' ? 
+                                        (selectedDiet && selectedDiet.foods.some(f => f.foodName === food.name)) :
+                                        storedFoods.some(f => f.name === food.name)"
+                                    @change="toggleFoodSelection(food)"
+                                    class="mr-3"
                                 >
-                                    Add
-                                </button>
+                                <label :for="'food-'+food.name" x-text="food.name" class="flex-1"></label>
                             </li>
                         </template>
-                        <template x-if="searchQuery.length > 1 && searchResults.length === 0">
+                        <template x-if="searchResults.length === 0">
                             <li class="p-4 text-gray-500">No foods found.</li>
-                        </template>
-                         <template x-if="searchQuery.length < 2">
-                            <li class="p-4 text-gray-500">Type at least 2 characters to search.</li>
                         </template>
                     </ul>
                 </div>
@@ -399,9 +427,15 @@
                 <div class="max-h-60 overflow-y-auto border rounded-md">
                     <ul class="divide-y divide-gray-200">
                         <template x-for="nutrient in filteredAvailableNutrients" :key="nutrient">
-                             <li class="p-3 flex justify-between items-center text-sm">
-                                <span x-text="nutrient"></span>
-                                <button @click="addNutrientColumn(nutrient)" class="blue-btn text-xs px-3 py-1">Add</button>
+                            <li class="modal-food-item">
+                                <input 
+                                    type="checkbox" 
+                                    :id="'nutrient-'+nutrient" 
+                                    :checked="displayHeaders.includes(nutrient)"
+                                    @change="toggleNutrientColumn(nutrient)"
+                                    class="mr-3"
+                                >
+                                <label :for="'nutrient-'+nutrient" x-text="nutrient" class="flex-1"></label>
                             </li>
                         </template>
                         <template x-if="filteredAvailableNutrients.length === 0">
@@ -551,25 +585,23 @@
                 },
 
                 searchFoods() {
-                    if (this.searchQuery.length < 2) {
-                        this.searchResults = [];
-                        return;
+                    // Always show results regardless of query length
+                    if (this.searchQuery === '') {
+                        this.searchResults = this.allFoods;
+                    } else {
+                        this.searchResults = this.allFoods.filter(food => 
+                            food.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+                        );
                     }
-                    this.searchResults = this.allFoods.filter(food => 
-                        food.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-                    );
                 },
 
                 addFood(foodObject) {
                     if (this.storedFoods.some(food => food.name === foodObject.name)) {
-                        alert('This food is already in your list.');
+                        // Food already exists, don't add duplicate
                         return;
                     }
                     this.storedFoods.push(foodObject);
                     this.saveStoredFoods();
-                    this.searchQuery = '';
-                    this.searchResults = [];
-                    this.isAddingFood = false;
                 },
 
                 removeFood(name) {
@@ -689,8 +721,6 @@
                     }
                     
                     this.saveDiets();
-                    this.isAddingFood = false;
-                    this.addFoodContext = null;
                 },
                 
                 removeFoodFromDiet(foodName) {
@@ -834,6 +864,67 @@
                     } catch (error) {
                         console.error("Optimization error:", error);
                         alert("Failed to optimize diet. Please check your inputs.");
+                    }
+                },
+                
+                // Create new food from search query
+                createNewFoodFromSearch() {
+                    const name = this.searchQuery.trim();
+                    if (!name) {
+                        alert('Please enter a food name');
+                        return;
+                    }
+                    
+                    if (this.storedFoods.some(food => food.name.toLowerCase() === name.toLowerCase())) {
+                        alert('A food with this name already exists.');
+                        return;
+                    }
+                    
+                    // Create a new food with all nutrients set to 0
+                    const newFood = { name };
+                    this.nutrientHeaders.forEach(header => {
+                        if (header !== 'name') {
+                            newFood[header] = 0;
+                        }
+                    });
+                    
+                    // Add to stored foods
+                    this.storedFoods.push(newFood);
+                    this.saveStoredFoods();
+                    
+                    // If in diet context, also add to diet
+                    if (this.addFoodContext === 'diet' && this.selectedDiet) {
+                        this.addFoodToDiet(name);
+                    }
+                    
+                    // Clear search and close modal
+                    this.searchQuery = '';
+                    this.isAddingFood = false;
+                },
+                
+                // Toggle food selection in modal
+                toggleFoodSelection(food) {
+                    if (this.addFoodContext === 'diet') {
+                        if (this.selectedDiet.foods.some(f => f.foodName === food.name)) {
+                            this.removeFoodFromDiet(food.name);
+                        } else {
+                            this.addFoodToDiet(food.name);
+                        }
+                    } else {
+                        if (this.storedFoods.some(f => f.name === food.name)) {
+                            this.removeFood(food.name);
+                        } else {
+                            this.addFood(food);
+                        }
+                    }
+                },
+                
+                // Toggle nutrient column in modal
+                toggleNutrientColumn(nutrient) {
+                    if (this.displayHeaders.includes(nutrient)) {
+                        this.removeNutrientColumn(nutrient);
+                    } else {
+                        this.addNutrientColumn(nutrient);
                     }
                 }
             }
