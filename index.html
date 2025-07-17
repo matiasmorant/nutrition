@@ -152,6 +152,10 @@
             align-items: center;
             padding: 0.5rem;
             border-bottom: 1px solid #e5e7eb;
+            justify-content: flex-start; /* Left justify */
+        }
+        .modal-label {
+            text-align: left;
         }
     </style>
 </head>
@@ -159,7 +163,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.6</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.7</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -178,7 +182,6 @@
                      <div class="flex gap-2">
                         <button @click="isAddingFood = true" class="blue-btn">Add Food</button>
                         <button @click="isAddingColumn = true" class="blue-btn">Add Nutrient</button>
-                        <button @click="showCreateFoodRow()" class="blue-btn bg-green-600 hover:bg-green-700 focus:ring-green-500">Create New Food</button>
                      </div>
                 </div>
                 <div id="table-container" class="bg-white rounded-lg shadow" x-show="storedFoods.length > 0 || isCreatingFood">
@@ -247,13 +250,19 @@
                             <span @click="removeNutrientColumn(nutrient)" class="remove-icon">&times;</span>
                             <label :for="`target-${nutrient}`" x-text="nutrient" class="text-sm font-medium text-gray-700"></label>
                         </div>
-                        <input type="number" :id="`target-${nutrient}`" x-model.number="nutrientTargets[nutrient]" class="w-32 p-2 border rounded-md text-sm" placeholder="0.00">
+                        <input 
+                            type="number" 
+                            :id="`target-${nutrient}`" 
+                            x-model.number="nutrientTargets[nutrient]" 
+                            @change="saveTargets()"
+                            class="w-32 p-2 border rounded-md text-sm" 
+                            placeholder="0.00"
+                        >
                     </div>
                 </template>
             </div>
             <div class="mt-8 flex justify-end items-center gap-4">
                 <button @click="isAddingColumn = true" class="blue-btn">Add Nutrient</button>
-                <button @click="saveTargets()" class="blue-btn bg-green-600 hover:bg-green-700 focus:ring-green-500">Save Targets</button>
             </div>
         </div>
 
@@ -322,7 +331,7 @@
                             </div>
                         </template>
                     </div>
-                    <div class="mt-4 flex gap-2">
+                    <div class="mt-4 flex justify-end gap-2">
                         <button @click="isAddingFood = true; addFoodContext = 'diet'" class="blue-btn">Add Food</button>
                         <button @click="optimizeDiet()" class="optimize-btn">Optimize</button>
                     </div>
@@ -399,7 +408,7 @@
                                     @change="toggleFoodSelection(food)"
                                     class="mr-3"
                                 >
-                                <label :for="'food-'+food.name" x-text="food.name" class="flex-1"></label>
+                                <label :for="'food-'+food.name" x-text="food.name" class="flex-1 modal-label"></label>
                             </li>
                         </template>
                         <template x-if="searchResults.length === 0">
@@ -435,7 +444,7 @@
                                     @change="toggleNutrientColumn(nutrient)"
                                     class="mr-3"
                                 >
-                                <label :for="'nutrient-'+nutrient" x-text="nutrient" class="flex-1"></label>
+                                <label :for="'nutrient-'+nutrient" x-text="nutrient" class="flex-1 modal-label"></label>
                             </li>
                         </template>
                         <template x-if="filteredAvailableNutrients.length === 0">
@@ -522,6 +531,11 @@
                     this.$watch('searchQuery', () => {
                         this.searchFoods();
                     });
+                    
+                    // Watch nutrientTargets and save automatically
+                    this.$watch('nutrientTargets', () => {
+                        this.saveTargets();
+                    }, { deep: true });
                 },
 
                 async loadNutrientTree() {
@@ -671,7 +685,6 @@
 
                 saveTargets() {
                     localStorage.setItem('nutrientTargets', JSON.stringify(this.nutrientTargets));
-                    alert('Nutrient targets saved!');
                 },
                 
                 saveStoredFoods() {
