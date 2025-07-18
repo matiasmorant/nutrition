@@ -73,9 +73,9 @@
             cursor: pointer;
         }
         .nutrient-table th, .nutrient-table td {
-            padding: 3px 8px; /* Reduced padding */
+            padding: 2px 4px; /* Reduced padding */
             text-align: right;
-            min-width: 90px; /* Increased min-width */
+            min-width: 80px; /* Added min-width */
         }
         .nutrient-table th:first-child, .nutrient-table td:first-child {
             text-align: left;
@@ -189,7 +189,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.1</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.2</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -212,7 +212,7 @@
                      </div>
                 </div>
                 <div id="table-container" class="bg-white rounded-lg shadow" x-show="storedFoods.length > 0 || isCreatingFood">
-                    <table id="nutrient-table" class="w-full text-sm text-left text-gray-600">
+                    <table id="nutrient-table" class="w-full text-sm text-left text-gray-600 nutrient-table">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                             <tr>
                                 <template x-for="header in displayHeaders" :key="header">
@@ -626,6 +626,7 @@
                 isAddingFood: false,
                 nutrientSearchQuery: '',
                 addFoodContext: null, // 'diet', 'tracker', or null
+                defaultNutrientTargets: {},
                 
                 // Diets state
                 diets: [],
@@ -679,13 +680,19 @@
 
                 // --- METHODS ---
                 async init() {
+                    this.defaultNutrientTargets = {};
                     this.storedFoods = JSON.parse(localStorage.getItem('storedFoods')) || [];
-                    this.nutrientTargets = JSON.parse(localStorage.getItem('nutrientTargets')) || {};
                     this.diets = JSON.parse(localStorage.getItem('diets')) || [];
                     this.trackedFoods = JSON.parse(localStorage.getItem('trackedFoods')) || [];
                     this.isLoading = true;
                     await Promise.all([this.loadNutrientTree(), this.loadFoodData()]);
                     this.isLoading = false;
+                    
+                    // Load nutrient targets with default values
+                    const storedTargets = JSON.parse(localStorage.getItem('nutrientTargets')) || {};
+                    this.nutrientTargets = { ...this.defaultNutrientTargets, ...storedTargets };
+                    this.saveTargets();
+                    
                     this.$watch('searchQuery', () => {
                         this.searchFoods();
                     });
@@ -712,10 +719,23 @@
                         lines.forEach(line => {
                             const trimmedLine = line.trim();
                             if (trimmedLine.startsWith('+')) {
-                                const nutrient = trimmedLine.substring(1).trim();
-                                defaultDisplayNutrients.push(nutrient);
-                                allNutrients.push(nutrient);
+                                const content = trimmedLine.substring(1).trim();
+                                // Split by dash characters to capture default value
+                                const parts = content.split(/[—\-]+/).map(part => part.trim());
+                                let nutrientName = parts[0];
+                                let defaultValue = null;
+                                if (parts.length > 1) {
+                                    // Try to parse the second part as a number
+                                    defaultValue = parseFloat(parts[1]);
+                                    if (!isNaN(defaultValue)) {
+                                        // Store in defaultNutrientTargets
+                                        this.defaultNutrientTargets[nutrientName] = defaultValue;
+                                    }
+                                }
+                                defaultDisplayNutrients.push(nutrientName);
+                                allNutrients.push(nutrientName);
                             } else if (trimmedLine) {
+                                // Non-default nutrient (without +) - just add the name
                                 allNutrients.push(trimmedLine);
                             }
                         });
@@ -1127,7 +1147,7 @@
                     this.searchQuery = '';
                     this.isAddingFood = false;
                 },
-                
+
                 // Toggle food selection in modal
                 toggleFoodSelection(food) {
                     if (this.addFoodContext === 'diet') {
@@ -1253,12 +1273,19 @@
                         labels.push('Other');
                     }
                     
+                    // Sort contributions from largest to smallest
+                    const combined = contributions.map((value, index) => ({ value, label: labels[index] }));
+                    combined.sort((a, b) => b.value - a.value);
+                    
+                    const sortedContributions = combined.map(item => item.value);
+                    const sortedLabels = combined.map(item => item.label);
+                    
                     this.nutrientChart = new Chart(ctx, {
                         type: 'pie',
                         data: {
-                            labels: labels,
+                            labels: sortedLabels,
                             datasets: [{
-                                data: contributions,
+                                data: sortedContributions,
                                 backgroundColor: [
                                     '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
                                     '#9966FF', '#FF9F40', '#8AC926', '#1982C4'
@@ -1278,6 +1305,7 @@
                                 },
                                 legend: {
                                     position: 'bottom',
+                                    align: 'start' // Left align legend
                                 }
                             }
                         }
