@@ -73,9 +73,9 @@
             cursor: pointer;
         }
         .nutrient-table th, .nutrient-table td {
-            padding: 2px 4px; /* Reduced padding */
+            padding: 3px 8px; /* Reduced padding */
             text-align: right;
-            min-width: 80px; /* Added min-width */
+            min-width: 90px; /* Added min-width */
         }
         .nutrient-table th:first-child, .nutrient-table td:first-child {
             text-align: left;
@@ -212,7 +212,7 @@
                      </div>
                 </div>
                 <div id="table-container" class="bg-white rounded-lg shadow" x-show="storedFoods.length > 0 || isCreatingFood">
-                    <table id="nutrient-table" class="w-full text-sm text-left text-gray-600 nutrient-table">
+                    <table id="nutrient-table" class="w-full text-sm text-left text-gray-600">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                             <tr>
                                 <template x-for="header in displayHeaders" :key="header">
@@ -721,7 +721,7 @@
                             if (trimmedLine.startsWith('+')) {
                                 const content = trimmedLine.substring(1).trim();
                                 // Split by dash characters to capture default value
-                                const parts = content.split(/[—\-]+/).map(part => part.trim());
+                                const parts = content.split(/—/).map(part => part.trim());
                                 let nutrientName = parts[0];
                                 let defaultValue = null;
                                 if (parts.length > 1) {
