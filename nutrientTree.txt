@@ -65,7 +65,7 @@
      PUFA 21:5 (g)
      PUFA 22:4 (g)
      PUFA 2:4 n-6 (g)
-+  Fatty acids, total saturated (g) — 0.1
++  Fatty acids, total saturated (g) — 4
      SFA 10:0 (g)
      SFA 12:0 (g)
      SFA 13:0 (g)
@@ -80,7 +80,7 @@
      SFA 4:0 (g)
      SFA 6:0 (g)
      SFA 8:0 (g)
-   Fatty acids, total trans (g) — 0.1
++  Fatty acids, total trans (g) — 0.1
      Fatty acids, total trans-monoenoic (g)
        TFA 16:1 t (g)
        TFA 18:1 t (g)
