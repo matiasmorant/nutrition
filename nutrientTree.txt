@@ -1,6 +1,6 @@
-+Energy (KCAL)
++Energy (KCAL) — 2741
  Energy (kJ)
-+Protein (g)
++Protein (g) — 120
    Histidine (g)
    Isoleucine (g)
    Leucine (g)
@@ -20,7 +20,7 @@
    Proline (g)
    Serine (g)
    Tyrosine (g)
-+Carbohydrate (g)
++Carbohydrate (g) — 383
    Sugars (g)
      Fructose (g)
      Galactose (g)
@@ -29,8 +29,8 @@
      Maltose (g)
      Sucrose (g)
    Starch (g)
-   Fiber, total dietary (g)
-+Fat (g)
++  Fiber, total dietary (g) — 38
++Fat (g) — 81
    Fatty acids, total monounsaturated (g)
      MUFA 14:1 (g)
      MUFA 15:1 (g)
@@ -45,11 +45,11 @@
      MUFA 22:1 c (g)
      MUFA 24:1 c (g)
    Fatty acids, total polyunsaturated (g)
-+    Omega-3 (ALA) (g)
++    Omega-3 (ALA) (g) — 1.6
      Omega-3 (EPA) (g)
      Omega-3 (DPA) (g)
      Omega-3 (DHA) (g)
-     Omega-6 (Linoleic Acid) (g)
++    Omega-6 (Linoleic Acid) (g) — 17
      Omega-6 (GLA) (g)
      Omega-6 (Eicosadienoic Acid) (g)
      Omega-6 (AA) (g)
@@ -65,7 +65,7 @@
      PUFA 21:5 (g)
      PUFA 22:4 (g)
      PUFA 2:4 n-6 (g)
-   Fatty acids, total saturated (g)
++  Fatty acids, total saturated (g) — 0.1
      SFA 10:0 (g)
      SFA 12:0 (g)
      SFA 13:0 (g)
@@ -80,7 +80,7 @@
      SFA 4:0 (g)
      SFA 6:0 (g)
      SFA 8:0 (g)
-   Fatty acids, total trans (g)
+   Fatty acids, total trans (g) — 0.1
      Fatty acids, total trans-monoenoic (g)
        TFA 16:1 t (g)
        TFA 18:1 t (g)
@@ -89,8 +89,8 @@
        TFA 18:2 t not further defined (g)
        TFA 18:2 t,t (g)
  Vitamins
-   Choline, total (mg)
-+  Vitamin E, added (mg)
++  Choline, total (mg) — 550
++  Vitamin E, added (mg) — 15
    Vitamin E (alpha-tocopherol) (mg)
    Vitamin E, beta Tocopherol (mg)
    Vitamin E, gamma Tocopherol (mg)
@@ -99,51 +99,49 @@
    Vitamin E, beta Tocotrienol (mg)
    Vitamin E, gamma Tocotrienol (mg)
    Vitamin E, delta Tocotrienol (mg)
-+  Vitamin A, IU (IU)
-   Vitamin A, RAE (μg)
+   Vitamin A, IU (IU)
++  Vitamin A, RAE (μg) — 900
      Retinol (μg)
      Cryptoxanthin, beta (μg)
      Carotene, alpha (μg)
      Carotene, beta (μg)
-   Vitamin B1, Thiamin (mg)
-   Vitamin B2, Riboflavin (mg)
-   Vitamin B3, Niacin (mg)
-   Vitamin B5, Pantothenic acid (mg)
-   Vitamin B6, Pyridoxine (mg)
-   Vitamin B9, Folate (μg)
++  Vitamin B1, Thiamin (mg) — 1.2
++  Vitamin B2, Riboflavin (mg) — 1.3
++  Vitamin B3, Niacin (mg) — 16
++  Vitamin B5, Pantothenic acid (mg) — 5
++  Vitamin B6, Pyridoxine (mg) — 1.3
++  Vitamin B9, Folate (μg) — 400
    Vitamin B9, Folate, DFE (μg)
    Vitamin B9, Folate, food (μg)
    Vitamin B9, Folic acid (μg)
-   Vitamin B-12 (μg)
++  Vitamin B-12 (μg) — 2.4
    Vitamin B-12, added (μg)
-   Vitamin C, total ascorbic acid (mg)
-   Vitamin D (D2 + D3) (μg)
++  Vitamin C, total ascorbic acid (mg) — 90
++  Vitamin D (D2 + D3) (μg) — 15
    Vitamin D (D2 + D3), International Units (IU)
    Vitamin D2 (ergocalciferol) (μg)
    Vitamin D3 (cholecalciferol) (μg)
-   Vitamin E (alpha-tocopherol) (mg)
-   Vitamin E, added (mg)
-   Vitamin K (Dihydrophylloquinone) (μg)
++  Vitamin K (Dihydrophylloquinone) (μg) — 120
    Vitamin K (Menaquinone-4) (μg)
    Vitamin K (phylloquinone) (μg)
  Minerals
-+  Calcium, Ca (mg)
-   Copper, Cu (mg)
-   Fluoride, F (μg)
-+  Iron, Fe (mg)
-+  Magnesium, Mg (mg)
-   Manganese, Mn (mg)
-   Phosphorus, P (mg)
-   Potassium, K (mg)
-   Selenium, Se (μg)
-   Sodium, Na (mg)
-   Zinc, Zn (mg)
++  Calcium, Ca (mg) — 1000
++  Copper, Cu (mg) — 0.9
++  Fluoride, F (μg) — 4000
++  Iron, Fe (mg) — 8
++  Magnesium, Mg (mg) — 420
++  Manganese, Mn (mg) — 2.3
++  Phosphorus, P (mg) — 700
++  Potassium, K (mg) — 3400
++  Selenium, Se (μg) — 55
++  Sodium, Na (mg) — 1500
++  Zinc, Zn (mg) — 11
  Alcohol, ethyl (g)
  Beta-sitosterol (mg)
  Betaine (mg)
  Caffeine (mg)
  Campesterol (mg)
- Cholesterol (mg)
++Cholesterol (mg) — 0.1
  Lutein + zeaxanthin (μg)
  Lycopene (μg)
  Phytosterols (mg)
