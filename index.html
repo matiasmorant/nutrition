@@ -1326,7 +1326,8 @@
                         // Compute score
                         const numerator = mF2 * mD**2 + mD2 * mF**2 - 2 * mFD * mF * mD;
                         const denominator = mF2 * mD2 - mFD**2;
-                        const score = denominator !== 0 ? numerator / denominator : -Infinity;
+                        const optimalAmount = (mF * mD2 - mD * mFD) * denominator; //we only care about the sign
+                        const score = (optimalAmount>0)? numerator / denominator : -Infinity;
                         
                         foodScores.push({ food, score });
                     }
