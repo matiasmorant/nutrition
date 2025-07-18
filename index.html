@@ -241,8 +241,8 @@
                                 <tr class="bg-white border-b">
                                     <template x-for="header in displayHeaders" :key="header">
                                         <td :class="{
-                                            'px-2 py-4 font-medium text-gray-900 sticky-col text-sm': header === 'name',
-                                            'px-6 py-4 text-sm': header !== 'name',
+                                            'px-2 py-3 font-medium text-gray-900 sticky-col text-sm': header === 'name',
+                                            'px-2 py-3 min-w-sm text-sm': header !== 'name',
                                             'text-zero': typeof food[header] === 'number' && food[header] === 0
                                         }" :title="food[header]">
                                             <template x-if="header === 'name'">
