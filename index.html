@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -72,8 +73,9 @@
             cursor: pointer;
         }
         .nutrient-table th, .nutrient-table td {
-            padding: 8px 16px;
+            padding: 4px 12px; /* Reduced padding */
             text-align: right;
+            min-width: 80px; /* Added min-width */
         }
         .nutrient-table th:first-child, .nutrient-table td:first-child {
             text-align: left;
@@ -156,13 +158,38 @@
         .modal-label {
             text-align: left;
         }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin: 20px 0;
+        }
+        .nutrient-clickable {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nutrient-clickable:hover {
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-init="init()" x-cloak>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v1.9</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.0</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -171,6 +198,7 @@
                 <button @click="activeTab = 'foods'" :class="{'active': activeTab === 'foods'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Foods</button>
                 <button @click="activeTab = 'targets'" :class="{'active': activeTab === 'targets'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Nutrient Targets</button>
                 <button @click="activeTab = 'diets'; selectedDiet = null" :class="{'active': activeTab === 'diets'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Diets</button>
+                <button @click="activeTab = 'tracker';" :class="{'active': activeTab === 'tracker'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Tracker</button>
             </nav>
         </div>
 
@@ -179,8 +207,8 @@
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
                      <h2 class="text-2xl font-semibold text-gray-800">My Foods</h2>
                      <div class="flex gap-2">
-                        <button @click="isAddingFood = true" class="blue-btn">Add Food</button>
-                        <button @click="isAddingColumn = true" class="blue-btn">Add Nutrient</button>
+                        <button @click="openAddFoodModal()" class="blue-btn">Add Food</button>
+                        <button @click="openAddNutrientModal()" class="blue-btn">Add Nutrient</button>
                      </div>
                 </div>
                 <div id="table-container" class="bg-white rounded-lg shadow" x-show="storedFoods.length > 0 || isCreatingFood">
@@ -261,7 +289,7 @@
                 </template>
             </div>
             <div class="mt-8 flex justify-end items-center gap-4">
-                <button @click="isAddingColumn = true" class="blue-btn">Add Nutrient</button>
+                <button @click="openAddNutrientModal()" class="blue-btn">Add Nutrient</button>
             </div>
         </div>
 
@@ -331,7 +359,7 @@
                         </template>
                     </div>
                     <div class="mt-4 flex justify-end gap-2">
-                        <button @click="isAddingFood = true; addFoodContext = 'diet'" class="blue-btn">Add Food</button>
+                        <button @click="isAddingFood = true; addFoodContext = 'diet'; resetFoodModal()" class="blue-btn">Add Food</button>
                         <button @click="optimizeDiet()" class="optimize-btn">Optimize</button>
                     </div>
                 </div>
@@ -351,7 +379,7 @@
                             <tbody>
                                 <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
                                     <tr>
-                                        <td class="text-left" x-text="nutrient"></td>
+                                        <td class="text-left nutrient-clickable" @click="showNutrientContribution(nutrient)" x-text="nutrient"></td>
                                         <td x-text="calculateNutrientTotal(nutrient).toFixed(2)"></td>
                                         <td>
                                             <span x-text="calculateNutrientPercentage(nutrient).toFixed(0) + '%'"></span>
@@ -372,6 +400,82 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tracker Tab -->
+        <div id="content-tracker" class="tab-content p-6 bg-white rounded-lg shadow" x-show="activeTab === 'tracker'">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Daily Nutrient Tracker</h2>
+            
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
+                <input type="date" x-model="trackerDate" class="p-2 border rounded-md w-full max-w-xs">
+            </div>
+            
+            <div class="mb-8">
+                <h4 class="text-lg font-medium mb-4">Tracked Foods</h4>
+                <div class="border rounded-lg overflow-hidden mb-4">
+                    <template x-if="trackedFoods.length === 0">
+                        <p class="p-4 text-gray-500">No foods tracked for today. Add some foods to track your nutrients.</p>
+                    </template>
+                    <template x-for="(foodItem, index) in trackedFoods" :key="index">
+                        <div class="flex items-center justify-between p-4 border-b hover:bg-gray-50">
+                            <div class="flex items-center">
+                                <span @click="removeTrackedFood(foodItem.foodName)" class="remove-icon">&times;</span>
+                                <span x-text="foodItem.foodName" class="text-sm font-medium"></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="number" 
+                                       x-model.number="foodItem.quantity" 
+                                       min="0" 
+                                       step="1"
+                                       class="w-24 p-2 border rounded-md text-sm" 
+                                       placeholder="Quantity">
+                                <span>grams</span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <button @click="isAddingFood = true; addFoodContext = 'tracker'; resetFoodModal()" class="blue-btn">Add Food</button>
+            </div>
+            
+            <div x-show="trackedFoods.length > 0">
+                <h4 class="text-lg font-medium mb-4">Daily Nutrient Summary</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full nutrient-table">
+                        <thead>
+                            <tr>
+                                <th class="text-left">Nutrient</th>
+                                <th>Target</th>
+                                <th>Consumed</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
+                                <tr>
+                                    <td class="text-left" x-text="nutrient"></td>
+                                    <td x-text="nutrientTargets[nutrient] || 0"></td>
+                                    <td x-text="calculateDailyIntake(nutrient).toFixed(2)"></td>
+                                    <td>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" 
+                                                 :style="'width: ' + Math.min(100, (calculateDailyIntake(nutrient) / (nutrientTargets[nutrient] || 1) * 100) + '%'"
+                                                 :class="{
+                                                     'bg-green-600': (calculateDailyIntake(nutrient) >= (nutrientTargets[nutrient] || 0),
+                                                     'bg-blue-500': (calculateDailyIntake(nutrient) < (nutrientTargets[nutrient] || 0)
+                                                 }">
+                                            </div>
+                                        </div>
+                                        <span class="percent-cell" 
+                                              x-text="nutrientTargets[nutrient] ? Math.min(100, (calculateDailyIntake(nutrient) / nutrientTargets[nutrient] * 100).toFixed(0) + '%' : 'N/A'">
+                                        </span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -460,6 +564,18 @@
         </div>
     </div>
 
+    <!-- Nutrient Contribution Pie Chart Modal -->
+    <div x-show="showNutrientChart" @keydown.escape.window="showNutrientChart = false" 
+         class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <h3 class="text-lg font-medium mb-4" x-text="'Contribution to ' + selectedNutrient"></h3>
+            <div class="chart-container">
+                <canvas id="nutrientChart" width="400" height="400"></canvas>
+            </div>
+            <button @click="showNutrientChart = false" class="mt-4 blue-btn w-full">Close</button>
+        </div>
+    </div>
+
     <script>
         function foodApp() {
             return {
@@ -481,11 +597,20 @@
                 isAddingColumn: false,
                 isAddingFood: false,
                 nutrientSearchQuery: '',
-                addFoodContext: null, // 'diet' or null
+                addFoodContext: null, // 'diet', 'tracker', or null
                 
                 // Diets state
                 diets: [],
                 selectedDiet: null,
+                
+                // Tracker state
+                trackerDate: new Date().toISOString().split('T')[0],
+                trackedFoods: [],
+                
+                // Chart state
+                showNutrientChart: false,
+                selectedNutrient: '',
+                nutrientChart: null,
 
                 // --- COMPUTED PROPERTIES ---
                 get sortedStoredFoods() {
@@ -525,6 +650,7 @@
                     this.storedFoods = JSON.parse(localStorage.getItem('storedFoods')) || [];
                     this.nutrientTargets = JSON.parse(localStorage.getItem('nutrientTargets')) || {};
                     this.diets = JSON.parse(localStorage.getItem('diets')) || [];
+                    this.trackedFoods = JSON.parse(localStorage.getItem('trackedFoods')) || [];
                     this.isLoading = true;
                     await Promise.all([this.loadNutrientTree(), this.loadFoodData()]);
                     this.isLoading = false;
@@ -535,6 +661,11 @@
                     // Watch nutrientTargets and save automatically
                     this.$watch('nutrientTargets', () => {
                         this.saveTargets();
+                    }, { deep: true });
+                    
+                    // Watch trackedFoods and save automatically
+                    this.$watch('trackedFoods', () => {
+                        localStorage.setItem('trackedFoods', JSON.stringify(this.trackedFoods));
                     }, { deep: true });
                 },
 
@@ -607,7 +738,7 @@
 
                 searchFoods() {
                     // Determine which food source to use based on context
-                    const source = this.addFoodContext === 'diet' ? this.storedFoods : this.allFoods;
+                    const source = this.addFoodContext === 'diet' || this.addFoodContext === 'tracker' ? this.storedFoods : this.allFoods;
                     
                     if (this.searchQuery === '') {
                         this.searchResults = source;
@@ -630,12 +761,30 @@
                 removeFood(name) {
                     this.storedFoods = this.storedFoods.filter(food => food.name !== name);
                     this.saveStoredFoods();
+                    
+                    // Remove from all diets
+                    this.diets.forEach(diet => {
+                        diet.foods = diet.foods.filter(foodItem => foodItem.foodName !== name);
+                    });
+                    this.saveDiets();
+                    
+                    // Remove from tracked foods
+                    this.trackedFoods = this.trackedFoods.filter(foodItem => foodItem.foodName !== name);
                 },
 
                 clearAll() {
                     if (confirm('Are you sure you want to remove all foods from your list?')) {
                         this.storedFoods = [];
                         this.saveStoredFoods();
+                        
+                        // Remove all foods from diets
+                        this.diets.forEach(diet => {
+                            diet.foods = [];
+                        });
+                        this.saveDiets();
+                        
+                        // Remove all tracked foods
+                        this.trackedFoods = [];
                     }
                 },
 
@@ -937,6 +1086,11 @@
                         this.addFoodToDiet(name);
                     }
                     
+                    // If in tracker context, also add to tracked foods
+                    if (this.addFoodContext === 'tracker') {
+                        this.addTrackedFood(name);
+                    }
+                    
                     // Clear search and close modal
                     this.searchQuery = '';
                     this.isAddingFood = false;
@@ -949,6 +1103,12 @@
                             this.removeFoodFromDiet(food.name);
                         } else {
                             this.addFoodToDiet(food.name);
+                        }
+                    } else if (this.addFoodContext === 'tracker') {
+                        if (this.trackedFoods.some(f => f.foodName === food.name)) {
+                            this.removeTrackedFood(food.name);
+                        } else {
+                            this.addTrackedFood(food.name);
                         }
                     } else {
                         if (this.storedFoods.some(f => f.name === food.name)) {
@@ -966,6 +1126,130 @@
                     } else {
                         this.addNutrientColumn(nutrient);
                     }
+                },
+                
+                // Reset food modal when opened
+                resetFoodModal() {
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                },
+                
+                // Open food modal with reset
+                openAddFoodModal() {
+                    this.resetFoodModal();
+                    this.isAddingFood = true;
+                },
+                
+                // Open nutrient modal with reset
+                openAddNutrientModal() {
+                    this.nutrientSearchQuery = '';
+                    this.isAddingColumn = true;
+                },
+                
+                // Tracker methods
+                addTrackedFood(foodName) {
+                    // Check if food already exists in tracker
+                    const existingIndex = this.trackedFoods.findIndex(f => f.foodName === foodName);
+                    if (existingIndex >= 0) {
+                        // Update existing quantity
+                        this.trackedFoods[existingIndex].quantity += 100;
+                    } else {
+                        // Add new food with default quantity
+                        this.trackedFoods.push({
+                            foodName,
+                            quantity: 100
+                        });
+                    }
+                },
+                
+                removeTrackedFood(foodName) {
+                    this.trackedFoods = this.trackedFoods.filter(f => f.foodName !== foodName);
+                },
+                
+                // Calculate daily nutrient intake
+                calculateDailyIntake(nutrient) {
+                    let total = 0;
+                    for (const foodItem of this.trackedFoods) {
+                        const food = this.storedFoods.find(f => f.name === foodItem.foodName);
+                        if (food && food[nutrient] !== undefined) {
+                            // Calculate: (nutrient per 100g) * (quantity in grams) / 100
+                            total += (food[nutrient] * foodItem.quantity) / 100;
+                        }
+                    }
+                    return total;
+                },
+                
+                // Show nutrient contribution pie chart
+                showNutrientContribution(nutrient) {
+                    this.selectedNutrient = nutrient;
+                    this.showNutrientChart = true;
+                    
+                    this.$nextTick(() => {
+                        this.renderNutrientChart(nutrient);
+                    });
+                },
+                
+                renderNutrientChart(nutrient) {
+                    if (this.nutrientChart) {
+                        this.nutrientChart.destroy();
+                    }
+                    
+                    const ctx = document.getElementById('nutrientChart').getContext('2d');
+                    const contributions = [];
+                    const labels = [];
+                    let otherTotal = 0;
+                    
+                    // Calculate contributions
+                    this.selectedDiet.foods.forEach(foodItem => {
+                        const food = this.storedFoods.find(f => f.name === foodItem.foodName);
+                        if (food && food[nutrient]) {
+                            const contribution = (food[nutrient] * foodItem.quantity) / 100;
+                            
+                            // Group small contributions as "Other"
+                            if (contribution < (this.calculateNutrientTotal(nutrient) * 0.05)) {
+                                otherTotal += contribution;
+                            } else {
+                                contributions.push(contribution);
+                                labels.push(food.name);
+                            }
+                        }
+                    });
+                    
+                    // Add "Other" category if needed
+                    if (otherTotal > 0) {
+                        contributions.push(otherTotal);
+                        labels.push('Other');
+                    }
+                    
+                    this.nutrientChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: contributions,
+                                backgroundColor: [
+                                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                                    '#9966FF', '#FF9F40', '#8AC926', '#1982C4'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.label}: ${context.raw.toFixed(2)}`;
+                                        }
+                                    }
+                                },
+                                legend: {
+                                    position: 'bottom',
+                                }
+                            }
+                        }
+                    });
                 }
             }
         }
