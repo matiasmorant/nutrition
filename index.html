@@ -1416,11 +1416,12 @@
                     
                     // Calculate nutrient values
                     const nutrients = this.displayHeaders.filter(h => h !== 'name');
-                    const values = nutrients.map(nutrient => 
-                        (food[nutrient] || 0) * foodItem.quantity / 100
-                    );
+                    const values = nutrients.map(nutrient => {
+                        const foodContribution = (food[nutrient] || 0) * foodItem.quantity / 100;
+                        const dietTotal = this.calculateNutrientTotal(nutrient) || 1; // Prevent divide-by-zero
+                        return (foodContribution / dietTotal) * 100;
+                    });
                     
-                    // Filter out zero values
                     const nonZeroData = nutrients.map((nutrient, index) => ({
                         nutrient,
                         value: values[index]
