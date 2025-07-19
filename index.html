@@ -6,6 +6,8 @@
     <title>Food Nutrient Finder</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍎</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/tabulator-tables@5.6.1/dist/css/tabulator_modern.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.6.1/dist/js/tabulator.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js"></script>
@@ -16,17 +18,6 @@
             font-family: 'Inter', sans-serif;
         }
         [x-cloak] { display: none !important; }
-        .sort-icon {
-            display: inline-block;
-            width: 1em;
-            height: 1em;
-            margin-left: 0.5rem;
-            color: #9ca3af;
-            transition: color 0.2s;
-        }
-        th:hover .sort-icon {
-            color: #374151;
-        }
         .tab-btn.active {
             border-bottom-color: #3b82f6; /* blue-500 */
             color: #1e40af; /* blue-800 */
@@ -36,33 +27,14 @@
             cursor: pointer;
             color: #ef4444; /* red-500 */
             font-weight: bold;
-            padding-right: 0.25rem; /* Task 1: Smaller blank space */
             font-size: 1.25rem; /* Larger remove icon */
+            line-height: 1;
         }
         .remove-icon:hover {
             color: #b91c1c; /* red-700 */
         }
         #search-results, .modal {
             z-index: 20;
-        }
-        #table-container {
-            overflow-x: auto;
-        }
-        .sticky-col {
-            position: -webkit-sticky; /* For Safari */
-            position: sticky;
-            left: 0;
-            z-index: 10;
-            max-width: 250px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        #nutrient-table thead .sticky-col {
-            background-color: #f3f4f6; /* gray-100, same as thead */
-        }
-        #nutrient-table tbody tr .sticky-col {
-            background-color: #ffffff; /* white, same as row */
         }
         .text-zero {
             color: #d1d5db; /* gray-300 */
@@ -183,7 +155,6 @@
             height: 100%;
             border-radius: 4px;
         }
-        /* New styles for v2.3 */
         .max-w-name {
             max-width: 150px;
             white-space: nowrap;
@@ -208,13 +179,34 @@
             color: white;
             border-color: #3b82f6;
         }
+        /* Tabulator custom styles */
+        .tabulator {
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+        .tabulator .tabulator-header {
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .tabulator .tabulator-col-title {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            color: #4b5563;
+        }
+        .tabulator-row .tabulator-cell {
+            padding: 8px;
+            border-right: none;
+        }
+        .tabulator-row.tabulator-row-even {
+            background-color: #f9fafb;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-init="init()" x-cloak>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.3</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.4</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -236,57 +228,10 @@
                         <button @click="openAddNutrientModal()" class="blue-btn">Add Nutrient</button>
                      </div>
                 </div>
-                <div id="table-container" class="bg-white rounded-lg shadow" x-show="storedFoods.length > 0 || isCreatingFood">
-                    <table id="nutrient-table" class="w-full text-sm text-left text-gray-600">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                            <tr>
-                                <template x-for="header in displayHeaders" :key="header">
-                                    <th scope="col" class="px-6 py-2 cursor-pointer text-xs" :class="{'sticky-col': header === 'name'}" @click="changeSort(header)">
-                                        <span x-text="header"></span>
-                                        <span class="sort-icon" x-html="sortColumn === header ? (sortDirection === 'asc' ? '&#9650;' : '&#9660;') : ''"></span>
-                                    </th>
-                                </template>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-if="isCreatingFood">
-                                <tr id="new-food-row" class="bg-gray-50">
-                                    <template x-for="header in displayHeaders" :key="header">
-                                        <td class="p-1">
-                                            <input :type="header === 'name' ? 'text' : 'number'" :placeholder="header" x-model="newFood[header]" class="w-full p-2 border rounded-md text-sm">
-                                        </td>
-                                    </template>
-                                    <td class="p-1 whitespace-nowrap">
-                                        <button @click="saveNewFood()" class="blue-btn text-xs px-3 py-1">Save</button>
-                                        <button @click="cancelNewFood()" class="ml-2 px-3 py-1 bg-gray-500 text-white text-xs rounded-md hover:bg-gray-600">Cancel</button>
-                                    </td>
-                                </tr>
-                            </template>
-                            <template x-for="(food, index) in sortedStoredFoods" :key="food.name">
-                                <tr class="bg-white border-b">
-                                    <template x-for="header in displayHeaders" :key="header">
-                                        <td :class="{
-                                            'px-2 py-3 font-medium text-gray-900 sticky-col text-sm': header === 'name',
-                                            'px-2 py-3 min-w-sm text-sm': header !== 'name',
-                                            'text-zero': typeof food[header] === 'number' && food[header] === 0
-                                        }" :title="food[header]">
-                                            <template x-if="header === 'name'">
-                                                <div class="flex items-center">
-                                                    <span @click="removeFood(food.name)" class="remove-icon">&times;</span>
-                                                    <input type="text" x-model="food.name" @change="saveStoredFoods()" class="w-full p-1 border-b focus:outline-none focus:border-blue-500 bg-transparent">
-                                                </div>
-                                            </template>
-                                            <template x-if="header !== 'name'">
-                                                <input type="number" x-model.number="food[header]" @change="saveStoredFoods()" class="w-full p-1 border-b focus:outline-none focus:border-blue-500 bg-transparent text-right">
-                                            </template>
-                                        </td>
-                                    </template>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-                <div id="table-placeholder" class="text-center p-8 text-gray-500" x-show="storedFoods.length === 0 && !isCreatingFood">
+
+                <div id="food-table-container" class="mt-4 bg-white rounded-lg shadow" x-show="storedFoods.length > 0"></div>
+
+                <div id="table-placeholder" class="text-center p-8 text-gray-500" x-show="storedFoods.length === 0">
                     <p>Your added foods will appear here.</p>
                 </div>
                 <button @click="clearAll()" class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" :disabled="storedFoods.length === 0">Clear All Foods</button>
@@ -319,7 +264,6 @@
         </div>
 
         <div id="content-diets" class="tab-content p-6 bg-white rounded-lg shadow" x-show="activeTab === 'diets'">
-            <!-- Diet list view -->
             <div x-show="!selectedDiet">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                     <button @click="createDiet()" class="blue-btn">Create New Diet</button>
@@ -340,14 +284,12 @@
                 </div>
             </div>
             
-            <!-- Diet edit view -->
             <div x-show="selectedDiet">
                 <div class="flex items-center mb-6">
                     <span @click="selectedDiet = null" class="back-arrow">←</span>
                     <input type="text" x-model="selectedDiet.name" class="text-xl font-medium border-b border-gray-300 focus:border-blue-500 focus:outline-none" placeholder="Diet name">
                 </div>
                 
-                <!-- Timeframe selector -->
                 <div class="timeframe-selector mb-6">
                     <span class="text-sm font-medium text-gray-700">Timeframe:</span>
                     <button @click="dietTimeframe = 'day'" :class="{'timeframe-btn': true, 'active': dietTimeframe === 'day'}">Day</button>
@@ -401,7 +343,6 @@
                     </div>
                 </div>
                 
-                <!-- Nutrient Summary Section -->
                 <div x-show="selectedDiet.foods.length > 0">
                     <h4 class="text-lg font-medium mb-4">Nutrient Summary</h4>
                     <div class="overflow-x-auto">
@@ -441,7 +382,6 @@
             </div>
         </div>
 
-        <!-- Tracker Tab -->
         <div id="content-tracker" class="tab-content p-6 bg-white rounded-lg shadow" x-show="activeTab === 'tracker'">
             <h2 class="text-2xl font-semibold mb-6 text-gray-800">Daily Nutrient Tracker</h2>
             
@@ -518,7 +458,6 @@
         </div>
     </div>
 
-    <!-- Add Food Modal -->
     <div x-show="isAddingFood" @keydown.escape.window="isAddingFood = false" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
         <div @click.outside="isAddingFood = false" class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
@@ -527,7 +466,6 @@
                     <input type="text" x-model.debounce.300ms="searchQuery" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Search for a food...">
                 </div>
                 <div class="max-h-60 overflow-y-auto border rounded-md">
-                    <!-- Create new food button -->
                     <button 
                         x-show="searchQuery" 
                         @click="createNewFoodFromSearch()" 
@@ -544,7 +482,9 @@
                                     :id="'food-'+food.name" 
                                     :checked="addFoodContext === 'diet' ? 
                                         (selectedDiet && selectedDiet.foods.some(f => f.foodName === food.name)) :
-                                        storedFoods.some(f => f.name === food.name)"
+                                        (addFoodContext === 'tracker' ? 
+                                            trackedFoods.some(f => f.foodName === food.name) :
+                                            storedFoods.some(f => f.name === food.name))"
                                     @change="toggleFoodSelection(food)"
                                     class="mr-3"
                                 >
@@ -565,7 +505,6 @@
         </div>
     </div>
 
-    <!-- Add Nutrient Column Modal -->
     <div x-show="isAddingColumn" @keydown.escape.window="isAddingColumn = false" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
         <div @click.outside="isAddingColumn = false" class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
@@ -601,31 +540,26 @@
         </div>
     </div>
 
-    <!-- Nutrient Contribution Pie Chart Modal -->
     <div x-show="showNutrientChart" @keydown.escape.window="showNutrientChart = false" 
          class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-        <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-            <h3 class="text-lg font-medium mb-4" x-text="'Contribution to ' + selectedNutrient"></h3>
+        <div @click.outside="showNutrientChart=false" class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
             <div class="chart-container">
-                <canvas id="nutrientChart" width="400" height="400"></canvas>
+                <canvas id="nutrientChart"></canvas>
             </div>
             <button @click="showNutrientChart = false" class="mt-4 blue-btn w-full">Close</button>
         </div>
     </div>
 
-    <!-- Food Contribution Pie Chart Modal -->
     <div x-show="showFoodChart" @keydown.escape.window="showFoodChart = false" 
          class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-        <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-            <h3 class="text-lg font-medium mb-4" x-text="'Nutrient Breakdown: ' + selectedFood"></h3>
+        <div @click.outside="showFoodChart=false" class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
             <div class="chart-container">
-                <canvas id="foodChart" width="400" height="400"></canvas>
+                <canvas id="foodChart"></canvas>
             </div>
             <button @click="showFoodChart = false" class="mt-4 blue-btn w-full">Close</button>
         </div>
     </div>
 
-    <!-- Suggest Food Modal -->
     <div x-show="showSuggestModal" @keydown.escape.window="showSuggestModal = false" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
         <div @click.outside="showSuggestModal = false" class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
@@ -659,27 +593,26 @@
                 allFoods: [],
                 storedFoods: [],
                 nutrientHeaders: [],
-                nutrientTreeNames: [], // Store all nutrient names from nutrientTree.txt
+                nutrientTreeNames: [],
                 displayHeaders: ['name'],
                 searchQuery: '',
                 searchResults: [],
                 isLoading: false,
                 isCreatingFood: false,
                 newFood: {},
-                sortColumn: 'name',
-                sortDirection: 'asc',
                 activeTab: 'foods',
                 nutrientTargets: {},
                 isAddingColumn: false,
                 isAddingFood: false,
                 nutrientSearchQuery: '',
-                addFoodContext: null, // 'diet', 'tracker', or null
+                addFoodContext: null,
                 defaultNutrientTargets: {},
+                foodTable: null,
                 
                 // Diets state
                 diets: [],
                 selectedDiet: null,
-                dietTimeframe: 'day', // 'day', 'week', or 'month'
+                dietTimeframe: 'day',
                 
                 // Tracker state
                 trackerDate: new Date().toISOString().split('T')[0],
@@ -698,36 +631,12 @@
                 suggestedFoods: [],
 
                 // --- COMPUTED PROPERTIES ---
-                get sortedStoredFoods() {
-                    return [...this.storedFoods].sort((a, b) => {
-                        let valA = a[this.sortColumn];
-                        let valB = b[this.sortColumn];
-                        if (typeof valA === 'string') {
-                            valA = valA.toLowerCase();
-                            valB = valB.toLowerCase();
-                        }
-                        if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
-                        if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
-                        return 0;
-                    });
-                },
                 get filteredAvailableNutrients() {
-                    if (!this.nutrientTreeNames || !this.nutrientHeaders) {
-                        return [];
-                    }
-
-                    const availableNutrients = this.nutrientTreeNames.filter(h => 
-                        this.nutrientHeaders.includes(h)
-                    );
+                    if (!this.nutrientTreeNames || !this.nutrientHeaders) return [];
+                    const availableNutrients = this.nutrientTreeNames.filter(h => this.nutrientHeaders.includes(h));
                     const uniqueAvailableNutrients = [...new Set(availableNutrients)];
-
-                    if (!this.nutrientSearchQuery) {
-                        return uniqueAvailableNutrients;
-                    }
-
-                    return uniqueAvailableNutrients.filter(h => {
-                        return h.toLowerCase().includes(this.nutrientSearchQuery.toLowerCase());
-                    });
+                    if (!this.nutrientSearchQuery) return uniqueAvailableNutrients;
+                    return uniqueAvailableNutrients.filter(h => h.toLowerCase().includes(this.nutrientSearchQuery.toLowerCase()));
                 },
                 
                 get factor() {
@@ -746,30 +655,74 @@
                     await Promise.all([this.loadNutrientTree(), this.loadFoodData()]);
                     this.isLoading = false;
                     
-                    // Add all foods if no stored foods exist
                     if (this.storedFoods.length === 0 && this.allFoods.length > 0) {
                         this.storedFoods = this.allFoods;
                         this.saveStoredFoods();
                     }
                     
-                    // Load nutrient targets with default values
+                    this.initFoodTable();
+
                     const storedTargets = JSON.parse(localStorage.getItem('nutrientTargets')) || {};
                     this.nutrientTargets = { ...this.defaultNutrientTargets, ...storedTargets };
                     this.saveTargets();
                     
-                    this.$watch('searchQuery', () => {
-                        this.searchFoods();
+                    this.$watch('searchQuery', () => this.searchFoods());
+                    this.$watch('nutrientTargets', () => this.saveTargets(), { deep: true });
+                    this.$watch('trackedFoods', () => localStorage.setItem('trackedFoods', JSON.stringify(this.trackedFoods)), { deep: true });
+                },
+
+                initFoodTable() {
+                    if (this.foodTable) this.foodTable.destroy();
+
+                    const columns = [{
+                        formatter: (cell, formatterParams, onRendered) => `<span class="remove-icon" title="Remove food">&times;</span>`,
+                        width: 40,
+                        hozAlign: "center",
+                        headerSort: false,
+                        cellClick: (e, cell) => {
+                            if (confirm('Are you sure you want to remove this food? This cannot be undone.')) {
+                                cell.getRow().delete();
+                            }
+                        },
+                    }];
+
+                    this.displayHeaders.forEach(header => {
+                        if (header === 'name') {
+                            columns.push({ title: "Name", field: "name", editor: "input", width: 250, frozen: true });
+                        } else {
+                            columns.push({
+                                title: header,
+                                field: header,
+                                editor: "number",
+                                editorParams: { step: 0.01 },
+                                sorter: "number",
+                                hozAlign: "right",
+                                formatter: (cell) => {
+                                    const value = cell.getValue();
+                                    cell.getElement().classList.toggle('text-zero', value === 0);
+                                    return value;
+                                }
+                            });
+                        }
                     });
-                    
-                    // Watch nutrientTargets and save automatically
-                    this.$watch('nutrientTargets', () => {
-                        this.saveTargets();
-                    }, { deep: true });
-                    
-                    // Watch trackedFoods and save automatically
-                    this.$watch('trackedFoods', () => {
-                        localStorage.setItem('trackedFoods', JSON.stringify(this.trackedFoods));
-                    }, { deep: true });
+
+                    this.foodTable = new Tabulator("#food-table-container", {
+                        data: this.storedFoods,
+                        columns: columns,
+                        layout: "fitDataStretch",
+                        height: "500px",
+                        reactiveData: true,
+                        cellEdited: (cell) => this.saveStoredFoods(),
+                        rowDeleted: (row) => {
+                            const deletedFoodName = row.getData().name;
+                            this.diets.forEach(diet => {
+                                diet.foods = diet.foods.filter(item => item.foodName !== deletedFoodName);
+                            });
+                            this.saveDiets();
+                            this.trackedFoods = this.trackedFoods.filter(item => item.foodName !== deletedFoodName);
+                            this.saveStoredFoods();
+                        },
+                    });
                 },
 
                 async loadNutrientTree() {
@@ -784,22 +737,18 @@
                             const trimmedLine = line.trim();
                             if (trimmedLine.startsWith('+')) {
                                 const content = trimmedLine.substring(1).trim();
-                                // Split by dash characters to capture default value
                                 const parts = content.split(/—/).map(part => part.trim());
                                 let nutrientName = parts[0];
                                 let defaultValue = null;
                                 if (parts.length > 1) {
-                                    // Try to parse the second part as a number
                                     defaultValue = parseFloat(parts[1]);
                                     if (!isNaN(defaultValue)) {
-                                        // Store in defaultNutrientTargets
                                         this.defaultNutrientTargets[nutrientName] = defaultValue;
                                     }
                                 }
                                 defaultDisplayNutrients.push(nutrientName);
                                 allNutrients.push(nutrientName);
                             } else if (trimmedLine) {
-                                // Non-default nutrient (without +) - just add the name
                                 allNutrients.push(trimmedLine);
                             }
                         });
@@ -817,23 +766,17 @@
                         if (!response.ok) throw new Error('foodnutrient.json not found');
                         const foodData = await response.json();
                         
-                        if (!Array.isArray(foodData)) {
-                            throw new Error('Invalid JSON format');
-                        }
+                        if (!Array.isArray(foodData)) throw new Error('Invalid JSON format');
                         
-                        // Extract headers: all keys except 'food'
                         const nutrientHeaders = [];
                         foodData.forEach(food => {
                             Object.keys(food).forEach(key => {
-                                if (key !== 'food' && !nutrientHeaders.includes(key)) {
-                                    nutrientHeaders.push(key);
-                                }
+                                if (key !== 'food' && !nutrientHeaders.includes(key)) nutrientHeaders.push(key);
                             });
                         });
                         
                         this.nutrientHeaders = ['name', ...nutrientHeaders];
                         
-                        // Transform data to match previous structure
                         this.allFoods = foodData.map(food => {
                             const foodObj = { name: food.food || '' };
                             nutrientHeaders.forEach(nutrient => {
@@ -842,10 +785,7 @@
                             return foodObj;
                         });
                         
-                        // Ensure display headers are set
-                        if (this.displayHeaders.length <= 1) {
-                            this.displayHeaders = this.nutrientHeaders;
-                        }
+                        if (this.displayHeaders.length <= 1) this.displayHeaders = this.nutrientHeaders;
                     } catch (error) {
                         console.error('Error loading food data:', error);
                         alert('Error: Could not load or parse food data. Please make sure the foodnutrient.json file is present and valid.');
@@ -853,9 +793,7 @@
                 },
 
                 searchFoods() {
-                    // Determine which food source to use based on context
                     const source = this.addFoodContext === 'diet' || this.addFoodContext === 'tracker' ? this.storedFoods : this.allFoods;
-                    
                     if (this.searchQuery === '') {
                         this.searchResults = source;
                     } else {
@@ -866,90 +804,31 @@
                 },
 
                 addFood(foodObject) {
-                    if (this.storedFoods.some(food => food.name === foodObject.name)) {
-                        // Food already exists, don't add duplicate
-                        return;
-                    }
-                    this.storedFoods.push(foodObject);
+                    if (this.storedFoods.some(food => food.name === foodObject.name)) return;
+                    this.foodTable.addRow(foodObject);
                     this.saveStoredFoods();
                 },
 
                 removeFood(name) {
-                    this.storedFoods = this.storedFoods.filter(food => food.name !== name);
-                    this.saveStoredFoods();
-                    
-                    // Remove from all diets
-                    this.diets.forEach(diet => {
-                        diet.foods = diet.foods.filter(foodItem => foodItem.foodName !== name);
-                    });
-                    this.saveDiets();
-                    
-                    // Remove from tracked foods
-                    this.trackedFoods = this.trackedFoods.filter(foodItem => foodItem.foodName !== name);
+                    const row = this.foodTable.getRows().find(r => r.getData().name === name);
+                    if (row) row.delete();
                 },
 
                 clearAll() {
                     if (confirm('Are you sure you want to remove all foods from your list?')) {
                         this.storedFoods = [];
                         this.saveStoredFoods();
-                        
-                        // Remove all foods from diets
-                        this.diets.forEach(diet => {
-                            diet.foods = [];
-                        });
+                        this.diets.forEach(diet => { diet.foods = []; });
                         this.saveDiets();
-                        
-                        // Remove all tracked foods
                         this.trackedFoods = [];
+                        if (this.foodTable) this.foodTable.clearData();
                     }
                 },
 
-                showCreateFoodRow() {
-                    this.isCreatingFood = true;
-                    this.newFood = {};
-                },
-
-                saveNewFood() {
-                    const name = (this.newFood.name || '').trim();
-                    if (!name) {
-                        alert('Food name cannot be empty.');
-                        return;
-                    }
-                    if (this.storedFoods.some(food => food.name.toLowerCase() === name.toLowerCase())) {
-                        alert('A food with this name already exists.');
-                        return;
-                    }
-                    
-                    const completeNewFood = {};
-                    this.nutrientHeaders.forEach(h => {
-                        completeNewFood[h] = this.newFood[h] || 0;
-                    });
-                    completeNewFood.name = name;
-
-                    this.storedFoods.unshift(completeNewFood);
-                    this.saveStoredFoods();
-                    this.cancelNewFood();
-                },
-
-                cancelNewFood() {
-                    this.isCreatingFood = false;
-                    this.newFood = {};
-                },
-
-                changeSort(column) {
-                    if (this.sortColumn === column) {
-                        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        this.sortColumn = column;
-                        this.sortDirection = 'asc';
-                    }
-                },
-                
                 addNutrientColumn(nutrient) {
                     if (!this.displayHeaders.includes(nutrient)) {
                         this.displayHeaders.push(nutrient);
                     }
-                    this.nutrientSearchQuery = '';
                 },
 
                 removeNutrientColumn(nutrient) {
@@ -967,13 +846,11 @@
                 
                 // Diets methods
                 createDiet() {
-                    const dietNumber = this.diets.length + 1;
                     const newDiet = {
                         id: Date.now().toString(),
-                        name: `Diet ${dietNumber}`,
+                        name: `Diet ${this.diets.length + 1}`,
                         foods: []
                     };
-                    
                     this.diets.push(newDiet);
                     this.saveDiets();
                 },
@@ -981,32 +858,20 @@
                 deleteDiet(id) {
                     if (confirm('Are you sure you want to delete this diet?')) {
                         this.diets = this.diets.filter(diet => diet.id !== id);
-                        if (this.selectedDiet && this.selectedDiet.id === id) {
-                            this.selectedDiet = null;
-                        }
+                        if (this.selectedDiet && this.selectedDiet.id === id) this.selectedDiet = null;
                         this.saveDiets();
                     }
                 },
                 
-                selectDiet(diet) {
-                    this.selectedDiet = diet;
-                },
+                selectDiet(diet) { this.selectedDiet = diet; },
                 
                 addFoodToDiet(foodName) {
-                    // Check if food already exists in diet
                     const existingIndex = this.selectedDiet.foods.findIndex(f => f.foodName === foodName);
                     if (existingIndex >= 0) {
-                        // Update existing quantity
                         this.selectedDiet.foods[existingIndex].quantity += 100;
                     } else {
-                        // Add new food with default quantity and unlocked state
-                        this.selectedDiet.foods.push({
-                            foodName,
-                            quantity: 100,
-                            locked: false
-                        });
+                        this.selectedDiet.foods.push({ foodName, quantity: 100, locked: false });
                     }
-                    
                     this.saveDiets();
                 },
                 
@@ -1015,204 +880,95 @@
                     this.saveDiets();
                 },
                 
-                saveDiets() {
-                    localStorage.setItem('diets', JSON.stringify(this.diets));
-                },
+                saveDiets() { localStorage.setItem('diets', JSON.stringify(this.diets)); },
                 
-                // Calculate total nutrient amount for the diet
                 calculateNutrientTotal(nutrient) {
                     if (!this.selectedDiet) return 0;
-                    
-                    let total = 0;
-                    for (const foodItem of this.selectedDiet.foods) {
+                    return this.selectedDiet.foods.reduce((total, foodItem) => {
                         const food = this.storedFoods.find(f => f.name === foodItem.foodName);
                         if (food && food[nutrient] !== undefined) {
-                            // Calculate: (nutrient per 100g) * (quantity in grams) / 100
-                            total += (food[nutrient] * foodItem.quantity) / 100;
+                            return total + (food[nutrient] * foodItem.quantity) / 100;
                         }
-                    }
-                    return total;
+                        return total;
+                    }, 0);
                 },
                 
-                // Calculate nutrient percentage of target
                 calculateNutrientPercentage(nutrient) {
                     const total = this.calculateNutrientTotal(nutrient);
                     const target = this.nutrientTargets[nutrient] || 0;
-                    
-                    if (target <= 0) return 0;
-                    
-                    return (total / target) * 100;
+                    return target <= 0 ? 0 : (total / target) * 100;
                 },
                 
-                // Optimize diet to hit nutrient targets
                 optimizeDiet() {
                     if (!this.selectedDiet || this.selectedDiet.foods.length === 0) {
                         alert("Please add foods to the diet first.");
                         return;
                     }
                     
-                    // Get nutrients that have targets > 0
-                    const nutrients = this.displayHeaders.filter(h => 
-                        h !== 'name' && 
-                        this.nutrientTargets[h] > 0 &&
-                        this.selectedDiet.foods.some(foodItem => {
-                            const food = this.storedFoods.find(f => f.name === foodItem.foodName);
-                            return food && food[h] !== undefined;
-                        })
-                    );
-                    
+                    const nutrients = this.displayHeaders.filter(h => h !== 'name' && this.nutrientTargets[h] > 0);
                     if (nutrients.length === 0) {
-                        alert("Please set targets for at least one nutrient in the Nutrient Targets tab.");
-                        return;
-                    }
-                    
-                    // Get foods in the diet
-                    const foods = this.selectedDiet.foods.map(foodItem => {
-                        return this.storedFoods.find(f => f.name === foodItem.foodName);
-                    }).filter(Boolean);
-                    
-                    if (foods.length === 0) {
-                        alert("No valid foods found in the diet.");
+                        alert("Please set targets for at least one nutrient.");
                         return;
                     }
                     
                     try {
-                        // Separate locked and unlocked foods
-                        const lockedFoods = [];
-                        const unlockedFoods = [];
-                        const lockedQuantities = [];
+                        const lockedFoods = this.selectedDiet.foods.filter(f => f.locked);
+                        const unlockedFoodItems = this.selectedDiet.foods.filter(f => !f.locked);
+                        const unlockedFoods = unlockedFoodItems.map(item => this.storedFoods.find(f => f.name === item.foodName)).filter(Boolean);
                         
-                        for (let i = 0; i < this.selectedDiet.foods.length; i++) {
-                            const foodItem = this.selectedDiet.foods[i];
-                            if (foodItem.locked) {
-                                lockedFoods.push(foods[i]);
-                                lockedQuantities.push(foodItem.quantity);
-                            } else {
-                                unlockedFoods.push(foods[i]);
-                            }
+                        if (unlockedFoods.length === 0) {
+                            alert("No unlocked foods to optimize.");
+                            return;
                         }
-                        
-                        // Calculate locked nutrients contribution
+
                         const lockedNutrients = math.zeros(nutrients.length).toArray();
-                        for (let i = 0; i < nutrients.length; i++) {
-                            const nutrient = nutrients[i];
-                            let total = 0;
-                            for (let j = 0; j < lockedFoods.length; j++) {
-                                const food = lockedFoods[j];
-                                const valuePerGram = (food[nutrient] || 0) / 100;
-                                total += valuePerGram * lockedQuantities[j];
-                            }
-                            lockedNutrients[i] = total;
-                        }
+                        nutrients.forEach((nutrient, i) => {
+                            lockedFoods.forEach(foodItem => {
+                                const food = this.storedFoods.find(f => f.name === foodItem.foodName);
+                                if (food) lockedNutrients[i] += (food[nutrient] || 0) / 100 * foodItem.quantity;
+                            });
+                        });
                         
-                        // Build the A matrix for unlocked foods: nutrients x foods
-                        const A = [];
-                        for (let i = 0; i < nutrients.length; i++) {
-                            const nutrient = nutrients[i];
-                            const target = this.nutrientTargets[nutrient];
-                            const row = [];
-                            for (const food of unlockedFoods) {
-                                // Nutrient value per gram = (value per 100g) / 100
-                                const valuePerGram = (food[nutrient] || 0) / 100;
-                                row.push(valuePerGram / target);
-                            }
-                            A.push(row);
-                        }
+                        const A = unlockedFoods.map(food => 
+                            nutrients.map(nutrient => (food[nutrient] || 0) / 100)
+                        );
                         
-                        // Vector b: (1 - lockedNutrients[i]/target) for each nutrient
-                        const b = [];
-                        for (let i = 0; i < nutrients.length; i++) {
-                            const nutrient = nutrients[i];
-                            const target = this.nutrientTargets[nutrient];
-                            const lockedContribution = lockedNutrients[i] / target;
-                            b.push(1 - lockedContribution);
-                        }
+                        const b = nutrients.map((nutrient, i) => this.nutrientTargets[nutrient] - lockedNutrients[i]);
                         
-                        // Solve least squares: minimize ||A*x - b||
-                        const x = math.lusolve(math.multiply(math.transpose(A), A), 
-                                              math.multiply(math.transpose(A), b));
+                        const x = math.lusolve(math.multiply(math.transpose(A), A), math.multiply(math.transpose(A), b));
                         
-                        // Extract solution
                         const solution = x.flat();
-                        
-                        // Update quantities for unlocked foods
-                        let unlockedIndex = 0;
-                        for (let i = 0; i < this.selectedDiet.foods.length; i++) {
-                            const foodItem = this.selectedDiet.foods[i];
-                            if (!foodItem.locked) {
-                                const quantity = Math.max(0, solution[unlockedIndex]);
-                                foodItem.quantity = Math.round(quantity);
-                                unlockedIndex++;
-                            }
-                        }
+                        unlockedFoodItems.forEach((foodItem, i) => {
+                            foodItem.quantity = Math.round(Math.max(0, solution[i]));
+                        });
                         
                         this.saveDiets();
-                        if(solution.some(x=>x<0)){
-                            let unlockedIndex = 0;
-                            const foodsToLock = [];
-                            
-                            for (let i = 0; i < this.selectedDiet.foods.length; i++) {
-                                const foodItem = this.selectedDiet.foods[i];
-                                if (!foodItem.locked) {
-                                    if (solution[unlockedIndex] < 0) {
-                                        foodsToLock.push(i);
-                                        foodItem.locked = true;
-                                    }
-                                    unlockedIndex++;
-                                }
-                            }
-                            
-                            this.optimizeDiet();
-
-                            foodsToLock.forEach(i => {this.selectedDiet.foods[i].locked = false;});
-                        }
                     } catch (error) {
                         console.error("Optimization error:", error);
-                        alert("Failed to optimize diet.");
+                        alert("Failed to optimize diet. The combination of foods and targets may not be solvable.");
                     }
                 },
                 
-                // Create new food from search query
                 createNewFoodFromSearch() {
                     const name = this.searchQuery.trim();
-                    if (!name) {
-                        alert('Please enter a food name');
-                        return;
-                    }
+                    if (!name) return alert('Please enter a food name');
+                    if (this.storedFoods.some(food => food.name.toLowerCase() === name.toLowerCase())) return alert('A food with this name already exists.');
                     
-                    if (this.storedFoods.some(food => food.name.toLowerCase() === name.toLowerCase())) {
-                        alert('A food with this name already exists.');
-                        return;
-                    }
-                    
-                    // Create a new food with all nutrients set to 0
                     const newFood = { name };
                     this.nutrientHeaders.forEach(header => {
-                        if (header !== 'name') {
-                            newFood[header] = 0;
-                        }
+                        if (header !== 'name') newFood[header] = 0;
                     });
                     
-                    // Add to stored foods
-                    this.storedFoods.push(newFood);
+                    this.foodTable.addRow(newFood, true);
                     this.saveStoredFoods();
                     
-                    // If in diet context, also add to diet
-                    if (this.addFoodContext === 'diet' && this.selectedDiet) {
-                        this.addFoodToDiet(name);
-                    }
+                    if (this.addFoodContext === 'diet' && this.selectedDiet) this.addFoodToDiet(name);
+                    if (this.addFoodContext === 'tracker') this.addTrackedFood(name);
                     
-                    // If in tracker context, also add to tracked foods
-                    if (this.addFoodContext === 'tracker') {
-                        this.addTrackedFood(name);
-                    }
-                    
-                    // Clear search and close modal
                     this.searchQuery = '';
                     this.isAddingFood = false;
                 },
 
-                // Toggle food selection in modal
                 toggleFoodSelection(food) {
                     if (this.addFoodContext === 'diet') {
                         if (this.selectedDiet.foods.some(f => f.foodName === food.name)) {
@@ -1235,324 +991,133 @@
                     }
                 },
                 
-                // Toggle nutrient column in modal
                 toggleNutrientColumn(nutrient) {
                     if (this.displayHeaders.includes(nutrient)) {
                         this.removeNutrientColumn(nutrient);
                     } else {
                         this.addNutrientColumn(nutrient);
                     }
+                    this.initFoodTable(); // Re-initialize table with new columns
                 },
                 
-                // Reset food modal when opened
-                resetFoodModal() {
-                    this.searchQuery = '';
-                    this.searchResults = [];
-                },
-                
-                // Open food modal with reset
-                openAddFoodModal() {
-                    this.resetFoodModal();
-                    this.isAddingFood = true;
-                },
-                
-                // Open nutrient modal with reset
-                openAddNutrientModal() {
-                    this.nutrientSearchQuery = '';
-                    this.isAddingColumn = true;
-                },
+                resetFoodModal() { this.searchQuery = ''; this.searchResults = []; },
+                openAddFoodModal() { this.resetFoodModal(); this.isAddingFood = true; this.addFoodContext = null; },
+                openAddNutrientModal() { this.nutrientSearchQuery = ''; this.isAddingColumn = true; },
                 
                 // Tracker methods
                 addTrackedFood(foodName) {
-                    // Check if food already exists in tracker
                     const existingIndex = this.trackedFoods.findIndex(f => f.foodName === foodName);
                     if (existingIndex >= 0) {
-                        // Update existing quantity
                         this.trackedFoods[existingIndex].quantity += 100;
                     } else {
-                        // Add new food with default quantity
-                        this.trackedFoods.push({
-                            foodName,
-                            quantity: 100
-                        });
+                        this.trackedFoods.push({ foodName, quantity: 100 });
                     }
                 },
                 
-                removeTrackedFood(foodName) {
-                    this.trackedFoods = this.trackedFoods.filter(f => f.foodName !== foodName);
-                },
+                removeTrackedFood(foodName) { this.trackedFoods = this.trackedFoods.filter(f => f.foodName !== foodName); },
                 
-                // Calculate daily nutrient intake
                 calculateDailyIntake(nutrient) {
-                    let total = 0;
-                    for (const foodItem of this.trackedFoods) {
+                    return this.trackedFoods.reduce((total, foodItem) => {
                         const food = this.storedFoods.find(f => f.name === foodItem.foodName);
-                        if (food && food[nutrient] !== undefined) {
-                            // Calculate: (nutrient per 100g) * (quantity in grams) / 100
-                            total += (food[nutrient] * foodItem.quantity) / 100;
-                        }
-                    }
-                    return total;
+                        return food && food[nutrient] ? total + (food[nutrient] * foodItem.quantity) / 100 : total;
+                    }, 0);
                 },
-                
-                // Show nutrient contribution pie chart
+
+                renderPieChart(canvasId, chartInstanceRef, title, data, labels) {
+                    if (this[chartInstanceRef]) this[chartInstanceRef].destroy();
+                    const ctx = document.getElementById(canvasId).getContext('2d');
+                    
+                    const combined = data.map((value, i) => ({ value, label: labels[i] })).sort((a, b) => b.value - a.value);
+
+                    this[chartInstanceRef] = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: combined.map(item => item.label),
+                            datasets: [{
+                                data: combined.map(item => item.value),
+                                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8AC926', '#1982C4', '#F44336', '#E91E63', '#9C27B0', '#673AB7']
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: { display: true, text: title, font: { size: 16 } },
+                                tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed.toFixed(2)}` } },
+                                legend: { position: 'bottom', align: 'start' }
+                            }
+                        }
+                    });
+                },
+
                 showNutrientContribution(nutrient) {
                     this.selectedNutrient = nutrient;
                     this.showNutrientChart = true;
                     
                     this.$nextTick(() => {
-                        this.renderNutrientChart(nutrient);
-                    });
-                },
-                
-                renderNutrientChart(nutrient) {
-                    if (this.nutrientChart) {
-                        this.nutrientChart.destroy();
-                    }
-                    
-                    const ctx = document.getElementById('nutrientChart').getContext('2d');
-                    const contributions = [];
-                    const labels = [];
-                    let otherTotal = 0;
-                    
-                    // Calculate contributions
-                    this.selectedDiet.foods.forEach(foodItem => {
-                        const food = this.storedFoods.find(f => f.name === foodItem.foodName);
-                        if (food && food[nutrient]) {
-                            const contribution = (food[nutrient] * foodItem.quantity) / 100;
-                            
-                            // Group small contributions as "Other"
-                            if (contribution < (this.calculateNutrientTotal(nutrient) * 0.05)) {
-                                otherTotal += contribution;
-                            } else {
-                                contributions.push(contribution);
-                                labels.push(food.name);
-                            }
-                        }
-                    });
-                    
-                    // Add "Other" category if needed
-                    if (otherTotal > 0) {
-                        contributions.push(otherTotal);
-                        labels.push('Other');
-                    }
-                    
-                    // Sort contributions from largest to smallest
-                    const combined = contributions.map((value, index) => ({ value, label: labels[index] }));
-                    combined.sort((a, b) => b.value - a.value);
-                    
-                    const sortedContributions = combined.map(item => item.value);
-                    const sortedLabels = combined.map(item => item.label);
-                    
-                    this.nutrientChart = new Chart(ctx, {
-                        type: 'pie',
-                        data: {
-                            labels: sortedLabels,
-                            datasets: [{
-                                data: sortedContributions,
-                                backgroundColor: [
-                                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
-                                    '#9966FF', '#FF9F40', '#8AC926', '#1982C4'
-                                ]
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            return `${context.label}: ${context.raw.toFixed(2)}`;
-                                        }
-                                    }
-                                },
-                                legend: {
-                                    position: 'bottom',
-                                    align: 'start',
-                                    labels: {
-                                        generateLabels: function(chart) {
-                                            const data = chart.data;
-                                            if (data.labels.length && data.datasets.length) {
-                                                return data.labels.map(function(label, i) {
-                                                    const value = data.datasets[0].data[i];
-                                                    return {
-                                                        text: `${value.toFixed(2)} ${label}`,
-                                                        fillStyle: data.datasets[0].backgroundColor[i],
-                                                        hidden: false,
-                                                        index: i
-                                                    };
-                                                });
-                                            }
-                                            return [];
-                                        }
-                                    }
+                        const contributions = [], labels = [];
+                        let otherTotal = 0;
+                        const nutrientTotal = this.calculateNutrientTotal(nutrient);
+                        const threshold = nutrientTotal * 0.05;
+
+                        this.selectedDiet.foods.forEach(foodItem => {
+                            const food = this.storedFoods.find(f => f.name === foodItem.foodName);
+                            if (food && food[nutrient]) {
+                                const contribution = (food[nutrient] * foodItem.quantity) / 100;
+                                if (contribution > 0) {
+                                    if (contribution < threshold) otherTotal += contribution;
+                                    else { contributions.push(contribution); labels.push(food.name); }
                                 }
                             }
-                        }
+                        });
+                        if (otherTotal > 0) { contributions.push(otherTotal); labels.push('Other'); }
+                        
+                        this.renderPieChart('nutrientChart', 'nutrientChart', `Contribution to ${nutrient}`, contributions, labels);
                     });
                 },
                 
-                // Show food nutrient contribution
                 showFoodContribution(foodName) {
                     this.selectedFood = foodName;
                     this.showFoodChart = true;
                     
                     this.$nextTick(() => {
-                        this.renderFoodChart(foodName);
+                        const food = this.storedFoods.find(f => f.name === foodName);
+                        const foodItem = this.selectedDiet.foods.find(f => f.foodName === foodName);
+                        if (!food || !foodItem) return;
+
+                        const values = [], labels = [];
+                        this.displayHeaders.filter(h => h !== 'name' && food[h] > 0).forEach(nutrient => {
+                            const value = (food[nutrient] || 0) * foodItem.quantity / 100;
+                            if (value > 0) { values.push(value); labels.push(nutrient); }
+                        });
+                        
+                        const title = `Nutrient Breakdown: ${foodItem.quantity}g of ${foodName}`;
+                        this.renderPieChart('foodChart', 'foodChart', title, values, labels);
                     });
                 },
                 
-                renderFoodChart(foodName) {
-                    if (this.foodChart) {
-                        this.foodChart.destroy();
-                    }
-                    
-                    const ctx = document.getElementById('foodChart').getContext('2d');
-                    const food = this.storedFoods.find(f => f.name === foodName);
-                    const foodItem = this.selectedDiet.foods.find(f => f.foodName === foodName);
-                    
-                    if (!food || !foodItem) return;
-                    
-                    // Calculate nutrient values
-                    const nutrients = this.displayHeaders.filter(h => h !== 'name');
-                    const values = nutrients.map(nutrient => {
-                        const foodContribution = (food[nutrient] || 0) * foodItem.quantity / 100;
-                        const dietTotal = this.calculateNutrientTotal(nutrient) || 1; // Prevent divide-by-zero
-                        return (foodContribution / dietTotal) * 100;
-                    });
-                    
-                    const nonZeroData = nutrients.map((nutrient, index) => ({
-                        nutrient,
-                        value: values[index]
-                    })).filter(item => item.value > 0);
-                    
-                    // Sort by largest contributions
-                    nonZeroData.sort((a, b) => b.value - a.value);
-                    
-                    // Group small contributions as "Other"
-                    const visibleNutrients = [];
-                    const visibleValues = [];
-                    let otherTotal = 0;
-                    
-                    nonZeroData.forEach((item, index) => {
-                        if (index < 6) {
-                            visibleNutrients.push(item.nutrient);
-                            visibleValues.push(item.value);
-                        } else {
-                            otherTotal += item.value;
-                        }
-                    });
-                    
-                    if (otherTotal > 0) {
-                        visibleNutrients.push('Other');
-                        visibleValues.push(otherTotal);
-                    }
-                    
-                    this.foodChart = new Chart(ctx, {
-                        type: 'pie',
-                        data: {
-                            labels: visibleNutrients,
-                            datasets: [{
-                                data: visibleValues,
-                                backgroundColor: [
-                                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
-                                    '#9966FF', '#FF9F40', '#8AC926', '#1982C4'
-                                ]
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            return `${context.raw.toFixed(0)}% ${context.label}`;
-                                        }
-                                    }
-                                },
-                                legend: {
-                                    position: 'bottom',
-                                    align: 'start',
-                                    labels: {
-                                        generateLabels: function(chart) {
-                                            const data = chart.data;
-                                            if (data.labels.length && data.datasets.length) {
-                                                return data.labels.map(function(label, i) {
-                                                    const value = data.datasets[0].data[i];
-                                                    return {
-                                                        text: `${value.toFixed(0)}% ${label}`,
-                                                        fillStyle: data.datasets[0].backgroundColor[i],
-                                                        hidden: false,
-                                                        index: i
-                                                    };
-                                                });
-                                            }
-                                            return [];
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                },
-                
-                // Suggest food method
                 suggestFood() {
-                    if (!this.selectedDiet || this.selectedDiet.foods.length === 0) {
-                        alert("Please add foods to your diet first.");
-                        return;
-                    }
+                    if (!this.selectedDiet || this.selectedDiet.foods.length === 0) return alert("Please add foods to your diet first.");
 
-                    const nutrients = this.displayHeaders.filter(
-                        h => h !== 'name' && 
-                        this.nutrientTargets[h] > 0
-                    );
+                    const nutrients = this.displayHeaders.filter(h => h !== 'name' && this.nutrientTargets[h] > 0);
+                    if (nutrients.length === 0) return alert("Please set nutrient targets first.");
 
-                    if (nutrients.length === 0) {
-                        alert("Please set nutrient targets first.");
-                        return;
-                    }
+                    const D = nutrients.map(nutrient => this.calculateNutrientTotal(nutrient) / this.nutrientTargets[nutrient]);
+                    const mD = math.mean(D), mD2 = math.mean(math.dotPow(D, 2));
 
-                    // Compute diet vector D
-                    const D = [];
-                    for (const nutrient of nutrients) {
-                        const total = this.calculateNutrientTotal(nutrient);
-                        D.push(total / this.nutrientTargets[nutrient]);
-                    }
+                    const foodScores = this.allFoods.filter(food => !this.selectedDiet.foods.some(f => f.foodName === food.name))
+                        .map(food => {
+                            const F = nutrients.map(nutrient => (food[nutrient] || 0) / 100);
+                            const mF = math.mean(F), mF2 = math.mean(math.dotPow(F, 2)), mFD = math.mean(math.dotMultiply(F, D));
+                            const denominator = mF2 * mD2 - mFD**2;
+                            const optimalAmount = (mF * mD2 - mD * mFD) * denominator;
+                            const score = (optimalAmount > 0 && denominator !== 0) ? (mF2 * mD**2 + mD2 * mF**2 - 2 * mFD * mF * mD) / denominator : -Infinity;
+                            return { food, score };
+                        });
 
-                    const mD = math.mean(D);
-                    const mD2 = math.mean(math.dotPow(D, 2));
-
-                    const foodScores = [];
-                    
-                    for (const food of this.allFoods) {
-                        // Skip foods already in diet
-                        if (this.selectedDiet.foods.some(f => f.foodName === food.name)) continue;
-                        
-                        // Compute food vector F
-                        const F = nutrients.map(nutrient => (food[nutrient] || 0) / 100);
-                        const mF = math.mean(F);
-                        const mF2 = math.mean(math.dotPow(F, 2));
-                        const mFD = math.mean(math.dotMultiply(F, D));
-                        
-                        // Compute score
-                        const numerator = mF2 * mD**2 + mD2 * mF**2 - 2 * mFD * mF * mD;
-                        const denominator = mF2 * mD2 - mFD**2;
-                        const optimalAmount = (mF * mD2 - mD * mFD) * denominator; //we only care about the sign
-                        const score = (optimalAmount>0)? numerator / denominator : -Infinity;
-                        
-                        foodScores.push({ food, score });
-                    }
-
-                    // Sort by highest score
                     foodScores.sort((a, b) => b.score - a.score);
                     
-                    // Filter by prefix to avoid similar names
-                    let distinctFoods = [];
-                    const seenPrefixes = new Set();
-                    
+                    const distinctFoods = [], seenPrefixes = new Set();
                     for (const item of foodScores) {
                         const prefix = item.food.name.substring(0, 12);
                         if (!seenPrefixes.has(prefix)) {
@@ -1566,15 +1131,11 @@
                     this.showSuggestModal = true;
                 },
                 
-                // Add suggested food to diet
                 addSuggestedFood(food) {
-                    // Add to stored foods if not already present
                     if (!this.storedFoods.some(f => f.name === food.name)) {
-                        this.storedFoods.push(food);
+                        this.foodTable.addRow(food);
                         this.saveStoredFoods();
                     }
-                    
-                    // Add to diet
                     this.addFoodToDiet(food.name);
                     this.showSuggestModal = false;
                 }
