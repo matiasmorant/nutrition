@@ -1377,7 +1377,7 @@
                                                 return data.labels.map(function(label, i) {
                                                     const value = data.datasets[0].data[i];
                                                     return {
-                                                        text: `${label}: ${value.toFixed(2)}`,
+                                                        text: `${value.toFixed(2)} ${label}`,
                                                         fillStyle: data.datasets[0].backgroundColor[i],
                                                         hidden: false,
                                                         index: i
@@ -1482,7 +1482,7 @@
                                                 return data.labels.map(function(label, i) {
                                                     const value = data.datasets[0].data[i];
                                                     return {
-                                                        text: `${label}: ${value.toFixed(2)}`,
+                                                        text: `${value.toFixed(2)} ${label}`,
                                                         fillStyle: data.datasets[0].backgroundColor[i],
                                                         hidden: false,
                                                         index: i
