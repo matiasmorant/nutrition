@@ -966,6 +966,7 @@
                             this.optimizeDiet();
                             
                             foodsToLock.forEach(i => {this.selectedDiet.foods[i].locked = false;});
+                        }
                     } catch (error) {
                         console.error("Optimization error:", error);
                         alert("Failed to optimize diet. The combination of foods and targets may not be solvable.");
