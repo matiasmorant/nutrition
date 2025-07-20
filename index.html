@@ -930,7 +930,7 @@
                         const dietFoods=this.selectedDiet.foods;
                         const locked = dietFoods.filter(f => f.locked);
                         const unlocked = dietFoods.filter(f => !f.locked);
-                        const nutrientData=Object.fromEntries(dietFood.map(x=>[x.foodName,this.storedFoods[x.foodName]]));
+                        const nutrientData=Object.fromEntries(dietFoods.map(x=>[x.foodName,this.storedFoods[x.foodName]]));
                         const getA=(food,nutrient)=>(nutrientData[food.foodName][nutrient] || 0) / 100;
                         
                         if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
