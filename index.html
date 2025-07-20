@@ -1094,10 +1094,17 @@
                         if (!food || !foodItem) return;
 
                         const values = [], labels = [];
+                        let otherTotal = 0;
+                        const threshold = 10;
+
                         this.displayHeaders.filter(h => h !== 'name' && food[h] > 0).forEach(nutrient => {
-                            const value = (food[nutrient] || 0) * foodItem.quantity / 100 / this.calculateNutrientTotal(nutrient);
-                            if (value > 0) { values.push(value); labels.push(nutrient); }
-                        });
+                            const value = (food[nutrient] || 0) * foodItem.quantity / 100 / this.calculateNutrientTotal(nutrient) *100;
+                            if (value > 0) { 
+                                if (value < threshold) {otherTotal += value; }
+                                else { values.push(value); labels.push(nutrient); }
+                            }
+                        );
+                        if (otherTotal > 0) { values.push(otherTotal); labels.push('Other'); }
                         
                         const title = `Nutrient Breakdown: ${foodItem.quantity}g of ${foodName}`;
                         this.renderPieChart(title, values, labels);
