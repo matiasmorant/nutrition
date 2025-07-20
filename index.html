@@ -191,6 +191,14 @@
             text-transform: uppercase;
             font-size: 0.75rem;
             color: #4b5563;
+            white-space: normal; /* Allow header wrapping */
+            line-height: 1.2; /* Better line spacing */
+            height: auto; /* Allow height to adjust */
+            padding: 8px 5px; /* Add padding for wrapping */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
         .tabulator-row .tabulator-cell {
             padding: 8px;
@@ -199,13 +207,29 @@
         .tabulator-row.tabulator-row-even {
             background-color: #f9fafb;
         }
+        /* Allow sticky column to wrap */
+        .tabulator-col[name="name"] .tabulator-col-content {
+            white-space: normal;
+            line-height: 1.2;
+            padding: 8px 5px;
+        }
+        /* Reduce sticky column width on narrow screens */
+        @media (max-width: 640px) {
+            .tabulator-col:first-child {
+                width: 30px !important;
+                min-width: 30px !important;
+            }
+            .tabulator-col[name="name"] {
+                max-width: 100px;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-init="init()" x-cloak>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.6</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.7</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -214,7 +238,6 @@
                 <button @click="activeTab = 'foods'" :class="{'active': activeTab === 'foods'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Foods</button>
                 <button @click="activeTab = 'targets'" :class="{'active': activeTab === 'targets'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Nutrient Targets</button>
                 <button @click="activeTab = 'diets'; selectedDiet = null" :class="{'active': activeTab === 'diets'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Diets</button>
-                <button @click="activeTab = 'tracker';" :class="{'active': activeTab === 'tracker'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Tracker</button>
             </nav>
         </div>
 
@@ -233,7 +256,6 @@
                 <div id="table-placeholder" class="text-center p-8 text-gray-500" x-show="Object.keys(storedFoods).length === 0">
                     <p>Your added foods will appear here.</p>
                 </div>
-                <button @click="clearAll()" class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" :disabled="Object.keys(storedFoods).length === 0">Clear All Foods</button>
             </div>
         </div>
 
@@ -380,81 +402,6 @@
                 </div>
             </div>
         </div>
-
-        <div id="content-tracker" class="tab-content p-6 bg-white rounded-lg shadow" x-show="activeTab === 'tracker'">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Daily Nutrient Tracker</h2>
-            
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Select Date</label>
-                <input type="date" x-model="trackerDate" class="p-2 border rounded-md w-full max-w-xs">
-            </div>
-            
-            <div class="mb-8">
-                <h4 class="text-lg font-medium mb-4">Tracked Foods</h4>
-                <div class="border rounded-lg overflow-hidden mb-4">
-                    <template x-if="trackedFoods.length === 0">
-                        <p class="p-4 text-gray-500">No foods tracked for today. Add some foods to track your nutrients.</p>
-                    </template>
-                    <template x-for="(foodItem, index) in trackedFoods" :key="index">
-                        <div class="flex items-center justify-between p-4 border-b hover:bg-gray-50">
-                            <div class="flex items-center">
-                                <span @click="removeTrackedFood(foodItem.foodName)" class="remove-icon">&times;</span>
-                                <span x-text="foodItem.foodName" class="text-sm font-medium max-w-name"></span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <input type="number" 
-                                       x-model.number="foodItem.quantity" 
-                                       min="0" 
-                                       step="1"
-                                       class="w-24 p-2 border rounded-md text-sm" 
-                                       placeholder="Quantity">
-                                <span>grams</span>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-                <button @click="isAddingFood = true; addFoodContext = 'tracker'; resetFoodModal()" class="blue-btn">Add Food</button>
-            </div>
-            
-            <div x-show="trackedFoods.length > 0">
-                <h4 class="text-lg font-medium mb-4">Daily Nutrient Summary</h4>
-                <div class="overflow-x-auto">
-                    <table class="w-full nutrient-table">
-                        <thead>
-                            <tr>
-                                <th class="text-left">Nutrient</th>
-                                <th>Target</th>
-                                <th>Consumed</th>
-                                <th>Progress</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
-                                <tr>
-                                    <td class="text-left max-w-name" x-text="nutrient"></td>
-                                    <td x-text="nutrientTargets[nutrient] || 0"></td>
-                                    <td x-text="calculateDailyIntake(nutrient).toFixed(2)"></td>
-                                    <td>
-                                        <div class="progress-bar">
-                                            <div class="progress-fill" 
-                                                 :style="'width: ' + Math.min(100, (calculateDailyIntake(nutrient) / (nutrientTargets[nutrient] || 1) * 100) + '%'"
-                                                 :class="{
-                                                     'bg-green-600': (calculateDailyIntake(nutrient) >= (nutrientTargets[nutrient] || 0),
-                                                     'bg-blue-500': (calculateDailyIntake(nutrient) < (nutrientTargets[nutrient] || 0)
-                                                 }">
-                                            </div>
-                                        </div>
-                                        <span class="percent-cell" 
-                                              x-text="nutrientTargets[nutrient] ? Math.min(100, (calculateDailyIntake(nutrient) / nutrientTargets[nutrient] * 100).toFixed(0) + '%' : 'N/A'">
-                                        </span>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div x-show="isAddingFood" @keydown.escape.window="isAddingFood = false" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
@@ -481,9 +428,7 @@
                                     :id="'food-'+food.name" 
                                     :checked="addFoodContext === 'diet' ? 
                                         (selectedDiet && selectedDiet.foods.some(f => f.foodName === food.name)) :
-                                        (addFoodContext === 'tracker' ? 
-                                            trackedFoods.some(f => f.foodName === food.name) :
-                                            !!storedFoods[food.name])"
+                                        !!storedFoods[food.name]"
                                     @change="toggleFoodSelection(food)"
                                     class="mr-3"
                                 >
@@ -603,10 +548,6 @@
                 selectedDiet: null,
                 dietTimeframe: 'day',
                 
-                // Tracker state
-                trackerDate: new Date().toISOString().split('T')[0],
-                trackedFoods: [],
-                
                 // Chart state
                 isChartModalVisible: false,
                 pieChart: null,
@@ -645,7 +586,6 @@
                     }
 
                     this.diets = JSON.parse(localStorage.getItem('diets')) || [];
-                    this.trackedFoods = JSON.parse(localStorage.getItem('trackedFoods')) || [];
                     this.isLoading = true;
                     await Promise.all([this.loadNutrientTree(), this.loadFoodData()]);
                     this.isLoading = false;
@@ -666,7 +606,6 @@
                     
                     this.$watch('searchQuery', () => this.searchFoods());
                     this.$watch('nutrientTargets', () => this.saveTargets(), { deep: true });
-                    this.$watch('trackedFoods', () => localStorage.setItem('trackedFoods', JSON.stringify(this.trackedFoods)), { deep: true });
                 },
 
                 initFoodTable() {
@@ -686,7 +625,13 @@
 
                     this.displayHeaders.forEach(header => {
                         if (header === 'name') {
-                            columns.push({ title: "Name", field: "name", width: 250, frozen: true });
+                            columns.push({ 
+                                title: "Name", 
+                                field: "name", 
+                                width: 250, 
+                                frozen: true,
+                                headerWordWrap: true,
+                            });
                         } else {
                             columns.push({
                                 title: header,
@@ -699,7 +644,8 @@
                                     const value = cell.getValue();
                                     cell.getElement().classList.toggle('text-zero', value === 0);
                                     return value;
-                                }
+                                },
+                                headerWordWrap: true,
                             });
                         }
                     });
@@ -709,6 +655,7 @@
                         columns: columns,
                         layout: "fitDataStretch",
                         height: "500px",
+                        headerHeight: 50, // Increased height for wrapped headers
                         cellEdited: (cell) => this.saveStoredFoods(),
                         rowDeleted: (row) => {
                             const deletedFoodName = row.getData().name;
@@ -718,7 +665,6 @@
                                 diet.foods = diet.foods.filter(item => item.foodName !== deletedFoodName);
                             });
                             this.saveDiets();
-                            this.trackedFoods = this.trackedFoods.filter(item => item.foodName !== deletedFoodName);
                             this.saveStoredFoods();
                         },
                     });
@@ -792,7 +738,7 @@
                 },
 
                 searchFoods() {
-                    const source = this.addFoodContext === 'diet' || this.addFoodContext === 'tracker' ? Object.values(this.storedFoods) : this.allFoods;
+                    const source = this.addFoodContext === 'diet' ? Object.values(this.storedFoods) : this.allFoods;
                     if (this.searchQuery === '') {
                         this.searchResults = source;
                     } else {
@@ -812,17 +758,6 @@
                 removeFood(name) {
                     const row = this.foodTable.getRows().find(r => r.getData().name === name);
                     if (row) row.delete();
-                },
-
-                clearAll() {
-                    if (confirm('Are you sure you want to remove all foods from your list?')) {
-                        this.storedFoods = {};
-                        this.saveStoredFoods();
-                        this.diets.forEach(diet => { diet.foods = []; });
-                        this.saveDiets();
-                        this.trackedFoods = [];
-                        if (this.foodTable) this.foodTable.setData([]);
-                    }
                 },
 
                 addNutrientColumn(nutrient) {
@@ -974,7 +909,6 @@
                     this.saveStoredFoods();
                     
                     if (this.addFoodContext === 'diet' && this.selectedDiet) this.addFoodToDiet(name);
-                    if (this.addFoodContext === 'tracker') this.addTrackedFood(name);
                     
                     this.searchQuery = '';
                     this.isAddingFood = false;
@@ -986,12 +920,6 @@
                             this.removeFoodFromDiet(food.name);
                         } else {
                             this.addFoodToDiet(food.name);
-                        }
-                    } else if (this.addFoodContext === 'tracker') {
-                        if (this.trackedFoods.some(f => f.foodName === food.name)) {
-                            this.removeTrackedFood(food.name);
-                        } else {
-                            this.addTrackedFood(food.name);
                         }
                     } else {
                         if (this.storedFoods[food.name]) {
@@ -1015,25 +943,6 @@
                 openAddFoodModal() { this.resetFoodModal(); this.isAddingFood = true; this.addFoodContext = null; },
                 openAddNutrientModal() { this.nutrientSearchQuery = ''; this.isAddingColumn = true; },
                 
-                // Tracker methods
-                addTrackedFood(foodName) {
-                    const existingIndex = this.trackedFoods.findIndex(f => f.foodName === foodName);
-                    if (existingIndex >= 0) {
-                        this.trackedFoods[existingIndex].quantity += 100;
-                    } else {
-                        this.trackedFoods.push({ foodName, quantity: 100 });
-                    }
-                },
-                
-                removeTrackedFood(foodName) { this.trackedFoods = this.trackedFoods.filter(f => f.foodName !== foodName); },
-                
-                calculateDailyIntake(nutrient) {
-                    return this.trackedFoods.reduce((total, foodItem) => {
-                        const food = this.storedFoods[foodItem.foodName];
-                        return food && food[nutrient] ? total + (food[nutrient] * foodItem.quantity) / 100 : total;
-                    }, 0);
-                },
-
                 renderPieChart(title, data, labels) {
                     if (this['pieChart']) this['pieChart'].destroy();
                     const ctx = document.getElementById('pieChart').getContext('2d');
