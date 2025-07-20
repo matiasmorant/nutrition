@@ -1108,7 +1108,7 @@
                         if (otherTotal > 0) { values.push(otherTotal); labels.push('Other'); }
                         
                         const title = `Nutrient Breakdown: ${foodItem.quantity}g of ${foodName}`;
-                        this.renderPieChart(title, values, labels.map((x,i)=>`${values[i].tofixed(0)}% ${x}`));
+                        this.renderPieChart(title, values, labels.map((x,i)=>`${values[i].toFixed(0)}% ${x}`));
                     });
                 },
                 
