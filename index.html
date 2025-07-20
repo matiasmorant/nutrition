@@ -927,34 +927,22 @@
                     }
                     
                     try {
-                        const lockedFoods = this.selectedDiet.foods.filter(f => f.locked);
-                        const unlockedFoodItems = this.selectedDiet.foods.filter(f => !f.locked);
-                        const unlockedFoods = unlockedFoodItems.map(item => this.storedFoods[item.foodName]).filter(Boolean);
+                        const dietFoods=this.selectedDiet.foods.map(x=>{return{...x, nutrients:this.storedFoods[x.foodName]}});
+                        const locked = dietFoods.filter(f => f.locked);
+                        const unlocked = dietFoods.filter(f => !f.locked);
                         
-                        if (unlockedFoods.length === 0) {
-                            alert("No unlocked foods to optimize.");
-                            return;
-                        }
+                        if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
 
-                        const lockedNutrients = math.zeros(nutrients.length).toArray();
-                        nutrients.forEach((nutrient, i) => {
-                            lockedFoods.forEach(foodItem => {
-                                const food = this.storedFoods[foodItem.foodName];
-                                if (food) lockedNutrients[i] += (food[nutrient] || 0) / 100 * foodItem.quantity;
-                            });
-                        });
-                        
-                        const A = unlockedFoods.map(food => 
-                            nutrients.map(nutrient => (food[nutrient] || 0) / 100)
+                        const lockedNutrients = nutrients.map(nutrient => locked.reduce((sum, food) => 
+                            sum + ((food[nutrient] || 0) * food.quantity) / 100
+                        ,0));                        
+                        const A = nutrients.map(nutrient => 
+                            unlocked.map(food => (food[nutrient] || 0) / 100 /this.nutrientTargets[nutrient]))
                         );
-                        
-                        const b = nutrients.map((nutrient, i) => this.nutrientTargets[nutrient] - lockedNutrients[i]);
-                        
-                        const x = math.lusolve(math.multiply(math.transpose(A), A), math.multiply(math.transpose(A), b));
-                        
-                        const solution = x.flat();
+                        const b = nutrients.map((nutrient, i) => 1-lockedNutrients[i]/this.nutrientTargets[nutrient]);
+                        const solution = math.multiply(math.pinv(A), b).flat();
                         unlockedFoodItems.forEach((foodItem, i) => {
-                            foodItem.quantity = Math.round(Math.max(0, solution[i]));
+                            foodItem.quantity = Math.round(Math.max(0, solution[i])*10)/10;
                         });
                         
                         this.saveDiets();
