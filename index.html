@@ -157,9 +157,8 @@
         }
         .max-w-name {
             max-width: 150px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal;
+            word-wrap: break-word;
             display: inline-block;
         }
         .timeframe-selector {
@@ -206,7 +205,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.5</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.6</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -540,23 +539,13 @@
         </div>
     </div>
 
-    <div x-show="showNutrientChart" @keydown.escape.window="showNutrientChart = false" 
+    <div x-show="isChartModalVisible" @keydown.escape.window="isChartModalVisible = false" 
          class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-        <div @click.outside="showNutrientChart=false" class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+        <div @click.outside="isChartModalVisible=false" class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
             <div class="chart-container">
-                <canvas id="nutrientChart"></canvas>
+                <canvas id="pieChart"></canvas>
             </div>
-            <button @click="showNutrientChart = false" class="mt-4 blue-btn w-full">Close</button>
-        </div>
-    </div>
-
-    <div x-show="showFoodChart" @keydown.escape.window="showFoodChart = false" 
-         class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-        <div @click.outside="showFoodChart=false" class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
-            <div class="chart-container">
-                <canvas id="foodChart"></canvas>
-            </div>
-            <button @click="showFoodChart = false" class="mt-4 blue-btn w-full">Close</button>
+            <button @click="isChartModalVisible = false" class="mt-4 blue-btn w-full">Close</button>
         </div>
     </div>
 
@@ -619,12 +608,8 @@
                 trackedFoods: [],
                 
                 // Chart state
-                showNutrientChart: false,
-                selectedNutrient: '',
-                nutrientChart: null,
-                showFoodChart: false,
-                selectedFood: '',
-                foodChart: null,
+                isChartModalVisible: false,
+                pieChart: null,
 
                 // Suggest Food state
                 showSuggestModal: false,
@@ -1076,8 +1061,7 @@
                 },
 
                 showNutrientContribution(nutrient) {
-                    this.selectedNutrient = nutrient;
-                    this.showNutrientChart = true;
+                    this.isChartModalVisible = true;
                     
                     this.$nextTick(() => {
                         const contributions = [], labels = [];
@@ -1097,13 +1081,12 @@
                         });
                         if (otherTotal > 0) { contributions.push(otherTotal); labels.push('Other'); }
                         
-                        this.renderPieChart('nutrientChart', 'nutrientChart', `Contribution to ${nutrient}`, contributions, labels);
+                        this.renderPieChart('pieChart', 'pieChart', `Contribution to ${nutrient}`, contributions, labels);
                     });
                 },
                 
                 showFoodContribution(foodName) {
-                    this.selectedFood = foodName;
-                    this.showFoodChart = true;
+                    this.isChartModalVisible = true;
                     
                     this.$nextTick(() => {
                         const food = this.storedFoods[foodName];
@@ -1117,7 +1100,7 @@
                         });
                         
                         const title = `Nutrient Breakdown: ${foodItem.quantity}g of ${foodName}`;
-                        this.renderPieChart('foodChart', 'foodChart', title, values, labels);
+                        this.renderPieChart('pieChart', 'pieChart', title, values, labels);
                     });
                 },
                 
