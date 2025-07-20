@@ -1103,7 +1103,7 @@
                                 if (value < threshold) {otherTotal += value; }
                                 else { values.push(value); labels.push(nutrient); }
                             }
-                        );
+                        });
                         if (otherTotal > 0) { values.push(otherTotal); labels.push('Other'); }
                         
                         const title = `Nutrient Breakdown: ${foodItem.quantity}g of ${foodName}`;
