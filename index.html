@@ -1033,13 +1033,13 @@
                     }, 0);
                 },
 
-                renderPieChart(canvasId, chartInstanceRef, title, data, labels) {
-                    if (this[chartInstanceRef]) this[chartInstanceRef].destroy();
-                    const ctx = document.getElementById(canvasId).getContext('2d');
+                renderPieChart(title, data, labels) {
+                    if (this['pieChart']) this['pieChart'].destroy();
+                    const ctx = document.getElementById('pieChart').getContext('2d');
                     
                     const combined = data.map((value, i) => ({ value, label: labels[i] })).sort((a, b) => b.value - a.value);
 
-                    this[chartInstanceRef] = new Chart(ctx, {
+                    this['pieChart'] = new Chart(ctx, {
                         type: 'pie',
                         data: {
                             labels: combined.map(item => item.label),
@@ -1081,7 +1081,7 @@
                         });
                         if (otherTotal > 0) { contributions.push(otherTotal); labels.push('Other'); }
                         
-                        this.renderPieChart('pieChart', 'pieChart', `Contribution to ${nutrient}`, contributions, labels);
+                        this.renderPieChart(`Contribution to ${nutrient}`, contributions, labels);
                     });
                 },
                 
@@ -1095,12 +1095,12 @@
 
                         const values = [], labels = [];
                         this.displayHeaders.filter(h => h !== 'name' && food[h] > 0).forEach(nutrient => {
-                            const value = (food[nutrient] || 0) * foodItem.quantity / 100;
+                            const value = (food[nutrient] || 0) * foodItem.quantity / 100 / this.calculateNutrientTotal(nutrient);
                             if (value > 0) { values.push(value); labels.push(nutrient); }
                         });
                         
                         const title = `Nutrient Breakdown: ${foodItem.quantity}g of ${foodName}`;
-                        this.renderPieChart('pieChart', 'pieChart', title, values, labels);
+                        this.renderPieChart(title, values, labels);
                     });
                 },
                 
