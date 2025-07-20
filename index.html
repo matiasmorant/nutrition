@@ -929,7 +929,8 @@
                         const b = nutrients.map((nutrient, i) => 1-lockedNutrients[i]/this.nutrientTargets[nutrient]);
                         const solution = math.multiply(math.pinv(A), b).flat();
                         unlocked.forEach((food, i) => {
-                            food.quantity = Math.round(Math.max(0, solution[i])*10)/10;
+                            const s = Math.max(0, solution[i]);
+                            food.quantity = s<1?s:(s<10?Math.round(s*10)/10:Math.round(s));
                         });
                         
                         this.saveDiets();
@@ -1125,9 +1126,10 @@
                             const F = nutrients.map(nutrient => (food[nutrient] || 0) / 100);
                             const mF = math.mean(F), mF2 = math.mean(math.dotPow(F, 2)), mFD = math.mean(math.dotMultiply(F, D));
                             const denominator = mF2 * mD2 - mFD**2;
-                            const optimalAmount = (mF * mD2 - mD * mFD) * denominator;
+                            const optimalAmount = (mF * mD2 - mD * mFD) * denominator; // only sign matters
+                            const dietAmount = (mD * mF2 - mF * mFD) * denominator;
                             const score = (optimalAmount > 0 && denominator !== 0) ? (mF2 * mD**2 + mD2 * mF**2 - 2 * mFD * mF * mD) / denominator : -Infinity;
-                            return { food, score };
+                            return { food, score, dietAmount};
                         });
 
                     foodScores.sort((a, b) => b.score - a.score);
