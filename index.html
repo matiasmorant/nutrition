@@ -927,25 +927,45 @@
                     }
                     
                     try {
-                        const dietFoods=this.selectedDiet.foods.map(x=>{return{...x, nutrients:this.storedFoods[x.foodName]}});
+                        const dietFoods=this.selectedDiet.foods;
                         const locked = dietFoods.filter(f => f.locked);
                         const unlocked = dietFoods.filter(f => !f.locked);
+                        const nutrientData=Object.fromEntries(dietFood.map(x=>[x.foodName,this.storedFoods[x.foodName]]));
+                        const getA=(food,nutrient)=>(nutrientData[food.foodName][nutrient] || 0) / 100;
                         
                         if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
 
                         const lockedNutrients = nutrients.map(nutrient => locked.reduce((sum, food) => 
-                            sum + ((food[nutrient] || 0) * food.quantity) / 100
+                            sum + (getA(food,nutrient) * food.quantity)
                         ,0));                        
                         const A = nutrients.map(nutrient => 
-                            unlocked.map(food => (food[nutrient] || 0) / 100 /this.nutrientTargets[nutrient]))
+                            unlocked.map(food => (getA(food,nutrient) /this.nutrientTargets[nutrient]))
                         );
                         const b = nutrients.map((nutrient, i) => 1-lockedNutrients[i]/this.nutrientTargets[nutrient]);
                         const solution = math.multiply(math.pinv(A), b).flat();
-                        unlockedFoodItems.forEach((foodItem, i) => {
-                            foodItem.quantity = Math.round(Math.max(0, solution[i])*10)/10;
+                        unlocked.forEach((food, i) => {
+                            food.quantity = Math.round(Math.max(0, solution[i])*10)/10;
                         });
                         
                         this.saveDiets();
+                        if(solution.some(x=>x<0)){
+                            let unlockedIndex = 0;
+                            const foodsToLock = [];
+                            
+                            for (let i = 0; i < this.selectedDiet.foods.length; i++) {
+                                const foodItem = this.selectedDiet.foods[i];
+                                if (!foodItem.locked) {
+                                    if (solution[unlockedIndex] < 0) {
+                                        foodsToLock.push(i);
+                                        foodItem.locked = true;
+                                    }
+                                    unlockedIndex++;
+                                }
+                            }
+                            
+                            this.optimizeDiet();
+                            
+                            foodsToLock.forEach(i => {this.selectedDiet.foods[i].locked = false;});
                     } catch (error) {
                         console.error("Optimization error:", error);
                         alert("Failed to optimize diet. The combination of foods and targets may not be solvable.");
