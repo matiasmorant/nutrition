@@ -1053,7 +1053,7 @@
                             maintainAspectRatio: false,
                             plugins: {
                                 title: { display: true, text: title, font: { size: 16 } },
-                                tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed.toFixed(2)}` } },
+                                tooltip: { callbacks: { label: ctx => ctx.label } },
                                 legend: { position: 'bottom', align: 'start' }
                             }
                         }
