@@ -206,7 +206,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.4</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.5</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -229,12 +229,12 @@
                      </div>
                 </div>
 
-                <div id="food-table-container" class="mt-4 bg-white rounded-lg shadow" x-show="storedFoods.length > 0"></div>
+                <div id="food-table-container" class="mt-4 bg-white rounded-lg shadow" x-show="Object.keys(storedFoods).length > 0"></div>
 
-                <div id="table-placeholder" class="text-center p-8 text-gray-500" x-show="storedFoods.length === 0">
+                <div id="table-placeholder" class="text-center p-8 text-gray-500" x-show="Object.keys(storedFoods).length === 0">
                     <p>Your added foods will appear here.</p>
                 </div>
-                <button @click="clearAll()" class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" :disabled="storedFoods.length === 0">Clear All Foods</button>
+                <button @click="clearAll()" class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" :disabled="Object.keys(storedFoods).length === 0">Clear All Foods</button>
             </div>
         </div>
 
@@ -484,7 +484,7 @@
                                         (selectedDiet && selectedDiet.foods.some(f => f.foodName === food.name)) :
                                         (addFoodContext === 'tracker' ? 
                                             trackedFoods.some(f => f.foodName === food.name) :
-                                            storedFoods.some(f => f.name === food.name))"
+                                            !!storedFoods[food.name])"
                                     @change="toggleFoodSelection(food)"
                                     class="mr-3"
                                 >
@@ -591,7 +591,7 @@
             return {
                 // --- STATE ---
                 allFoods: [],
-                storedFoods: [],
+                storedFoods: {},
                 nutrientHeaders: [],
                 nutrientTreeNames: [],
                 displayHeaders: ['name'],
@@ -648,15 +648,28 @@
                 // --- METHODS ---
                 async init() {
                     this.defaultNutrientTargets = {};
-                    this.storedFoods = JSON.parse(localStorage.getItem('storedFoods')) || [];
+                    
+                    let storedData = JSON.parse(localStorage.getItem('storedFoods'));
+                    if (Array.isArray(storedData)) {
+                        this.storedFoods = storedData.reduce((obj, food) => {
+                            if (food && food.name) obj[food.name] = food;
+                            return obj;
+                        }, {});
+                    } else {
+                        this.storedFoods = storedData || {};
+                    }
+
                     this.diets = JSON.parse(localStorage.getItem('diets')) || [];
                     this.trackedFoods = JSON.parse(localStorage.getItem('trackedFoods')) || [];
                     this.isLoading = true;
                     await Promise.all([this.loadNutrientTree(), this.loadFoodData()]);
                     this.isLoading = false;
                     
-                    if (this.storedFoods.length === 0 && this.allFoods.length > 0) {
-                        this.storedFoods = this.allFoods;
+                    if (Object.keys(this.storedFoods).length === 0 && this.allFoods.length > 0) {
+                        this.storedFoods = this.allFoods.reduce((obj, food) => {
+                            if (food && food.name) obj[food.name] = food;
+                            return obj;
+                        }, {});
                         this.saveStoredFoods();
                     }
                     
@@ -688,7 +701,7 @@
 
                     this.displayHeaders.forEach(header => {
                         if (header === 'name') {
-                            columns.push({ title: "Name", field: "name", editor: "input", width: 250, frozen: true });
+                            columns.push({ title: "Name", field: "name", width: 250, frozen: true });
                         } else {
                             columns.push({
                                 title: header,
@@ -707,14 +720,15 @@
                     });
 
                     this.foodTable = new Tabulator("#food-table-container", {
-                        data: this.storedFoods,
+                        data: Object.values(this.storedFoods),
                         columns: columns,
                         layout: "fitDataStretch",
                         height: "500px",
-                        reactiveData: true,
                         cellEdited: (cell) => this.saveStoredFoods(),
                         rowDeleted: (row) => {
                             const deletedFoodName = row.getData().name;
+                            delete this.storedFoods[deletedFoodName];
+                            
                             this.diets.forEach(diet => {
                                 diet.foods = diet.foods.filter(item => item.foodName !== deletedFoodName);
                             });
@@ -793,7 +807,7 @@
                 },
 
                 searchFoods() {
-                    const source = this.addFoodContext === 'diet' || this.addFoodContext === 'tracker' ? this.storedFoods : this.allFoods;
+                    const source = this.addFoodContext === 'diet' || this.addFoodContext === 'tracker' ? Object.values(this.storedFoods) : this.allFoods;
                     if (this.searchQuery === '') {
                         this.searchResults = source;
                     } else {
@@ -804,7 +818,8 @@
                 },
 
                 addFood(foodObject) {
-                    if (this.storedFoods.some(food => food.name === foodObject.name)) return;
+                    if (this.storedFoods[foodObject.name]) return;
+                    this.storedFoods[foodObject.name] = foodObject;
                     this.foodTable.addRow(foodObject);
                     this.saveStoredFoods();
                 },
@@ -816,12 +831,12 @@
 
                 clearAll() {
                     if (confirm('Are you sure you want to remove all foods from your list?')) {
-                        this.storedFoods = [];
+                        this.storedFoods = {};
                         this.saveStoredFoods();
                         this.diets.forEach(diet => { diet.foods = []; });
                         this.saveDiets();
                         this.trackedFoods = [];
-                        if (this.foodTable) this.foodTable.clearData();
+                        if (this.foodTable) this.foodTable.setData([]);
                     }
                 },
 
@@ -885,7 +900,7 @@
                 calculateNutrientTotal(nutrient) {
                     if (!this.selectedDiet) return 0;
                     return this.selectedDiet.foods.reduce((total, foodItem) => {
-                        const food = this.storedFoods.find(f => f.name === foodItem.foodName);
+                        const food = this.storedFoods[foodItem.foodName];
                         if (food && food[nutrient] !== undefined) {
                             return total + (food[nutrient] * foodItem.quantity) / 100;
                         }
@@ -914,7 +929,7 @@
                     try {
                         const lockedFoods = this.selectedDiet.foods.filter(f => f.locked);
                         const unlockedFoodItems = this.selectedDiet.foods.filter(f => !f.locked);
-                        const unlockedFoods = unlockedFoodItems.map(item => this.storedFoods.find(f => f.name === item.foodName)).filter(Boolean);
+                        const unlockedFoods = unlockedFoodItems.map(item => this.storedFoods[item.foodName]).filter(Boolean);
                         
                         if (unlockedFoods.length === 0) {
                             alert("No unlocked foods to optimize.");
@@ -924,7 +939,7 @@
                         const lockedNutrients = math.zeros(nutrients.length).toArray();
                         nutrients.forEach((nutrient, i) => {
                             lockedFoods.forEach(foodItem => {
-                                const food = this.storedFoods.find(f => f.name === foodItem.foodName);
+                                const food = this.storedFoods[foodItem.foodName];
                                 if (food) lockedNutrients[i] += (food[nutrient] || 0) / 100 * foodItem.quantity;
                             });
                         });
@@ -952,13 +967,14 @@
                 createNewFoodFromSearch() {
                     const name = this.searchQuery.trim();
                     if (!name) return alert('Please enter a food name');
-                    if (this.storedFoods.some(food => food.name.toLowerCase() === name.toLowerCase())) return alert('A food with this name already exists.');
+                    if (Object.keys(this.storedFoods).some(key => key.toLowerCase() === name.toLowerCase())) return alert('A food with this name already exists.');
                     
                     const newFood = { name };
                     this.nutrientHeaders.forEach(header => {
                         if (header !== 'name') newFood[header] = 0;
                     });
                     
+                    this.storedFoods[name] = newFood;
                     this.foodTable.addRow(newFood, true);
                     this.saveStoredFoods();
                     
@@ -983,7 +999,7 @@
                             this.addTrackedFood(food.name);
                         }
                     } else {
-                        if (this.storedFoods.some(f => f.name === food.name)) {
+                        if (this.storedFoods[food.name]) {
                             this.removeFood(food.name);
                         } else {
                             this.addFood(food);
@@ -1018,7 +1034,7 @@
                 
                 calculateDailyIntake(nutrient) {
                     return this.trackedFoods.reduce((total, foodItem) => {
-                        const food = this.storedFoods.find(f => f.name === foodItem.foodName);
+                        const food = this.storedFoods[foodItem.foodName];
                         return food && food[nutrient] ? total + (food[nutrient] * foodItem.quantity) / 100 : total;
                     }, 0);
                 },
@@ -1061,7 +1077,7 @@
                         const threshold = nutrientTotal * 0.05;
 
                         this.selectedDiet.foods.forEach(foodItem => {
-                            const food = this.storedFoods.find(f => f.name === foodItem.foodName);
+                            const food = this.storedFoods[foodItem.foodName];
                             if (food && food[nutrient]) {
                                 const contribution = (food[nutrient] * foodItem.quantity) / 100;
                                 if (contribution > 0) {
@@ -1081,7 +1097,7 @@
                     this.showFoodChart = true;
                     
                     this.$nextTick(() => {
-                        const food = this.storedFoods.find(f => f.name === foodName);
+                        const food = this.storedFoods[foodName];
                         const foodItem = this.selectedDiet.foods.find(f => f.foodName === foodName);
                         if (!food || !foodItem) return;
 
@@ -1132,7 +1148,8 @@
                 },
                 
                 addSuggestedFood(food) {
-                    if (!this.storedFoods.some(f => f.name === food.name)) {
+                    if (!this.storedFoods[food.name]) {
+                        this.storedFoods[food.name] = food;
                         this.foodTable.addRow(food);
                         this.saveStoredFoods();
                     }
