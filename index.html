@@ -1081,7 +1081,7 @@
                         });
                         if (otherTotal > 0) { contributions.push(otherTotal); labels.push('Other'); }
                         
-                        this.renderPieChart(`Contribution to ${nutrient}`, contributions, labels);
+                        this.renderPieChart(`Contribution to ${nutrient}`, contributions, labels.map((x,i)=>`${contributions[i].toFixed(0)} ${x}`));
                     });
                 },
                 
@@ -1107,7 +1107,7 @@
                         if (otherTotal > 0) { values.push(otherTotal); labels.push('Other'); }
                         
                         const title = `Nutrient Breakdown: ${foodItem.quantity}g of ${foodName}`;
-                        this.renderPieChart(title, values, labels);
+                        this.renderPieChart(title, values, labels.map((x,i)=>`${values[i].tofixed(0)}% ${x}`));
                     });
                 },
                 
