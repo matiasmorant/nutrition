@@ -179,22 +179,33 @@
             word-wrap: break-word;
             display: inline-block;
         }
+       .pill-group {
+            display: inline-flex;
+            background: #f1f5f9;
+            border-radius: 50px;
+        }
         .timeframe-selector {
             display: flex;
             align-items: center;
+            justify-content: flex-end;
             gap: 10px;
             margin-bottom: 15px;
         }
-        .timeframe-btn {
+        .pill-btn {
             padding: 5px 10px;
-            border-radius: 5px;
             cursor: pointer;
             border: 1px solid #d1d5db;
         }
-        .timeframe-btn.active {
+        .pill-btn.active {
             background-color: #3b82f6;
             color: white;
             border-color: #3b82f6;
+        }
+        .pill-btn:first-child {
+            border-radius: 50px 0 0 50px;
+        }
+        .pill-btn:last-child {
+            border-radius: 0 50px 50px 0;
         }
         /* Tabulator custom styles */
         .tabulator {
@@ -330,10 +341,12 @@
                 </div>
                 
                 <div class="timeframe-selector mb-6">
-                    <span class="text-sm font-medium text-gray-700">Timeframe:</span>
-                    <button @click="dietTimeframe = 'day'" :class="{'timeframe-btn': true, 'active': dietTimeframe === 'day'}">Day</button>
-                    <button @click="dietTimeframe = 'week'" :class="{'timeframe-btn': true, 'active': dietTimeframe === 'week'}">Week</button>
-                    <button @click="dietTimeframe = 'month'" :class="{'timeframe-btn': true, 'active': dietTimeframe === 'month'}">Month</button>
+                    <span class="text-sm font-medium text-gray-700">Per</span>
+                    <div class="pill-group">
+                        <button @click="dietTimeframe = 'day'" :class="{'pill-btn': true, 'active': dietTimeframe === 'day'}">Day</button>
+                        <button @click="dietTimeframe = 'week'" :class="{'pill-btn': true, 'active': dietTimeframe === 'week'}">Week</button>
+                        <button @click="dietTimeframe = 'month'" :class="{'pill-btn': true, 'active': dietTimeframe === 'month'}">Month</button>
+                    </div>
                 </div>
                 
                 <div class="mb-6">
