@@ -411,14 +411,14 @@
                                             <td x-text="calculateNutrientTotal(nutrient).toFixed(2)"></td>
                                             <td>
                                                 <span x-text="calculateNutrientPercentage(nutrient).toFixed(0) + '%'"></span>
-                                                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1" x-show="nutrientTargets[nutrient] > 0">
+                                                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
                                                     <div class="bg-blue-600 h-2.5 rounded-full" 
                                                         :style="'width: ' + Math.min(100, calculateNutrientPercentage(nutrient)) + '%'"
                                                         :class="{
-                                                            'bg-green-600': calculateNutrientPercentage(nutrient) >= 100,
-                                                            'bg-yellow-400': calculateNutrientPercentage(nutrient) >= 75 && calculateNutrientPercentage(nutrient) < 100,
-                                                            'bg-orange-500': calculateNutrientPercentage(nutrient) >= 50 && calculateNutrientPercentage(nutrient) < 75,
-                                                            'bg-red-500': calculateNutrientPercentage(nutrient) < 50
+                                                            'bg-green-600' : calculateNutrientPercentage(nutrient) >= 100 && calculateNutrientPercentage(nutrient) < 110,
+                                                            'bg-yellow-400': (calculateNutrientPercentage(nutrient) >=  75 && calculateNutrientPercentage(nutrient) < 100) || (calculateNutrientPercentage(nutrient) >= 110 && calculateNutrientPercentage(nutrient) < 133),
+                                                            'bg-orange-500': (calculateNutrientPercentage(nutrient) >=  50 && calculateNutrientPercentage(nutrient) < 75)||(calculateNutrientPercentage(nutrient) >= 133 && calculateNutrientPercentage(nutrient) < 200),
+                                                            'bg-red-500': (calculateNutrientPercentage(nutrient) < 50) || (calculateNutrientPercentage(nutrient) >= 200)
                                                         }">
                                                     </div>
                                                 </div>
@@ -863,7 +863,7 @@
                 calculateNutrientPercentage(nutrient) {
                     const total = this.calculateNutrientTotal(nutrient);
                     const target = this.nutrientTargets[nutrient] || 0;
-                    return target <= 0 ? 0 : (total / target) * 100;
+                    return target <= 0 ? 100 : (total / target) * 100;
                 },
                 
                 optimizeDiet() {
@@ -883,6 +883,7 @@
                         const locked = dietFoods.filter(f => f.locked);
                         const unlocked = dietFoods.filter(f => !f.locked);
                         const nutrientData=Object.fromEntries(dietFoods.map(x=>[x.foodName,this.storedFoods[x.foodName]]));
+                        const targets = nutrients.map(x=>this.nutrientTargets[x]);
                         const getA=(food,nutrient)=>(nutrientData[food.foodName][nutrient] || 0) / 100;
                         
                         if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
@@ -890,10 +891,12 @@
                         const lockedNutrients = nutrients.map(nutrient => locked.reduce((sum, food) => 
                             sum + (getA(food,nutrient) * food.quantity)
                         ,0));                        
-                        const A = nutrients.map(nutrient => 
-                            unlocked.map(food => (getA(food,nutrient) /this.nutrientTargets[nutrient]))
-                        );
-                        const b = nutrients.map((nutrient, i) => 1-lockedNutrients[i]/this.nutrientTargets[nutrient]);
+                        const A = nutrients.map(nutrient => unlocked.map(food => (
+                            getA(food,nutrient) /(this.nutrientTargets[nutrient]>0?this.nutrientTargets[nutrient]:1)
+                        )));
+                        const b = nutrients.map((nutrient, i) => (
+                            this.nutrientTargets[nutrient]>0? 1-lockedNutrients[i]/this.nutrientTargets[nutrient]:-lockedNutrients[i]
+                        ));
                         const solution = math.multiply(math.pinv(A), b).flat();
                         unlocked.forEach((food, i) => {
                             const s = Math.max(0, solution[i]);
