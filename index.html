@@ -340,97 +340,97 @@
                     <input type="text" x-model="selectedDiet.name" class="text-xl font-medium border-b border-gray-300 focus:border-blue-500 focus:outline-none" placeholder="Diet name">
                 </div>
                 
-                <div class="timeframe-selector mb-6">
-                    <span class="text-l font-medium text-gray-700">Per</span>
-                    <div class="pill-group">
-                        <button @click="dietTimeframe = 'day'" :class="{'pill-btn': true, 'active': dietTimeframe === 'day'}">Day</button>
-                        <button @click="dietTimeframe = 'week'" :class="{'pill-btn': true, 'active': dietTimeframe === 'week'}">Week</button>
-                        <button @click="dietTimeframe = 'month'" :class="{'pill-btn': true, 'active': dietTimeframe === 'month'}">Month</button>
+                <div class="flex justify-center"> <div>
+                    <div class="timeframe-selector mb-6">
+                        <span class="text-l font-medium text-gray-700">Per</span>
+                        <div class="pill-group">
+                            <button @click="dietTimeframe = 'day'" :class="{'pill-btn': true, 'active': dietTimeframe === 'day'}">Day</button>
+                            <button @click="dietTimeframe = 'week'" :class="{'pill-btn': true, 'active': dietTimeframe === 'week'}">Week</button>
+                            <button @click="dietTimeframe = 'month'" :class="{'pill-btn': true, 'active': dietTimeframe === 'month'}">Month</button>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="mb-6">
-                    <h4 class="text-lg font-medium mb-4">Diet Foods</h4>
-                    <div id="diet-foods-list" class="grid grid-cols-1 gap-y-4 mb-8">
-                        <template x-if="selectedDiet.foods.length === 0">
-                            <p class="text-gray-500">No foods added to this diet yet.</p>
-                        </template>
-                        <template x-for="(foodItem, index) in selectedDiet.foods" :key="index">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <span @click="removeFoodFromDiet(foodItem.foodName)" class="remove-icon">&times;</span>
-                                    <span @click="showFoodContribution(foodItem.foodName)" 
-                                          class="text-sm font-medium max-w-name cursor-pointer hover:text-blue-600" 
-                                          x-text="foodItem.foodName"></span>
+                    <div class="mb-6 max-w-xl">
+                        <h4 class="text-lg font-medium mb-4">Diet Foods</h4>
+                        <div id="diet-foods-list" class="grid grid-cols-1 gap-y-4 mb-8">
+                            <template x-if="selectedDiet.foods.length === 0">
+                                <p class="text-gray-500">No foods added to this diet yet.</p>
+                            </template>
+                            <template x-for="(foodItem, index) in selectedDiet.foods" :key="index">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <span @click="removeFoodFromDiet(foodItem.foodName)" class="remove-icon">&times;</span>
+                                        <span @click="showFoodContribution(foodItem.foodName)" 
+                                              class="text-sm font-medium max-w-name cursor-pointer hover:text-blue-600" 
+                                              x-text="foodItem.foodName"></span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" 
+                                               :value="foodItem.quantity * factor" 
+                                               @input="foodItem.quantity = parseFloat($event.target.value) / factor || 0"
+                                               min="0" 
+                                               step="1" 
+                                               :disabled="foodItem.locked"
+                                               class="w-14 p-2 border rounded-md text-sm quantity-input" 
+                                               placeholder="Quantity">
+                                        <span>g</span>
+                                        <i 
+                                            :class="{
+                                                'fa-solid': true,
+                                                'fa-lock': foodItem.locked,
+                                                'fa-lock-open': !foodItem.locked,
+                                                'lock-icon': true,
+                                                'locked': foodItem.locked
+                                            }" 
+                                            @click="foodItem.locked = !foodItem.locked; saveDiets()"
+                                            title="Lock quantity for optimization"
+                                        ></i>
+                                    </div>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <input type="number" 
-                                           :value="foodItem.quantity * factor" 
-                                           @input="foodItem.quantity = parseFloat($event.target.value) / factor || 0"
-                                           min="0" 
-                                           step="1" 
-                                           :disabled="foodItem.locked"
-                                           class="w-14 p-2 border rounded-md text-sm quantity-input" 
-                                           placeholder="Quantity">
-                                    <span>grams</span>
-                                    <i 
-                                        :class="{
-                                            'fa-solid': true,
-                                            'fa-lock': foodItem.locked,
-                                            'fa-lock-open': !foodItem.locked,
-                                            'lock-icon': true,
-                                            'locked': foodItem.locked
-                                        }" 
-                                        @click="foodItem.locked = !foodItem.locked; saveDiets()"
-                                        title="Lock quantity for optimization"
-                                    ></i>
-                                </div>
-                            </div>
-                        </template>
+                            </template>
+                        </div>
+                        <div class="mt-4 flex justify-end gap-2">
+                            <button @click="isAddingFood = true; addFoodContext = 'diet'; resetFoodModal()" class="blue-btn">Add Food</button>
+                            <button @click="suggestFood()" class="blue-btn">Suggest Food</button>
+                            <button @click="optimizeDiet()" class="optimize-btn">Optimize</button>
+                        </div>
                     </div>
-                    <div class="mt-4 flex justify-end gap-2">
-                        <button @click="isAddingFood = true; addFoodContext = 'diet'; resetFoodModal()" class="blue-btn">Add Food</button>
-                        <button @click="suggestFood()" class="blue-btn">Suggest Food</button>
-                        <button @click="optimizeDiet()" class="optimize-btn">Optimize</button>
-                    </div>
-                </div>
-                
-                <div x-show="selectedDiet.foods.length > 0">
-                    <h4 class="text-lg font-medium mb-4">Nutrient Summary</h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full nutrient-table">
-                            <thead>
-                                <tr>
-                                    <th class="text-left">Nutrient</th>
-                                    <th>Total Amount</th>
-                                    <th>% of Target</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
+                    <div x-show="selectedDiet.foods.length > 0">
+                        <h4 class="text-lg font-medium mb-4">Nutrient Summary</h4>
+                        <div class="overflow-x-auto flex justify-center">
+                            <table class="w-full max-w-xl nutrient-table">
+                                <thead>
                                     <tr>
-                                        <td class="text-left nutrient-clickable max-w-name" @click="showNutrientContribution(nutrient)" x-text="nutrient"></td>
-                                        <td x-text="calculateNutrientTotal(nutrient).toFixed(2)"></td>
-                                        <td>
-                                            <span x-text="calculateNutrientPercentage(nutrient).toFixed(0) + '%'"></span>
-                                            <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1" x-show="nutrientTargets[nutrient] > 0">
-                                                <div class="bg-blue-600 h-2.5 rounded-full" 
-                                                    :style="'width: ' + Math.min(100, calculateNutrientPercentage(nutrient)) + '%'"
-                                                    :class="{
-                                                        'bg-green-600': calculateNutrientPercentage(nutrient) >= 100,
-                                                        'bg-yellow-400': calculateNutrientPercentage(nutrient) >= 75 && calculateNutrientPercentage(nutrient) < 100,
-                                                        'bg-orange-500': calculateNutrientPercentage(nutrient) >= 50 && calculateNutrientPercentage(nutrient) < 75,
-                                                        'bg-red-500': calculateNutrientPercentage(nutrient) < 50
-                                                    }">
-                                                </div>
-                                            </div>
-                                        </td>
+                                        <th class="text-left">Nutrient</th>
+                                        <th>Total Amount</th>
+                                        <th>% of Target</th>
                                     </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
+                                        <tr>
+                                            <td class="text-left nutrient-clickable max-w-name" @click="showNutrientContribution(nutrient)" x-text="nutrient"></td>
+                                            <td x-text="calculateNutrientTotal(nutrient).toFixed(2)"></td>
+                                            <td>
+                                                <span x-text="calculateNutrientPercentage(nutrient).toFixed(0) + '%'"></span>
+                                                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1" x-show="nutrientTargets[nutrient] > 0">
+                                                    <div class="bg-blue-600 h-2.5 rounded-full" 
+                                                        :style="'width: ' + Math.min(100, calculateNutrientPercentage(nutrient)) + '%'"
+                                                        :class="{
+                                                            'bg-green-600': calculateNutrientPercentage(nutrient) >= 100,
+                                                            'bg-yellow-400': calculateNutrientPercentage(nutrient) >= 75 && calculateNutrientPercentage(nutrient) < 100,
+                                                            'bg-orange-500': calculateNutrientPercentage(nutrient) >= 50 && calculateNutrientPercentage(nutrient) < 75,
+                                                            'bg-red-500': calculateNutrientPercentage(nutrient) < 50
+                                                        }">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                </div></div>
             </div>
         </div>
     </div>
