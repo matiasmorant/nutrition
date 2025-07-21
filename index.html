@@ -26,6 +26,17 @@
             font-family: 'Inter', sans-serif;
         }
         [x-cloak] { display: none !important; }
+        /*hide input arrows*/
+        /* Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        /* Firefox */
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
         .tab-btn.active {
             border-bottom-color: #3b82f6; /* blue-500 */
             color: #1e40af; /* blue-800 */
@@ -280,7 +291,7 @@
                             :id="`target-${nutrient}`" 
                             x-model.number="nutrientTargets[nutrient]" 
                             @change="saveTargets()"
-                            class="w-32 p-2 border rounded-md text-sm" 
+                            class="w-14 p-2 border rounded-md text-sm"
                             placeholder="0.00"
                         >
                     </div>
@@ -346,7 +357,7 @@
                                            min="0" 
                                            step="1" 
                                            :disabled="foodItem.locked"
-                                           class="w-24 p-2 border rounded-md text-sm quantity-input" 
+                                           class="w-14 p-2 border rounded-md text-sm quantity-input" 
                                            placeholder="Quantity">
                                     <span>grams</span>
                                     <i 
