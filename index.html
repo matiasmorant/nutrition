@@ -242,14 +242,14 @@
             line-height: 1.2;
             padding: 8px 5px;
         }
+        .nameColumnCell {
+            max-width: 300px;
+        }
+
         /* Reduce sticky column width on narrow screens */
         @media (max-width: 640px) {
-            .tabulator-col:first-child {
-                width: 30px !important;
-                min-width: 30px !important;
-            }
-            .tabulator-col[name="name"] {
-                max-width: 100px;
+            .nameColumnCell {
+                max-width: 150px;
             }
         }
     </style>
@@ -341,7 +341,7 @@
                 </div>
                 
                 <div class="timeframe-selector mb-6">
-                    <span class="text-sm font-medium text-gray-700">Per</span>
+                    <span class="text-l font-medium text-gray-700">Per</span>
                     <div class="pill-group">
                         <button @click="dietTimeframe = 'day'" :class="{'pill-btn': true, 'active': dietTimeframe === 'day'}">Day</button>
                         <button @click="dietTimeframe = 'week'" :class="{'pill-btn': true, 'active': dietTimeframe === 'week'}">Week</button>
@@ -659,7 +659,8 @@
                             columns.push({ 
                                 title: "Name", 
                                 field: "name", 
-                                width: 250, 
+                                cssClass: "nameColumnCell",
+                                resizable: false,
                                 frozen: true,
                                 headerWordWrap: true,
                             });
@@ -668,6 +669,7 @@
                                 title: header,
                                 field: header,
                                 editor: "number",
+                                resizable: false,
                                 editorParams: { step: 0.01 },
                                 sorter: "number",
                                 hozAlign: "right",
