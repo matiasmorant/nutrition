@@ -255,16 +255,18 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v3.1</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v3.2</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
-        <div class="border-b border-gray-200 mb-6">
-            <nav class="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto" aria-label="Tabs">
-                <button @click="activeTab = 'foods'" :class="{'active': activeTab === 'foods'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Foods</button>
-                <button @click="activeTab = 'targets'" :class="{'active': activeTab === 'targets'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Nutrient Targets</button>
-                <button @click="activeTab = 'diets'; selectedDiet = null" :class="{'active': activeTab === 'diets'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Diets</button>
-            </nav>
+        <div class="sticky top-0 z-10 bg-gray-50 pb-6">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto" aria-label="Tabs">
+                    <button @click="activeTab = 'foods'" :class="{'active': activeTab === 'foods'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Foods</button>
+                    <button @click="activeTab = 'targets'" :class="{'active': activeTab === 'targets'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Nutrient Targets</button>
+                    <button @click="activeTab = 'diets'; selectedDiet = null" :class="{'active': activeTab === 'diets'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Diets</button>
+                </nav>
+            </div>
         </div>
 
         <div id="content-foods" class="tab-content" x-show="activeTab === 'foods'">
@@ -577,6 +579,49 @@
         </div>
     </div>
 
+    <div x-show="isEditingFood" @keydown.escape.window="closeEditFoodModal()" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
+        <div @click.outside="closeEditFoodModal()" class="relative mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white">
+            <template x-if="editingFood">
+                <div class="mt-3">
+                    <h3 class="text-xl leading-6 font-medium text-gray-900 text-center mb-4" x-text="'Edit: ' + editingFood.name"></h3>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="flex flex-col">
+                            <div class="flex justify-between items-center mb-2">
+                                 <h4 class="font-semibold">Nutrients (per 100g)</h4>
+                                 <button @click="showZeroNutrientsInEdit = !showZeroNutrientsInEdit" class="text-sm text-blue-600 hover:underline">
+                                    <span x-show="showZeroNutrientsInEdit">Hide 0 values</span>
+                                    <span x-show="!showZeroNutrientsInEdit">Show 0 values</span>
+                                </button>
+                            </div>
+                            <div class="border rounded-md p-3 flex-grow max-h-96 overflow-y-auto">
+                                <template x-for="nutrient in nutrientHeaders.filter(n => n !== 'name' && (showZeroNutrientsInEdit || editingFood[n] > 0)).sort()" :key="nutrient">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label :for="'edit-nutrient-'+nutrient" class="text-sm font-medium text-gray-700 max-w-name" x-text="nutrient"></label>
+                                        <input type="number" step="any" min="0" :id="'edit-nutrient-'+nutrient" x-model.lazy="editingFood[nutrient]" class="w-24 p-1 border rounded-md text-sm text-right">
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+    
+                        <div class="flex flex-col">
+                            <h4 class="font-semibold text-center mb-2">% of Nutrient Targets</h4>
+                             <div class="chart-container w-full h-80 mx-auto" style="margin-top: 0; height: 100%;">
+                                <canvas id="editFoodPieChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <div class="items-center px-4 py-3 mt-4">
+                        <button @click="saveFoodEdits()" class="blue-btn w-full">
+                            Save and Close
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
     <script>
         function foodApp() {
             return {
@@ -610,6 +655,12 @@
                 // Chart state
                 isChartModalVisible: false,
                 pieChart: null,
+
+                // Edit Food Modal state
+                isEditingFood: false,
+                editingFood: null,
+                editFoodPieChartInstance: null,
+                showZeroNutrientsInEdit: true,
 
                 // Suggest Food state
                 showSuggestModal: false,
@@ -692,6 +743,11 @@
                     this.$watch('searchQuery', () => this.searchFoods());
                     this.$watch('nutrientTargets', () => this.saveTargets(), { deep: true });
                     this.$watch('foodTableFilter', () => this.updateFoodTableFilter());
+                    this.$watch('editingFood', (newValue) => {
+                        if (this.isEditingFood && newValue) {
+                            this.renderEditFoodPieChart();
+                        }
+                    }, { deep: true });
                 },
 
                 updateFoodTableFilter() {
@@ -720,10 +776,13 @@
                             columns.push({ 
                                 title: "Name", 
                                 field: "name", 
-                                cssClass: "nameColumnCell",
+                                cssClass: "nameColumnCell nutrient-clickable",
                                 resizable: false,
                                 frozen: true,
                                 headerWordWrap: true,
+                                cellClick: (e, cell) => {
+                                    this.openEditFoodModal(cell.getRow().getData());
+                                }
                             });
                         } else {
                             columns.push({
@@ -750,7 +809,11 @@
                         layout: "fitDataStretch",
                         height: "500px",
                         headerHeight: 50, // Increased height for wrapped headers
-                        cellEdited: (cell) => this.saveStoredFoods(),
+                        cellEdited: (cell) => {
+                            const foodData = cell.getRow().getData();
+                            this.storedFoods[foodData.name] = foodData;
+                            this.saveStoredFoods();
+                        },
                         rowDeleted: (row) => {
                             const deletedFoodName = row.getData().name;
                             delete this.storedFoods[deletedFoodName];
@@ -867,8 +930,9 @@
                 },
 
                 removeFood(name) {
+                    delete this.storedFoods[name];
                     const row = this.foodTable.getRows().find(r => r.getData().name === name);
-                    if (row) row.delete();
+                    if (row) row.delete(); // This will trigger rowDeleted callback
                 },
 
                 addNutrientColumn(nutrient) {
@@ -887,6 +951,12 @@
                 },
                 
                 saveStoredFoods() {
+                    // Get data directly from table to ensure it's the source of truth
+                    const tableData = this.foodTable.getData();
+                    this.storedFoods = tableData.reduce((obj, food) => {
+                        obj[food.name] = food;
+                        return obj;
+                    }, {});
                     localStorage.setItem('storedFoods', JSON.stringify(this.storedFoods));
                 },
 
@@ -1059,8 +1129,7 @@
                         if (header !== 'name') newFood[header] = 0;
                     });
                     
-                    this.storedFoods[name] = newFood;
-                    this.foodTable.addRow(newFood, true);
+                    this.addFood(newFood);
                     this.saveStoredFoods();
                     
                     if (this.addFoodContext === 'diet' && this.selectedDiet) this.addFoodToDiet(name);
@@ -1217,12 +1286,98 @@
                 
                 addSuggestedFood(food) {
                     if (!this.storedFoods[food.name]) {
-                        this.storedFoods[food.name] = food;
-                        this.foodTable.addRow(food);
+                        this.addFood(food);
                         this.saveStoredFoods();
                     }
                     this.addFoodToDiet(food.name);
                     this.showSuggestModal = false;
+                },
+
+                // Food Edit Modal Methods
+                openEditFoodModal(food) {
+                    this.editingFood = JSON.parse(JSON.stringify(food)); // Deep copy
+                    this.isEditingFood = true;
+                    this.$nextTick(() => {
+                        this.renderEditFoodPieChart();
+                    });
+                },
+
+                closeEditFoodModal() {
+                    this.isEditingFood = false;
+                    this.editingFood = null;
+                    if (this.editFoodPieChartInstance) {
+                        this.editFoodPieChartInstance.destroy();
+                        this.editFoodPieChartInstance = null;
+                    }
+                },
+
+                saveFoodEdits() {
+                    if (!this.editingFood) return;
+
+                    // The x-model.number and input type=number should handle this, but safeguard anyway
+                    for (const key in this.editingFood) {
+                        if (key !== 'name' && typeof this.editingFood[key] !== 'number') {
+                            this.editingFood[key] = parseFloat(this.editingFood[key]) || 0;
+                        }
+                    }
+
+                    this.storedFoods[this.editingFood.name] = this.editingFood;
+                    this.foodTable.updateData([this.editingFood]); // Update the row in the table
+                    this.saveStoredFoods();
+                    this.closeEditFoodModal();
+                },
+
+                renderEditFoodPieChart() {
+                    if (this.editFoodPieChartInstance) this.editFoodPieChartInstance.destroy();
+                    if (!this.editingFood) return;
+
+                    const food = this.editingFood;
+                    const labels = [];
+                    const data = [];
+                    
+                    this.displayHeaders.filter(h => h !== 'name').forEach(nutrient => {
+                        const target = this.getTarget(nutrient);
+                        if (target && target.min > 0) {
+                            const foodValue = food[nutrient] || 0;
+                            const percentage = (foodValue / target.min) * 100;
+                            if (percentage > 0.1) { // Only show meaningful percentages
+                                labels.push(`${nutrient}: ${percentage.toFixed(0)}%`);
+                                data.push(percentage);
+                            }
+                        }
+                    });
+                    
+                    const canvas = document.getElementById('editFoodPieChart');
+                    const ctx = canvas.getContext('2d');
+                    
+                    if (data.length === 0) {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.font = "16px Inter, sans-serif";
+                        ctx.fillStyle = "#6b7280";
+                        ctx.textAlign = "center";
+                        ctx.fillText("No target data to display.", canvas.width / 2, canvas.height / 2);
+                        return;
+                    }
+                    
+                    this.editFoodPieChartInstance = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8AC926', '#1982C4', '#F44336', '#E91E63', '#9C27B0', '#673AB7'].slice(0, data.length)
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: { display: true, text: '% of Nutrient Targets (per 100g)', font: { size: 14 } },
+                                legend: { display: false },
+                                tooltip: { callbacks: { label: ctx => ctx.label } }
+                            }
+                        }
+                    });
                 }
             }
         }
