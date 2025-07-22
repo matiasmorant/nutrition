@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Food Nutrient Finder</title>
-    <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3b82f6">
-    <!-- iOS PWA Support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/icon-192.png">
@@ -257,7 +255,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v2.9</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v3.0</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -650,11 +648,6 @@
                     this.initFoodTable();
 
                     // Initialize nutrient targets, migrating old format if necessary
-                    const defaultTargetsAsObjects = {};
-                    for (const key in this.defaultNutrientTargets) {
-                        defaultTargetsAsObjects[key] = { min: this.defaultNutrientTargets[key], max: null, show: 1 };
-                    }
-
                     const storedTargets = JSON.parse(localStorage.getItem('nutrientTargets')) || {};
                     const migratedTargets = {};
                     for (const key in storedTargets) {
@@ -671,7 +664,7 @@
                             };
                         }
                     }
-                    this.nutrientTargets = { ...defaultTargetsAsObjects, ...migratedTargets };
+                    this.nutrientTargets = { ...this.defaultNutrientTargets, ...migratedTargets };
                     this.saveTargets();
                     
                     this.$watch('searchQuery', () => this.searchFoods());
@@ -752,21 +745,36 @@
 
                         lines.forEach(line => {
                             const trimmedLine = line.trim();
+                            if (!trimmedLine) return; // Skip empty lines
+
+                            const parts = trimmedLine.split(/—/).map(part => part.trim());
+                            let nutrientName = parts[0];
+                            
+                            // Remove the '+' prefix if it exists
+                            if (nutrientName.startsWith('+')) {
+                                nutrientName = nutrientName.substring(1).trim();
+                            }
+
+                            allNutrients.push(nutrientName);
+
+                            // Only process for default targets if it's a '+' line
                             if (trimmedLine.startsWith('+')) {
-                                const content = trimmedLine.substring(1).trim();
-                                const parts = content.split(/—/).map(part => part.trim());
-                                let nutrientName = parts[0];
-                                let defaultValue = null;
+                                defaultDisplayNutrients.push(nutrientName);
+
                                 if (parts.length > 1) {
-                                    defaultValue = parseFloat(parts[1]);
-                                    if (!isNaN(defaultValue)) {
-                                        this.defaultNutrientTargets[nutrientName] = defaultValue;
+                                    const valuePart = parts[1];
+                                    if (valuePart.includes('–')) {
+                                        const range = valuePart.split(/–/).map(p => parseFloat(p.trim()));
+                                        if (range.length === 2 && !isNaN(range[0]) && !isNaN(range[1])) {
+                                            this.defaultNutrientTargets[nutrientName] = { min: range[0], max: range[1], show: 2 };
+                                        }
+                                    } else {
+                                        const defaultValue = parseFloat(valuePart);
+                                        if (!isNaN(defaultValue)) {
+                                            this.defaultNutrientTargets[nutrientName] = { min: defaultValue, max: null, show: 1 };
+                                        }
                                     }
                                 }
-                                defaultDisplayNutrients.push(nutrientName);
-                                allNutrients.push(nutrientName);
-                            } else if (trimmedLine) {
-                                allNutrients.push(trimmedLine);
                             }
                         });
                         
