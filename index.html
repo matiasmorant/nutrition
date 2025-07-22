@@ -255,7 +255,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v3.2</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v3.3</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -595,7 +595,7 @@
                                 </button>
                             </div>
                             <div class="border rounded-md p-3 flex-grow max-h-96 overflow-y-auto">
-                                <template x-for="nutrient in nutrientHeaders.filter(n => n !== 'name' && (showZeroNutrientsInEdit || editingFood[n] > 0)).sort()" :key="nutrient">
+                                <template x-for="nutrient in Object.keys(nutrientTargets).filter(n => nutrientTargets[n]?.min > 0 && (showZeroNutrientsInEdit || editingFood[n] > 0)).sort()" :key="nutrient">
                                     <div class="flex items-center justify-between mb-2">
                                         <label :for="'edit-nutrient-'+nutrient" class="text-sm font-medium text-gray-700 max-w-name" x-text="nutrient"></label>
                                         <input type="number" step="any" min="0" :id="'edit-nutrient-'+nutrient" x-model.lazy="editingFood[nutrient]" class="w-24 p-1 border rounded-md text-sm text-right">
@@ -660,7 +660,7 @@
                 isEditingFood: false,
                 editingFood: null,
                 editFoodPieChartInstance: null,
-                showZeroNutrientsInEdit: true,
+                showZeroNutrientsInEdit: false,
 
                 // Suggest Food state
                 showSuggestModal: false,
@@ -1332,20 +1332,24 @@
                     if (!this.editingFood) return;
 
                     const food = this.editingFood;
-                    const labels = [];
-                    const data = [];
+                    const chartItems = [];
                     
-                    this.displayHeaders.filter(h => h !== 'name').forEach(nutrient => {
+                    Object.keys(this.nutrientTargets).forEach(nutrient => {
                         const target = this.getTarget(nutrient);
                         if (target && target.min > 0) {
                             const foodValue = food[nutrient] || 0;
                             const percentage = (foodValue / target.min) * 100;
-                            if (percentage > 0.1) { // Only show meaningful percentages
-                                labels.push(`${nutrient}: ${percentage.toFixed(0)}%`);
-                                data.push(percentage);
+                            if (percentage > 0.1) {
+                                chartItems.push({ nutrient: nutrient, percentage: percentage });
                             }
                         }
                     });
+                    
+                    // Sort by percentage descending
+                    chartItems.sort((a, b) => b.percentage - a.percentage);
+
+                    const labels = chartItems.map(item => item.nutrient);
+                    const data = chartItems.map(item => item.percentage);
                     
                     const canvas = document.getElementById('editFoodPieChart');
                     const ctx = canvas.getContext('2d');
@@ -1373,8 +1377,16 @@
                             maintainAspectRatio: false,
                             plugins: {
                                 title: { display: true, text: '% of Nutrient Targets (per 100g)', font: { size: 14 } },
-                                legend: { display: false },
-                                tooltip: { callbacks: { label: ctx => ctx.label } }
+                                legend: { 
+                                    display: true,
+                                    position: 'right',
+                                    align: 'start'
+                                },
+                                tooltip: { 
+                                    callbacks: { 
+                                        label: ctx => `${ctx.label}: ${ctx.parsed.toFixed(0)}%`
+                                    } 
+                                }
                             }
                         }
                     });
