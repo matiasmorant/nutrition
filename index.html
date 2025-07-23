@@ -770,6 +770,7 @@
                         width: 40,
                         hozAlign: "center",
                         headerSort: false,
+                        resizable: false,
                         cellClick: (e, cell) => {
                             if (confirm('Are you sure you want to remove this food? This cannot be undone.')) {
                                 cell.getRow().delete();
