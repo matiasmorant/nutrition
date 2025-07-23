@@ -255,7 +255,7 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v3.3</sup></h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v3.4</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -1137,10 +1137,16 @@
                     this.addFood(newFood);
                     this.saveStoredFoods();
                     
-                    if (this.addFoodContext === 'diet' && this.selectedDiet) this.addFoodToDiet(name);
+                    if (this.addFoodContext === 'diet' && this.selectedDiet) {
+                        this.addFoodToDiet(name);
+                    }
                     
+                    this.isAddingFood = false; // Close the add food modal
+                    this.addFoodContext = null;
                     this.searchQuery = '';
-                    this.isAddingFood = false;
+                    
+                    this.showZeroNutrientsInEdit = true; // Set show 0 values to true
+                    this.openEditFoodModal(newFood); // Open the edit modal
                 },
 
                 toggleFoodSelection(food) {
@@ -1172,19 +1178,15 @@
                 openAddFoodModal() { this.resetFoodModal(); this.isAddingFood = true; this.addFoodContext = null; },
                 openAddNutrientModal() { this.nutrientSearchQuery = ''; this.isAddingColumn = true; },
                 
-                renderPieChart(title, data, labels) {
-                    if (this['pieChart']) this['pieChart'].destroy();
-                    const ctx = document.getElementById('pieChart').getContext('2d');
-                    
-                    const combined = data.map((value, i) => ({ value, label: labels[i] })).sort((a, b) => b.value - a.value);
-
-                    this['pieChart'] = new Chart(ctx, {
+                _createPieChart(canvasId, title, labels, data) {
+                    const ctx = document.getElementById(canvasId).getContext('2d');
+                    return new Chart(ctx, {
                         type: 'pie',
                         data: {
-                            labels: combined.map(item => item.label),
+                            labels: labels,
                             datasets: [{
-                                data: combined.map(item => item.value),
-                                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8AC926', '#1982C4', '#F44336', '#E91E63', '#9C27B0', '#673AB7']
+                                data: data,
+                                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8AC926', '#1982C4', '#F44336', '#E91E63', '#9C27B0', '#673AB7'].slice(0, data.length)
                             }]
                         },
                         options: {
@@ -1193,11 +1195,27 @@
                             plugins: {
                                 title: { display: true, text: title, font: { size: 16 } },
                                 tooltip: { callbacks: { label: ctx => ctx.label } },
-                                legend: { position: 'bottom', align: 'start' }
+                                legend: { position: 'right', align: 'bottom'}
                             }
                         }
                     });
                 },
+
+                renderPieChart(title, data, labels) {
+                    if (this.pieChart) this.pieChart.destroy();
+                    
+                    const combined = data.map((value, i) => ({ value, label: labels[i] })).sort((a, b) => b.value - a.value);
+                    const sortedLabels = combined.map(item => item.label);
+                    const sortedData = combined.map(item => item.value);
+
+                    this.pieChart = this._createPieChart(
+                        'pieChart',
+                        title,
+                        sortedLabels,
+                        sortedData
+                    );
+                },
+
                 groupPie(items){
                     const values = [], labels = [];
                     items.sort((a, b) => b.value - a.value);
@@ -1211,7 +1229,7 @@
                         labels.push('Other');
                     }
                     return {labels, values}
-                }
+                },
                 showNutrientContribution(nutrient) {
                     this.isChartModalVisible = true;
                     
@@ -1342,28 +1360,22 @@
 
                     const food = this.editingFood;
                     const chartItems = [];
-                    
+
                     Object.keys(this.nutrientTargets).forEach(nutrient => {
                         const target = this.getTarget(nutrient);
                         if (target && target.min > 0) {
                             const foodValue = food[nutrient] || 0;
-                            const percentage = (foodValue / target.min) * 100;
-                            if (percentage > 0.1) {
-                                chartItems.push({ nutrient: nutrient, percentage: percentage });
-                            }
+                            const value = (foodValue / target.min) * 100;
+                            chartItems.push({ name: nutrient, value });
                         }
                     });
-                    
-                    // Sort by percentage descending
-                    chartItems.sort((a, b) => b.percentage - a.percentage);
 
-                    const labels = chartItems.map(item => item.nutrient);
-                    const data = chartItems.map(item => item.percentage);
-                    
+                    const { labels, values } = this.groupPie(chartItems);
+
                     const canvas = document.getElementById('editFoodPieChart');
                     const ctx = canvas.getContext('2d');
-                    
-                    if (data.length === 0) {
+
+                    if (values.length === 0) {
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         ctx.font = "16px Inter, sans-serif";
                         ctx.fillStyle = "#6b7280";
@@ -1371,34 +1383,13 @@
                         ctx.fillText("No target data to display.", canvas.width / 2, canvas.height / 2);
                         return;
                     }
-                    
-                    this.editFoodPieChartInstance = new Chart(ctx, {
-                        type: 'pie',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                data: data,
-                                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8AC926', '#1982C4', '#F44336', '#E91E63', '#9C27B0', '#673AB7'].slice(0, data.length)
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                title: { display: true, text: '% of Nutrient Targets (per 100g)', font: { size: 14 } },
-                                legend: { 
-                                    display: true,
-                                    position: 'right',
-                                    align: 'start'
-                                },
-                                tooltip: { 
-                                    callbacks: { 
-                                        label: ctx => `${ctx.label}: ${ctx.parsed.toFixed(0)}%`
-                                    } 
-                                }
-                            }
-                        }
-                    });
+
+                    this.editFoodPieChartInstance = this._createPieChart(
+                        'editFoodPieChart',
+                        '% of Nutrient Targets (per 100g)',
+                        labels.map((x,i)=>`${values[i].toFixed(0)}% ${x}`),
+                        values
+                    );
                 }
             }
         }
