@@ -623,6 +623,12 @@
     </div>
 
     <script>
+        function round(x) {
+          if (x === 0) return 0;
+          const scale = Math.pow(10, Math.floor(Math.log10(x)) - 1);
+          return Math.round(x / scale) * scale;
+        }
+
         function foodApp() {
             return {
                 // --- STATE ---
@@ -1079,8 +1085,7 @@
                         ));
                         const solution = math.multiply(math.pinv(A), b).flat();
                         unlocked.forEach((food, i) => {
-                            const s = Math.max(0, solution[i]);
-                            food.quantity = s<1?s:(s<10?Math.round(s*10)/10:Math.round(s));
+                            food.quantity = round(Math.max(0, solution[i]));
                         });
                         
                         this.saveDiets();
@@ -1193,29 +1198,37 @@
                         }
                     });
                 },
-
+                groupPie(items){
+                    const values = [], labels = [];
+                    items.sort((a, b) => b.value - a.value);
+                    items.slice(0, 8).forEach(item => {
+                        values.push(item.value);
+                        labels.push(item.name);
+                    });
+                    if (items.length > 8) {
+                        otherTotal = items.slice(8).reduce((sum, item) => sum + item.value, 0);
+                        values.push(otherTotal);
+                        labels.push('Other');
+                    }
+                    return {labels, values}
+                }
                 showNutrientContribution(nutrient) {
                     this.isChartModalVisible = true;
                     
                     this.$nextTick(() => {
-                        const contributions = [], labels = [];
-                        let otherTotal = 0;
                         const nutrientTotal = this.calculateNutrientTotal(nutrient);
-                        const threshold = nutrientTotal * 0.05;
-
+                        const items = [];
                         this.selectedDiet.foods.forEach(foodItem => {
                             const food = this.storedFoods[foodItem.foodName];
                             if (food && food[nutrient]) {
-                                const contribution = (food[nutrient] * foodItem.quantity) / 100;
-                                if (contribution > 0) {
-                                    if (contribution < threshold) otherTotal += contribution;
-                                    else { contributions.push(contribution); labels.push(food.name); }
+                                const value = (food[nutrient] * foodItem.quantity) / 100;
+                                if (value > 0) {
+                                    items.push({ name: food.name, value });
                                 }
                             }
                         });
-                        if (otherTotal > 0) { contributions.push(otherTotal); labels.push('Other'); }
-                        
-                        this.renderPieChart(`Contribution to ${nutrient}`, contributions, labels.map((x,i)=>`${contributions[i].toFixed(0)} ${x}`));
+                        const { labels, values } = this.groupPie(items);
+                        this.renderPieChart(`Contribution to ${nutrient}`, values, labels.map((x,i)=>`${values[i].toFixed(0)} ${x}`));
                     });
                 },
                 
@@ -1226,22 +1239,18 @@
                         const food = this.storedFoods[foodName];
                         const foodItem = this.selectedDiet.foods.find(f => f.foodName === foodName);
                         if (!food || !foodItem) return;
-
-                        const values = [], labels = [];
-                        let otherTotal = 0;
-                        const threshold = 10;
-
-                        this.displayHeaders.filter(h => h !== 'name' && food[h] > 0).forEach(nutrient => {
-                            const value = (food[nutrient] || 0) * foodItem.quantity / 100 / this.calculateNutrientTotal(nutrient) *100;
-                            if (value > 0) { 
-                                if (value < threshold) {otherTotal += value; }
-                                else { values.push(value); labels.push(nutrient); }
-                            }
-                        });
-                        if (otherTotal > 0) { values.push(otherTotal); labels.push('Other'); }
-                        
+                        const items = [];
+                        this.displayHeaders
+                            .filter(h => h !== 'name' && food[h] > 0)
+                            .forEach(nutrient => {
+                                const value = (food[nutrient] || 0) * foodItem.quantity / 100 / this.calculateNutrientTotal(nutrient) * 100;
+                                if (value > 0) {
+                                    items.push({ name: nutrient, value });
+                                }
+                            });
+                        const { labels, values } = this.groupPie(items);
                         const title = `Nutrient Breakdown: ${foodItem.quantity}g of ${foodName}`;
-                        this.renderPieChart(title, values, labels.map((x,i)=>`${values[i].toFixed(0)}% ${x}`));
+                        this.renderPieChart(title,values,labels.map((x,i)=>`${values[i].toFixed(0)}% ${x}`));
                     });
                 },
                 
