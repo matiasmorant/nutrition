@@ -259,7 +259,7 @@
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
-        <div class="sticky top-0 z-10 bg-gray-50 pb-6">
+        <div class="sticky top-0 z-10 bg-gray-50">
             <div class="border-b border-gray-200">
                 <nav class="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto" aria-label="Tabs">
                     <button @click="activeTab = 'foods'" :class="{'active': activeTab === 'foods'}" class="tab-btn whitespace-nowrap py-4 px-2 sm:px-1 border-b-2 font-medium text-sm sm:text-base text-gray-500 hover:text-gray-700 hover:border-gray-300">Foods</button>
@@ -291,7 +291,7 @@
             </div>
         </div>
 
-        <div id="content-targets" class="tab-content p-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
+        <div id="content-targets" class="tab-content p-6 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
             <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
             <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
                 <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
@@ -335,7 +335,7 @@
             </div>
         </div>
 
-        <div id="content-diets" class="tab-content p-6 bg-white rounded-lg shadow" x-show="activeTab === 'diets'">
+        <div id="content-diets" class="tab-content p-6 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'diets'">
             <div x-show="!selectedDiet">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                     <button @click="createDiet()" class="blue-btn">Create New Diet</button>
