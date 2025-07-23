@@ -65,7 +65,7 @@
      PUFA 21:5 (g)
      PUFA 22:4 (g)
      PUFA 2:4 n-6 (g)
-+  Fatty acids, total saturated (g) — 4
++  Fatty acids, total saturated (g) — 0–4
      SFA 10:0 (g)
      SFA 12:0 (g)
      SFA 13:0 (g)
@@ -80,7 +80,7 @@
      SFA 4:0 (g)
      SFA 6:0 (g)
      SFA 8:0 (g)
-+  Fatty acids, total trans (g) — 0.1
++  Fatty acids, total trans (g) — 0–0.1
      Fatty acids, total trans-monoenoic (g)
        TFA 16:1 t (g)
        TFA 18:1 t (g)
@@ -117,11 +117,11 @@
 +  Vitamin B-12 (μg) — 2.4
    Vitamin B-12, added (μg)
 +  Vitamin C, total ascorbic acid (mg) — 90–2000
-+  Vitamin D (D2 + D3) (μg) — 15–100
+   Vitamin D (D2 + D3) (μg) — 15–100
    Vitamin D (D2 + D3), International Units (IU)
    Vitamin D2 (ergocalciferol) (μg)
    Vitamin D3 (cholecalciferol) (μg)
-+  Vitamin K (Dihydrophylloquinone) (μg) — 120
+   Vitamin K (Dihydrophylloquinone) (μg) — 120
    Vitamin K (Menaquinone-4) (μg)
    Vitamin K (phylloquinone) (μg)
  Minerals
@@ -141,7 +141,7 @@
  Betaine (mg)
  Caffeine (mg)
  Campesterol (mg)
-+Cholesterol (mg) — 0.1
++Cholesterol (mg) — 0–0.1
  Lutein + zeaxanthin (μg)
  Lycopene (μg)
  Phytosterols (mg)
