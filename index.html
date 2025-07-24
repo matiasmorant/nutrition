@@ -19,6 +19,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Add idb-keyval for IndexedDB storage -->
+    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6.2.0/dist/umd.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -251,11 +253,12 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-init="init()" x-cloak>
+<body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-cloak>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v3.4</sup></h1>
+            <!-- Updated version number to v3.5 -->
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Food Nutrient Finder <sup class="text-lg font-medium text-gray-400">v3.5</sup></h1>
             <p class="text-base sm:text-lg text-gray-600 mt-2">Search, track, and manage your nutritional intake.</p>
         </header>
 
@@ -648,7 +651,6 @@
                 isAddingFood: false,
                 nutrientSearchQuery: '',
                 addFoodContext: null,
-                defaultNutrientTargets: {},
                 foodTable: null,
                 foodTableFilter: '',
                 
@@ -672,13 +674,15 @@
                 showSuggestModal: false,
                 suggestedFoods: [],
 
+                // IndexedDB store
+                db: null,
+
                 // --- COMPUTED PROPERTIES ---
                 get filteredAvailableNutrients() {
                     if (!this.nutrientTreeNames || !this.nutrientHeaders) return [];
                     const availableNutrients = this.nutrientTreeNames.filter(h => this.nutrientHeaders.includes(h));
-                    const uniqueAvailableNutrients = [...new Set(availableNutrients)];
-                    if (!this.nutrientSearchQuery) return uniqueAvailableNutrients;
-                    return uniqueAvailableNutrients.filter(h => h.toLowerCase().includes(this.nutrientSearchQuery.toLowerCase()));
+                    if (!this.nutrientSearchQuery) return availableNutrients;
+                    return availableNutrients.filter(h => h.toLowerCase().includes(this.nutrientSearchQuery.toLowerCase()));
                 },
                 
                 get factor() {
@@ -699,52 +703,38 @@
 
                 // --- METHODS ---
                 async init() {
-                    this.defaultNutrientTargets = {};
+                    // Create IndexedDB store
+                    this.db = idbKeyval.createStore('food-app-db', 'food-app-store4');
                     
-                    let storedData = JSON.parse(localStorage.getItem('storedFoods'));
-                    if (Array.isArray(storedData)) {
-                        this.storedFoods = storedData.reduce((obj, food) => {
-                            if (food && food.name) obj[food.name] = food;
-                            return obj;
-                        }, {});
-                    } else {
-                        this.storedFoods = storedData || {};
-                    }
+                    // Load data from IndexedDB
+                    this.storedFoods = (await idbKeyval.get('storedFoods', this.db) || []).reduce((obj, food) => {
+                        if (food && food.name) obj[food.name] = food;
+                        return obj;
+                    }, {});
+                    this.diets = await idbKeyval.get('diets', this.db) || [];
+                    this.nutrientTargets = await idbKeyval.get('nutrientTargets', this.db) || {};
 
-                    this.diets = JSON.parse(localStorage.getItem('diets')) || [];
                     this.isLoading = true;
-                    await Promise.all([this.loadNutrientTree(), this.loadFoodData()]);
+                    // await Promise.all([this.loadNutrientTree(), this.loadFoodData()]);
+                    const defaultNutrientTargets = await this.loadNutrientTree();
+
+                    await this.loadFoodData();
                     this.isLoading = false;
                     
+                    // Initialize with allFoods if storedFoods is empty
                     if (Object.keys(this.storedFoods).length === 0 && this.allFoods.length > 0) {
                         this.storedFoods = this.allFoods.reduce((obj, food) => {
                             if (food && food.name) obj[food.name] = food;
                             return obj;
                         }, {});
-                        this.saveStoredFoods();
+                        await this.saveStoredFoods();
                     }
                     
-                    this.initFoodTable();
 
-                    // Initialize nutrient targets, migrating old format if necessary
-                    const storedTargets = JSON.parse(localStorage.getItem('nutrientTargets')) || {};
-                    const migratedTargets = {};
-                    for (const key in storedTargets) {
-                        const value = storedTargets[key];
-                        if (typeof value === 'number') {
-                            // Old format: 90
-                            migratedTargets[key] = { min: value, max: null, show: 1 };
-                        } else if (typeof value === 'object' && value !== null && value.hasOwnProperty('min')) {
-                            // New format: { min: 90, max: null, show: 1 }
-                            migratedTargets[key] = {
-                                min: value.min || 0,
-                                max: value.max !== undefined ? value.max : null,
-                                show: value.show || 1
-                            };
-                        }
-                    }
-                    this.nutrientTargets = { ...this.defaultNutrientTargets, ...migratedTargets };
-                    this.saveTargets();
+                    this.nutrientTargets = { ...defaultNutrientTargets, ...this.nutrientTargets };
+                    await this.saveTargets();
+                    
+                    this.initFoodTable();
                     
                     this.$watch('searchQuery', () => this.searchFoods());
                     this.$watch('nutrientTargets', () => this.saveTargets(), { deep: true });
@@ -816,20 +806,20 @@
                         layout: "fitDataStretch",
                         height: "500px",
                         headerHeight: 50, // Increased height for wrapped headers
-                        cellEdited: (cell) => {
+                        cellEdited: async (cell) => {
                             const foodData = cell.getRow().getData();
                             this.storedFoods[foodData.name] = foodData;
-                            this.saveStoredFoods();
+                            await this.saveStoredFoods();
                         },
-                        rowDeleted: (row) => {
+                        rowDeleted: async (row) => {
                             const deletedFoodName = row.getData().name;
                             delete this.storedFoods[deletedFoodName];
                             
                             this.diets.forEach(diet => {
                                 diet.foods = diet.foods.filter(item => item.foodName !== deletedFoodName);
                             });
-                            this.saveDiets();
-                            this.saveStoredFoods();
+                            await this.saveDiets();
+                            await this.saveStoredFoods();
                         },
                     });
 
@@ -843,6 +833,7 @@
                         const lines = (await response.text()).split('\n');
                         const allNutrients = [];
                         const defaultDisplayNutrients = [];
+                        const defaultNutrientTargets = {}
 
                         lines.forEach(line => {
                             const trimmedLine = line.trim();
@@ -867,12 +858,12 @@
                                     if (valuePart.includes('–')) {
                                         const range = valuePart.split(/–/).map(p => parseFloat(p.trim()));
                                         if (range.length === 2 && !isNaN(range[0]) && !isNaN(range[1])) {
-                                            this.defaultNutrientTargets[nutrientName] = { min: range[0], max: range[1], show: 2 };
+                                            defaultNutrientTargets[nutrientName] = { min: range[0], max: range[1], show: 2 };
                                         }
                                     } else {
                                         const defaultValue = parseFloat(valuePart);
                                         if (!isNaN(defaultValue)) {
-                                            this.defaultNutrientTargets[nutrientName] = { min: defaultValue, max: null, show: 1 };
+                                            defaultNutrientTargets[nutrientName] = { min: defaultValue, max: null, show: 1 };
                                         }
                                     }
                                 }
@@ -881,6 +872,8 @@
                         
                         this.nutrientTreeNames = allNutrients;
                         this.displayHeaders = ['name', ...defaultDisplayNutrients];
+
+                        return defaultNutrientTargets
                     } catch (error) {
                         console.error('Failed to load or parse nutrientTree.txt:', error);
                     }
@@ -929,14 +922,14 @@
                     }
                 },
 
-                addFood(foodObject) {
+                async addFood(foodObject) {
                     if (this.storedFoods[foodObject.name]) return;
                     this.storedFoods[foodObject.name] = foodObject;
                     this.foodTable.addRow(foodObject);
-                    this.saveStoredFoods();
+                    await this.saveStoredFoods();
                 },
 
-                removeFood(name) {
+                async removeFood(name) {
                     delete this.storedFoods[name];
                     const row = this.foodTable.getRows().find(r => r.getData().name === name);
                     if (row) row.delete(); // This will trigger rowDeleted callback
@@ -953,25 +946,25 @@
                     delete this.nutrientTargets[nutrient];
                 },
 
-                saveTargets() {
-                    localStorage.setItem('nutrientTargets', JSON.stringify(this.nutrientTargets));
+                async saveTargets() {
+                    try {
+                        await idbKeyval.set('nutrientTargets', JSON.parse(JSON.stringify(this.nutrientTargets)), this.db);
+                    } catch (e) {
+                        console.error("Error saving targets:", e);
+                    }
                 },
                 
-                saveStoredFoods() {
-                    // Get data directly from table to ensure it's the source of truth
-                    const tableData = this.foodTable.getData();
-                    this.storedFoods = tableData.reduce((obj, food) => {
-                        obj[food.name] = food;
-                        return obj;
-                    }, {});
-                    localStorage.setItem('storedFoods', JSON.stringify(this.storedFoods));
+                async saveStoredFoods() {
+                    try {
+                        const foodsArray = JSON.parse(JSON.stringify(Object.values(this.storedFoods)));
+                        await idbKeyval.set('storedFoods', foodsArray, this.db);
+                    } catch (e) {
+                        console.error("Error saving foods:", e);
+                    }
                 },
 
                 getTarget(nutrient) {
-                    if (!this.nutrientTargets[nutrient]) {
-                        this.nutrientTargets[nutrient] = { min: 0, max: null, show: 1 };
-                    }
-                    return this.nutrientTargets[nutrient];
+                    return this.nutrientTargets[nutrient] ?? { min: 0, max: null, show: 1 };
                 },
 
                 toggleTargetInputs(nutrient) {
@@ -983,42 +976,48 @@
                 },
                 
                 // Diets methods
-                createDiet() {
+                async createDiet() {
                     const newDiet = {
                         id: Date.now().toString(),
                         name: `Diet ${this.diets.length + 1}`,
                         foods: []
                     };
                     this.diets.push(newDiet);
-                    this.saveDiets();
+                    await this.saveDiets();
                 },
                 
-                deleteDiet(id) {
+                async deleteDiet(id) {
                     if (confirm('Are you sure you want to delete this diet?')) {
                         this.diets = this.diets.filter(diet => diet.id !== id);
                         if (this.selectedDiet && this.selectedDiet.id === id) this.selectedDiet = null;
-                        this.saveDiets();
+                        await this.saveDiets();
                     }
                 },
                 
                 selectDiet(diet) { this.selectedDiet = diet; },
                 
-                addFoodToDiet(foodName) {
+                async addFoodToDiet(foodName) {
                     const existingIndex = this.selectedDiet.foods.findIndex(f => f.foodName === foodName);
                     if (existingIndex >= 0) {
                         this.selectedDiet.foods[existingIndex].quantity += 100;
                     } else {
                         this.selectedDiet.foods.push({ foodName, quantity: 100, locked: false });
                     }
-                    this.saveDiets();
+                    await this.saveDiets();
                 },
                 
-                removeFoodFromDiet(foodName) {
+                async removeFoodFromDiet(foodName) {
                     this.selectedDiet.foods = this.selectedDiet.foods.filter(f => f.foodName !== foodName);
-                    this.saveDiets();
+                    await this.saveDiets();
                 },
                 
-                saveDiets() { localStorage.setItem('diets', JSON.stringify(this.diets)); },
+                async saveDiets() {
+                    try {
+                        await idbKeyval.set('diets', this.diets, this.db);
+                    } catch (e) {
+                        console.error("Error saving diets:", e);
+                    }
+                },
                 
                 calculateNutrientTotal(nutrient) {
                     if (!this.selectedDiet) return 0;
@@ -1125,7 +1124,7 @@
                     }
                 },
                 
-                createNewFoodFromSearch() {
+                async createNewFoodFromSearch() {
                     const name = this.searchQuery.trim();
                     if (!name) return alert('Please enter a food name');
                     if (Object.keys(this.storedFoods).some(key => key.toLowerCase() === name.toLowerCase())) return alert('A food with this name already exists.');
@@ -1135,33 +1134,32 @@
                         if (header !== 'name') newFood[header] = 0;
                     });
                     
-                    this.addFood(newFood);
-                    this.saveStoredFoods();
+                    await this.addFood(newFood);
                     
                     if (this.addFoodContext === 'diet' && this.selectedDiet) {
-                        this.addFoodToDiet(name);
+                        await this.addFoodToDiet(name);
                     }
                     
-                    this.isAddingFood = false; // Close the add food modal
+                    this.isAddingFood = false;
                     this.addFoodContext = null;
                     this.searchQuery = '';
                     
-                    this.showZeroNutrientsInEdit = true; // Set show 0 values to true
-                    this.openEditFoodModal(newFood); // Open the edit modal
+                    this.showZeroNutrientsInEdit = true;
+                    this.openEditFoodModal(newFood);
                 },
 
-                toggleFoodSelection(food) {
+                async toggleFoodSelection(food) {
                     if (this.addFoodContext === 'diet') {
                         if (this.selectedDiet.foods.some(f => f.foodName === food.name)) {
-                            this.removeFoodFromDiet(food.name);
+                            await this.removeFoodFromDiet(food.name);
                         } else {
-                            this.addFoodToDiet(food.name);
+                            await this.addFoodToDiet(food.name);
                         }
                     } else {
                         if (this.storedFoods[food.name]) {
-                            this.removeFood(food.name);
+                            await this.removeFood(food.name);
                         } else {
-                            this.addFood(food);
+                            await this.addFood(food);
                         }
                     }
                 },
@@ -1172,7 +1170,7 @@
                     } else {
                         this.addNutrientColumn(nutrient);
                     }
-                    this.initFoodTable(); // Re-initialize table with new columns
+                    this.initFoodTable();
                 },
                 
                 resetFoodModal() { this.searchQuery = ''; this.searchResults = []; },
@@ -1312,18 +1310,17 @@
                     this.showSuggestModal = true;
                 },
                 
-                addSuggestedFood(food) {
+                async addSuggestedFood(food) {
                     if (!this.storedFoods[food.name]) {
-                        this.addFood(food);
-                        this.saveStoredFoods();
+                        await this.addFood(food);
                     }
-                    this.addFoodToDiet(food.name);
+                    await this.addFoodToDiet(food.name);
                     this.showSuggestModal = false;
                 },
 
                 // Food Edit Modal Methods
                 openEditFoodModal(food) {
-                    this.editingFood = JSON.parse(JSON.stringify(food)); // Deep copy
+                    this.editingFood = JSON.parse(JSON.stringify(food));
                     this.isEditingFood = true;
                     this.$nextTick(() => {
                         this.renderEditFoodPieChart();
@@ -1339,10 +1336,9 @@
                     }
                 },
 
-                saveFoodEdits() {
+                async saveFoodEdits() {
                     if (!this.editingFood) return;
 
-                    // The x-model.number and input type=number should handle this, but safeguard anyway
                     for (const key in this.editingFood) {
                         if (key !== 'name' && typeof this.editingFood[key] !== 'number') {
                             this.editingFood[key] = parseFloat(this.editingFood[key]) || 0;
@@ -1350,8 +1346,8 @@
                     }
 
                     this.storedFoods[this.editingFood.name] = this.editingFood;
-                    this.foodTable.updateData([this.editingFood]); // Update the row in the table
-                    this.saveStoredFoods();
+                    this.foodTable.updateData([this.editingFood]);
+                    await this.saveStoredFoods();
                     this.closeEditFoodModal();
                 },
 
