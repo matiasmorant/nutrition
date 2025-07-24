@@ -590,7 +590,7 @@
         <div @click.outside="closeEditFoodModal()" class="relative mx-auto p-5 border max-w-3xl shadow-lg rounded-md bg-white">
             <template x-if="editingFood">
                 <div class="mt-3">
-                    <h3 class="text-xl leading-6 font-medium text-gray-900 text-center mb-4" x-text="'Edit: ' + editingFood.name"></h3>
+                    <h3 class="text-xl leading-6 font-medium text-gray-900 text-center mb-4" x-text="editingFood.name"></h3>
                     
                     <div class="grid md:grid-cols-2 gap-6 max-h-96 overflow-y-auto">
                         <div class="flex flex-col max-w-sm max-h-96 ">
@@ -631,9 +631,15 @@
     <script>
         function round(x) {
           if (x === 0) return 0;
-          const scale = Math.pow(10, Math.floor(Math.log10(x)) - 1);
-          return Math.round(x / scale) * scale;
+          const scale = Math.pow(10, -Math.floor(Math.log10(x)) + 1);
+          return Math.round(x * scale) / scale;
         }
+        Object.defineProperty(Array.prototype, 'sum', {
+            value: function (selector = x => x) {
+              return this.reduce((s,x) => s + selector(x), 0);
+            },
+            enumerable: false
+        });
 
         function foodApp() {
             return {
@@ -1076,9 +1082,9 @@
                         
                         if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
 
-                        const lockedNutrients = nutrients.map(nutrient => locked.reduce((sum, food) => 
-                            sum + (getA(food,nutrient) * food.quantity)
-                        ,0));                        
+                        const lockedNutrients = nutrients.map(nutrient => locked.sum(food => 
+                            (getA(food,nutrient) * food.quantity)
+                        ));                        
                         const A = nutrients.map(nutrient => unlocked.map(food => (
                             getA(food,nutrient) /(targets[nutrient] > 0 ? targets[nutrient] : 1)
                         )));
@@ -1217,18 +1223,25 @@
                     );
                 },
 
-                groupPie(items){
-                    const values = [], labels = [];
-                    items.sort((a, b) => b.value - a.value);
-                    items.slice(0, 9).forEach(item => {
-                        values.push(item.value);
-                        labels.push(item.name);
-                    });
-                    if (items.length > 9) {
-                        otherTotal = items.slice(9).reduce((sum, item) => sum + item.value, 0);
-                        values.push(otherTotal);
+                groupPie(items) {
+                    const total = items.sum(x =>x.value);
+                    const sorted = items.slice().sort((a, b) => b.value - a.value);
+                    const topItems = sorted.slice(0, 9);
+                    const otherItems = sorted.slice(9);
+
+                    const significantItems = topItems.filter(item => item.value / total >= 0.05);
+                    const smallTopItems = topItems.filter(item => item.value / total < 0.05);
+
+                    const labels = significantItems.map(item => item.name);
+                    const values = significantItems.map(item => item.value);
+
+                    const otherTotal = [...smallTopItems,...otherItems].sum(x=>x.value)
+
+                    if (otherTotal > 0) {
                         labels.push('Other');
+                        values.push(otherTotal);
                     }
+
                     return {labels, values}
                 },
                 showNutrientContribution(nutrient) {
