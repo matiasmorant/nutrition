@@ -801,6 +801,7 @@
                     });
 
                     this.foodTable = new Tabulator("#food-table-container", {
+                        index: "name",
                         data: Object.values(this.storedFoods),
                         columns: columns,
                         layout: "fitDataStretch",
@@ -987,11 +988,9 @@
                 },
                 
                 async deleteDiet(id) {
-                    if (confirm('Are you sure you want to delete this diet?')) {
-                        this.diets = this.diets.filter(diet => diet.id !== id);
-                        if (this.selectedDiet && this.selectedDiet.id === id) this.selectedDiet = null;
-                        await this.saveDiets();
-                    }
+                    this.diets = this.diets.filter(diet => diet.id !== id);
+                    if (this.selectedDiet && this.selectedDiet.id === id) this.selectedDiet = null;
+                    await this.saveDiets();
                 },
                 
                 selectDiet(diet) { this.selectedDiet = diet; },
