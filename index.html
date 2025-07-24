@@ -597,7 +597,7 @@
                                     <span x-show="!showZeroNutrientsInEdit">Show 0 values</span>
                                 </button>
                             </div>
-                            <div class="border rounded-md p-3 flex-grow max-h-96 overflow-y-auto">
+                            <div class="border rounded-md p-3 flex-grow max-h-96 max-w-sm overflow-y-auto">
                                 <template x-for="nutrient in Object.keys(nutrientTargets).filter(n => nutrientTargets[n]?.min > 0 && (showZeroNutrientsInEdit || editingFood[n] > 0)).sort()" :key="nutrient">
                                     <div class="flex items-center justify-between mb-2">
                                         <label :for="'edit-nutrient-'+nutrient" class="text-sm font-medium text-gray-700 max-w-name" x-text="nutrient"></label>
@@ -608,7 +608,6 @@
                         </div>
     
                         <div class="flex flex-col">
-                            <h4 class="font-semibold text-center mb-2">% of Nutrient Targets</h4>
                              <div class="chart-container w-full h-80 mx-auto" style="margin-top: 0; height: 100%;">
                                 <canvas id="editFoodPieChart"></canvas>
                             </div>
@@ -1217,12 +1216,12 @@
                 groupPie(items){
                     const values = [], labels = [];
                     items.sort((a, b) => b.value - a.value);
-                    items.slice(0, 8).forEach(item => {
+                    items.slice(0, 10).forEach(item => {
                         values.push(item.value);
                         labels.push(item.name);
                     });
-                    if (items.length > 8) {
-                        otherTotal = items.slice(8).reduce((sum, item) => sum + item.value, 0);
+                    if (items.length > 10) {
+                        otherTotal = items.slice(10).reduce((sum, item) => sum + item.value, 0);
                         values.push(otherTotal);
                         labels.push('Other');
                     }
@@ -1265,7 +1264,7 @@
                                 }
                             });
                         const { labels, values } = this.groupPie(items);
-                        const title = `Nutrient Breakdown: ${foodItem.quantity}g of ${foodName}`;
+                        const title = `${foodItem.quantity}g of ${foodName}`;
                         this.renderPieChart(title,values,labels.map((x,i)=>`${values[i].toFixed(0)}% ${x}`));
                     });
                 },
