@@ -275,15 +275,11 @@
         <div id="content-foods" class="tab-content" x-show="activeTab === 'foods'">
             <div class="mt-4 mb-12">
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
-                     <h2 class="text-2xl font-semibold text-gray-800">My Foods</h2>
-                     <div class="flex gap-2">
+                    <input type="text" x-model.debounce.300ms="foodTableFilter" class="w-full sm:w-1/3 p-2 border rounded-md" placeholder="Search foods">                    
+                    <div class="flex gap-2">
                         <button @click="openAddFoodModal()" class="blue-btn">Add Food</button>
                         <button @click="openAddNutrientModal()" class="blue-btn">Add Nutrient</button>
-                     </div>
-                </div>
-
-                <div class="mb-4">
-                    <input type="text" x-model.debounce.300ms="foodTableFilter" class="w-full sm:w-1/3 p-2 border rounded-md" placeholder="Filter foods by name...">
+                    </div>
                 </div>
 
                 <div id="food-table-container" class="mt-4 bg-white rounded-lg shadow" x-show="Object.keys(storedFoods).length > 0"></div>
@@ -1216,12 +1212,12 @@
                 groupPie(items){
                     const values = [], labels = [];
                     items.sort((a, b) => b.value - a.value);
-                    items.slice(0, 10).forEach(item => {
+                    items.slice(0, 9).forEach(item => {
                         values.push(item.value);
                         labels.push(item.name);
                     });
-                    if (items.length > 10) {
-                        otherTotal = items.slice(10).reduce((sum, item) => sum + item.value, 0);
+                    if (items.length > 9) {
+                        otherTotal = items.slice(9).reduce((sum, item) => sum + item.value, 0);
                         values.push(otherTotal);
                         labels.push('Other');
                     }
