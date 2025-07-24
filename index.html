@@ -359,7 +359,7 @@
                 </div>
             </div>
             
-            <div x-show="selectedDiet">
+            <template x-if="selectedDiet"><div x-show="selectedDiet">
                 <div class="flex items-center mb-6">
                     <span @click="selectedDiet = null" class="back-arrow">←</span>
                     <input type="text" x-model="selectedDiet.name" class="text-xl font-medium border-b border-gray-300 focus:border-blue-500 focus:outline-none" placeholder="Diet name">
@@ -462,7 +462,7 @@
                         </div>
                     </div>
                 </div></div>
-            </div>
+            </div></template>
         </div>
     </div>
 
@@ -1013,7 +1013,7 @@
                 
                 async saveDiets() {
                     try {
-                        await idbKeyval.set('diets', this.diets, this.db);
+                        await idbKeyval.set('diets', JSON.parse(JSON.stringify(this.diets)), this.db);
                     } catch (e) {
                         console.error("Error saving diets:", e);
                     }
