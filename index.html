@@ -798,6 +798,15 @@
                                 resizable: false,
                                 editorParams: { step: 0.01 },
                                 sorter: "number",
+                                headerSort:false,
+                                headerClick: (e,column)=>{
+                                    const field = column.getField()
+                                    const isDesc = this.foodTable.getSorters().some(s =>
+                                        s.field === field && s.dir === "desc"
+                                    );
+                                    if(isDesc) {this.foodTable.setSort("name","asc");}
+                                    else { this.foodTable.setSort(field,"desc");}
+                                },
                                 hozAlign: "right",
                                 formatter: (cell) => {
                                     const value = cell.getValue();
