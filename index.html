@@ -79,12 +79,12 @@
             font-size: 0.875rem;
         }
         .blue-btn {
-            min-width: 6.5rem;
+            width: max-content;
             font: icon;
             background-color: #3b82f6;
             color: white;
             border-radius: 0.5rem;
-            padding: 0.5rem 0.3rem;
+            padding: 0.5rem 0.6rem;
             font-weight: 500;
             transition: background-color 0.2s;
         }
@@ -276,7 +276,7 @@
 
         <div id="content-foods" class="tab-content" x-show="activeTab === 'foods'">
             <div class="mt-4 mb-12">
-                <div class="flex flex-row justify-between items-center mb-4 gap-4">
+                <div class="flex flex-row justify-between items-center mb-4 gap-2">
                     <input type="text" x-model.debounce.300ms="foodTableFilter" class="w-full p-2 border rounded-md" placeholder="Search foods">
                     <div class="flex gap-2">
                         <button @click="openAddFoodModal()" class="blue-btn">Add Food</button>
