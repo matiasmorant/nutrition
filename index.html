@@ -43,6 +43,8 @@
             font-weight: 600;
         }
         .remove-icon {
+            padding-bottom: 2px;
+            padding-right: 5px;
             cursor: pointer;
             color: #ef4444; /* red-500 */
             font-weight: bold;
@@ -234,6 +236,9 @@
             padding: 8px;
             border-right: none;
         }
+        .tabulator-row .tabulator-cell:first-child               { border-left: none;}
+        .tabulator-row:nth-child(2n) .tabulator-cell:first-child { border-left: none;}
+
         .tabulator-row.tabulator-row-even {
             background-color: #f9fafb;
         }
@@ -294,12 +299,12 @@
 
         <div id="content-targets" class="tab-content p-6 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
             <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
-            <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+            <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-20 gap-y-1">
                 <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <span @click="removeNutrientColumn(nutrient)" class="remove-icon">&times;</span>
-                            <label :for="`target-min-${nutrient}`" x-text="nutrient" class="text-sm font-medium text-gray-700 max-w-name"></label>
+                            <label :for="`target-min-${nutrient}`" x-text="nutrient" class="text-sm font-medium text-gray-700 w-[180px]"></label>
                         </div>
                         <div class="flex items-center gap-1">
                             <input 
@@ -310,6 +315,7 @@
                                 class="w-14 p-2 border rounded-md text-sm"
                                 placeholder="Min"
                             >
+                            <span x-show="getTarget(nutrient).show === 2">-</span>
                             <input 
                                 type="number" 
                                 :id="`target-max-${nutrient}`" 
@@ -319,15 +325,15 @@
                                 class="w-14 p-2 border rounded-md text-sm"
                                 placeholder="Max"
                             >
-                            <button @click="toggleTargetInputs(nutrient)" class="p-2 rounded-full hover:bg-gray-200 focus:outline-none" :title="getTarget(nutrient).show === 1 ? 'Set range' : 'Set single value'">
-                                <span x-show="getTarget(nutrient).show === 2">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" class="text-gray-600"><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
-                                </span>
-                                <span x-show="getTarget(nutrient).show !== 2">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" class="text-gray-600"><circle cx="5" cy="8" r="2" fill="currentColor"/><circle cx="11" cy="8" r="2" fill="currentColor"/></svg>
-                                </span>
-                            </button>
                         </div>
+                        <button @click="toggleTargetInputs(nutrient)" class="p-2 rounded-full hover:bg-gray-200 focus:outline-none" :title="getTarget(nutrient).show === 1 ? 'Set range' : 'Set single value'">
+                            <span x-show="getTarget(nutrient).show === 2">
+                                <svg width="16" height="16" viewBox="0 0 16 16" class="text-gray-600"><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
+                            </span>
+                            <span x-show="getTarget(nutrient).show !== 2">
+                                <svg width="16" height="16" viewBox="0 0 16 16" class="text-gray-600"><circle cx="5" cy="8" r="2" fill="currentColor"/><circle cx="11" cy="8" r="2" fill="currentColor"/></svg>
+                            </span>
+                        </button>
                     </div>
                 </template>
             </div>
@@ -438,7 +444,7 @@
                                     <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
                                         <tr>
                                             <td class="text-left nutrient-clickable max-w-name" @click="showNutrientContribution(nutrient)" x-text="nutrient"></td>
-                                            <td x-text="calculateNutrientTotal(nutrient).toFixed(2)"></td>
+                                            <td x-text="(x=>x<10?x.toFixed(2):x.toFixed(0))(calculateNutrientTotal(nutrient))"></td>
                                             <td>
                                                 <span x-text="calculateNutrientPercentage(nutrient).toFixed(0) + '%'"></span>
                                                 <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
