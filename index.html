@@ -298,8 +298,8 @@
             </div>
         </div>
 
-        <div id="content-targets" class="tab-content p-6 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
+        <div id="content-targets" class="tab-content flex flex-col w-fit mx-auto items-end gap-4 p-6 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
+            <button @click="openAddNutrientModal()" class="blue-btn">Add Nutrient</button>
             <div id="targets-list" class="grid grid-cols-1 lg:grid-cols-2 gap-x-20 gap-y-1 max-w-fit">
                 <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
                     <div class="grid grid-cols-[1fr_min-content_min-content] items-center gap-x-1">
@@ -337,9 +337,6 @@
                         </button>
                     </div>
                 </template>
-            </div>
-            <div class="mt-8 flex justify-end items-center gap-4">
-                <button @click="openAddNutrientModal()" class="blue-btn">Add Nutrient</button>
             </div>
         </div>
 
