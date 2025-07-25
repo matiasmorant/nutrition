@@ -250,6 +250,7 @@
         }
         .nameColumnCell {
             max-width: 300px;
+            min-width: 150px;
         }
 
         /* Reduce sticky column width on narrow screens */
@@ -299,14 +300,14 @@
 
         <div id="content-targets" class="tab-content p-6 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
             <h2 class="text-2xl font-semibold mb-6 text-gray-800">Nutrient Targets</h2>
-            <div id="targets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-20 gap-y-1">
+            <div id="targets-list" class="grid grid-cols-1 lg:grid-cols-2 gap-x-20 gap-y-1 max-w-fit">
                 <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
-                    <div class="flex items-center justify-between">
+                    <div class="grid grid-cols-[1fr_min-content_min-content] items-center gap-x-1">
                         <div class="flex items-center">
                             <span @click="removeNutrientColumn(nutrient)" class="remove-icon">&times;</span>
-                            <label :for="`target-min-${nutrient}`" x-text="nutrient" class="text-sm font-medium text-gray-700 w-[180px]"></label>
+                            <label :for="`target-min-${nutrient}`" x-text="nutrient" class="text-sm font-medium text-gray-700"></label>
                         </div>
-                        <div class="flex items-center gap-1">
+                        <div class="flex w-32 justify-center items-center gap-1">
                             <input 
                                 type="number" 
                                 :id="`target-min-${nutrient}`" 
@@ -326,7 +327,7 @@
                                 placeholder="Max"
                             >
                         </div>
-                        <button @click="toggleTargetInputs(nutrient)" class="p-2 rounded-full hover:bg-gray-200 focus:outline-none" :title="getTarget(nutrient).show === 1 ? 'Set range' : 'Set single value'">
+                        <button @click="toggleTargetInputs(nutrient)" class="w-[30px] p-2 rounded-full hover:bg-gray-200 focus:outline-none" :title="getTarget(nutrient).show === 1 ? 'Set range' : 'Set single value'">
                             <span x-show="getTarget(nutrient).show === 2">
                                 <svg width="16" height="16" viewBox="0 0 16 16" class="text-gray-600"><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
                             </span>
