@@ -1,7 +1,7 @@
 {
-  "name": "Food Nutrient Finder",
-  "short_name": "NutriFind",
-  "description": "Search, track, and manage your nutritional intake",
+  "name": "Optimal Nutrition",
+  "short_name": "Optimal Nutrition",
+  "description": "Optimize your nutritional intake",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#f9fafb",

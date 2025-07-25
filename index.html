@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Nutrient Finder</title>
+    <title>Optimal Nutrition</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3b82f6">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -336,60 +336,61 @@
 
         <div id="content-diets" class="tab-content p-6 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'diets'">
             <div x-show="!selectedDiet">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-                    <button @click="createDiet()" class="blue-btn">Create New Diet</button>
+                <div x-show="diets.length > 0" class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                    <button @click="createDiet()" class="blue-btn">Create Diet</button>
                 </div>
                 
                 <div class="border rounded-lg overflow-hidden">
-                    <template x-if="diets.length === 1">
-<div class="p-6 bg-gray-50 rounded-lg text-center">
-    <div class="max-w-2xl mx-auto">
-        <h3 class="text-2xl font-bold text-gray-800 mb-4">Welcome to Food Nutrient Finder</h3>
-        
-        <div class="text-left space-y-4 mb-6">
-            <div class="bg-white p-4 rounded-lg shadow-sm">
-                <h4 class="font-semibold text-blue-600 flex items-start">
-                    <span class="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center mr-2 mt-0.5">1</span>
-                    Purpose
-                </h4>
-                <p class="mt-2 text-gray-600">Track and optimize your nutrient intake by analyzing food combinations to meet your nutritional targets.</p>
-            </div>
-            
-            <div class="bg-white p-4 rounded-lg shadow-sm">
-                <h4 class="font-semibold text-blue-600 flex items-start">
-                    <span class="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center mr-2 mt-0.5">2</span>
-                    What It Does
-                </h4>
-                <ul class="mt-2 text-gray-600 list-disc pl-5 space-y-1">
-                    <li>Analyze nutritional profiles of foods</li>
-                    <li>Create custom diets with portion control</li>
-                    <li>Track nutrient intake against targets</li>
-                    <li>Optimize food combinations automatically</li>
-                </ul>
-            </div>
-            
-            <div class="bg-white p-4 rounded-lg shadow-sm">
-                <h4 class="font-semibold text-blue-600 flex items-start">
-                    <span class="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center mr-2 mt-0.5">3</span>
-                    How To Use
-                </h4>
-                <ol class="mt-2 text-gray-600 list-decimal pl-5 space-y-2">
-                    <li><span class="font-medium">Add foods</span> through the Foods tab</li>
-                    <li><span class="font-medium">Set targets</span> in the Nutrient Targets tab</li>
-                    <li><span class="font-medium">Create a diet</span> and add foods to it</li>
-                    <li><span class="font-medium">Adjust quantities</span> or use Optimize to balance nutrition</li>
-                </ol>
-            </div>
-        </div>
-        
-        <button 
-            @click="createDiet()" 
-            class="blue-btn px-6 py-3 text-lg font-semibold mx-auto"
-        >
-            <i class="fas fa-plus-circle mr-2"></i>Create Your First Diet
-        </button>
-    </div>
-</div>
+                    <template x-if="diets.length === 0">
+                        <div class="p-6 bg-gray-50 rounded-lg text-center">
+                            <div class="max-w-2xl mx-auto">
+                                <h3 class="text-2xl font-bold text-gray-800 mb-4">Welcome to</h3>
+                                <h2 class="text-3xl font-bold text-gray-800 mb-4">Optimal Nutrition</h2>
+                                
+                                <div class="text-left space-y-4 mb-6">
+                                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                                        <h4 class="font-semibold text-blue-600 flex items-start">
+                                            <span class="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center mr-2 mt-0.5">1</span>
+                                            Purpose
+                                        </h4>
+                                        <p class="mt-2 text-gray-600">Optimize your nutrient intake by analyzing food combinations to meet your nutritional targets.</p>
+                                    </div>
+                                    
+                                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                                        <h4 class="font-semibold text-blue-600 flex items-start">
+                                            <span class="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center mr-2 mt-0.5">2</span>
+                                            What It Does
+                                        </h4>
+                                        <ul class="mt-2 text-gray-600 list-disc pl-5 space-y-1">
+                                            <li>Analyze nutritional profiles of foods</li>
+                                            <li>Analyze nutrient contributions of each food item to your diet</li>
+                                            <li>Optimize food combinations automatically</li>
+                                            <li>Suggest foods to add to your diet to supply deficient nutrients</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                                        <h4 class="font-semibold text-blue-600 flex items-start">
+                                            <span class="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center mr-2 mt-0.5">3</span>
+                                            How To Use
+                                        </h4>
+                                        <ol class="mt-2 text-gray-600 list-decimal pl-5 space-y-2">
+                                            <li><span class="font-medium">Create a diet</span> and add foods to it</li>
+                                            <li><span class="font-medium">Set targets</span> in the Nutrient Targets tab</li>
+                                            <li><span class="font-medium">Optimize your diet</span> using the Optimize and Suggest Food buttons</li>
+                                            <li><span class="font-medium">Explore and Create new foods</span> in the Foods tab</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                                
+                                <button 
+                                    @click="createDiet()" 
+                                    class="blue-btn px-6 py-3 text-lg font-semibold mx-auto"
+                                >
+                                    <i class="fas fa-plus-circle mr-2"></i>Create Your First Diet
+                                </button>
+                            </div>
+                        </div>
                     </template>
 
                     <template x-for="diet in diets" :key="diet.id">
@@ -863,7 +864,7 @@
                         data: Object.values(this.storedFoods),
                         columns: columns,
                         layout: "fitDataStretch",
-                        height: "550px",
+                        height: "600px",
                         headerHeight: 50, // Increased height for wrapped headers
                         cellEdited: async (cell) => {
                             const foodData = cell.getRow().getData();

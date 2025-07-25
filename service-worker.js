@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nutri-finder-v1';
+const CACHE_NAME = 'optimal-nutrition-v1';
 const urlsToCache = [
   '/',
   '/index.html',
