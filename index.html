@@ -275,7 +275,7 @@
         </div>
 
         <div id="content-foods" class="tab-content" x-show="activeTab === 'foods'">
-            <div class="mt-4 mb-12">
+            <div class="mt-4">
                 <div class="flex flex-row justify-between items-center mb-4 gap-2">
                     <input type="text" x-model.debounce.300ms="foodTableFilter" class="w-full p-2 border rounded-md" placeholder="Search foods">
                     <div class="flex gap-2">
@@ -341,6 +341,57 @@
                 </div>
                 
                 <div class="border rounded-lg overflow-hidden">
+                    <template x-if="diets.length === 1">
+<div class="p-6 bg-gray-50 rounded-lg text-center">
+    <div class="max-w-2xl mx-auto">
+        <h3 class="text-2xl font-bold text-gray-800 mb-4">Welcome to Food Nutrient Finder</h3>
+        
+        <div class="text-left space-y-4 mb-6">
+            <div class="bg-white p-4 rounded-lg shadow-sm">
+                <h4 class="font-semibold text-blue-600 flex items-start">
+                    <span class="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center mr-2 mt-0.5">1</span>
+                    Purpose
+                </h4>
+                <p class="mt-2 text-gray-600">Track and optimize your nutrient intake by analyzing food combinations to meet your nutritional targets.</p>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow-sm">
+                <h4 class="font-semibold text-blue-600 flex items-start">
+                    <span class="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center mr-2 mt-0.5">2</span>
+                    What It Does
+                </h4>
+                <ul class="mt-2 text-gray-600 list-disc pl-5 space-y-1">
+                    <li>Analyze nutritional profiles of foods</li>
+                    <li>Create custom diets with portion control</li>
+                    <li>Track nutrient intake against targets</li>
+                    <li>Optimize food combinations automatically</li>
+                </ul>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow-sm">
+                <h4 class="font-semibold text-blue-600 flex items-start">
+                    <span class="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center mr-2 mt-0.5">3</span>
+                    How To Use
+                </h4>
+                <ol class="mt-2 text-gray-600 list-decimal pl-5 space-y-2">
+                    <li><span class="font-medium">Add foods</span> through the Foods tab</li>
+                    <li><span class="font-medium">Set targets</span> in the Nutrient Targets tab</li>
+                    <li><span class="font-medium">Create a diet</span> and add foods to it</li>
+                    <li><span class="font-medium">Adjust quantities</span> or use Optimize to balance nutrition</li>
+                </ol>
+            </div>
+        </div>
+        
+        <button 
+            @click="createDiet()" 
+            class="blue-btn px-6 py-3 text-lg font-semibold mx-auto"
+        >
+            <i class="fas fa-plus-circle mr-2"></i>Create Your First Diet
+        </button>
+    </div>
+</div>
+                    </template>
+
                     <template x-for="diet in diets" :key="diet.id">
                         <div class="flex justify-between items-center p-4 border-b hover:bg-gray-50 cursor-pointer" @click="selectDiet(diet)">
                             <div class="flex items-center">
@@ -348,9 +399,6 @@
                                 <span x-text="diet.name" class="font-medium max-w-name"></span>
                             </div>
                         </div>
-                    </template>
-                    <template x-if="diets.length === 0">
-                        <!-- WELCOME SCREEN HERE -->
                     </template>
                 </div>
             </div>
@@ -815,7 +863,7 @@
                         data: Object.values(this.storedFoods),
                         columns: columns,
                         layout: "fitDataStretch",
-                        height: "500px",
+                        height: "550px",
                         headerHeight: 50, // Increased height for wrapped headers
                         cellEdited: async (cell) => {
                             const foodData = cell.getRow().getData();
