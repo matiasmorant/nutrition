@@ -1,6 +1,6 @@
 +Energy (KCAL) — 2741
  Energy (kJ)
-+Protein (g) — 120
++Protein (g) — 69–239
    Histidine (g)
    Isoleucine (g)
    Leucine (g)
@@ -20,7 +20,7 @@
    Proline (g)
    Serine (g)
    Tyrosine (g)
-+Carbohydrate (g) — 383
++Carbohydrate (g) — 308–445
    Sugars (g)
      Fructose (g)
      Galactose (g)
@@ -29,8 +29,8 @@
      Maltose (g)
      Sucrose (g)
    Starch (g)
-+  Fiber, total dietary (g) — 38
-+Fat (g) — 81
++  Fiber, total dietary (g) — 38–70
++Fat (g) — 61–106
    Fatty acids, total monounsaturated (g)
      MUFA 14:1 (g)
      MUFA 15:1 (g)
@@ -45,11 +45,11 @@
      MUFA 22:1 c (g)
      MUFA 24:1 c (g)
    Fatty acids, total polyunsaturated (g)
-+    Omega-3 (ALA) (g) — 1.6
++    Omega-3 (ALA) (g) — 1.6–3.6
      Omega-3 (EPA) (g)
      Omega-3 (DPA) (g)
      Omega-3 (DHA) (g)
-+    Omega-6 (Linoleic Acid) (g) — 17
++    Omega-6 (Linoleic Acid) (g) — 17–30
      Omega-6 (GLA) (g)
      Omega-6 (Eicosadienoic Acid) (g)
      Omega-6 (AA) (g)
@@ -65,7 +65,7 @@
      PUFA 21:5 (g)
      PUFA 22:4 (g)
      PUFA 2:4 n-6 (g)
-+  Fatty acids, total saturated (g) — 0–4
++  Fatty acids, total saturated (g) — 0–20
      SFA 10:0 (g)
      SFA 12:0 (g)
      SFA 13:0 (g)
@@ -80,7 +80,7 @@
      SFA 4:0 (g)
      SFA 6:0 (g)
      SFA 8:0 (g)
-+  Fatty acids, total trans (g) — 0–0.1
++  Fatty acids, total trans (g) — 0–5
      Fatty acids, total trans-monoenoic (g)
        TFA 16:1 t (g)
        TFA 18:1 t (g)
@@ -114,7 +114,7 @@
    Vitamin B9, Folate, DFE (μg)
    Vitamin B9, Folate, food (μg)
    Vitamin B9, Folic acid (μg)
-+  Vitamin B-12 (μg) — 2.4
+   Vitamin B-12 (μg) — 2.4
    Vitamin B-12, added (μg)
 +  Vitamin C, total ascorbic acid (mg) — 90–2000
    Vitamin D (D2 + D3) (μg) — 15–100
@@ -127,7 +127,7 @@
  Minerals
 +  Calcium (mg) — 1000–2500
 +  Copper (mg) — 0.9–10
-+  Fluoride (μg) — 4000–10000
+   Fluoride (μg) — 4000–10000
 +  Iron (mg) — 8–45
 +  Magnesium (mg) — 420
 +  Manganese (mg) — 2.3–11
