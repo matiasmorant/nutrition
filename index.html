@@ -67,6 +67,7 @@
         .nutrient-table th, .nutrient-table td {
             padding: 3px 8px; /* Reduced padding */
             text-align: right;
+            vertical-align: baseline;
         }
         .nutrient-table th:first-child, .nutrient-table td:first-child {
             text-align: left;
@@ -492,7 +493,7 @@
                                 </thead>
                                 <tbody>
                                     <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
-                                        <tr>
+                                        <tr class="py-1">
                                             <td class="text-left nutrient-clickable max-w-name" @click="showNutrientContribution(nutrient)" x-text="nutrient"></td>
                                             <td x-text="(x=>x<10?x.toFixed(2):x.toFixed(0))(calculateNutrientTotal(nutrient))"></td>
                                             <td>
