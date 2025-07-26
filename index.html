@@ -19,7 +19,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Add idb-keyval for IndexedDB storage -->
     <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6.2.0/dist/umd.js"></script>
     <style>
         body {
@@ -263,6 +262,13 @@
 </head>
 <body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-cloak>
 
+    <div x-show="tooltip.visible"
+         @click.outside="tooltip.visible = false; tooltip.nutrient = null"
+         :style="`top: ${tooltip.top}px; left: ${tooltip.left}px; transform: translateX(-50%);`"
+         class="absolute z-50 p-4 bg-gray-800 text-white rounded-lg shadow-xl max-w-sm w-max"
+         x-cloak>
+        <div x-html="tooltip.content" class="text-sm"></div>
+    </div>
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <div class="sticky top-0 z-10 bg-gray-50">
             <div class="border-b border-gray-200">
@@ -299,8 +305,11 @@
                     <div class="grid grid-cols-[1fr_min-content_min-content] items-center gap-x-1">
                         <div class="flex items-center">
                             <span @click="removeNutrientColumn(nutrient)" class="remove-icon">&times;</span>
-                            <label :for="`target-min-${nutrient}`" x-text="nutrient" class="text-sm font-medium text-gray-700"></label>
-                        </div>
+                            <label :for="`target-min-${nutrient}`" 
+                                   x-text="nutrient" 
+                                   @click="showNutrientTooltip($event, nutrient)"
+                                   class="text-sm font-medium text-gray-700 cursor-pointer hover:text-blue-600 underline-offset-2 hover:underline"></label>
+                            </div>
                         <div class="flex w-32 justify-center items-center gap-1">
                             <input 
                                 type="number" 
@@ -726,6 +735,17 @@
 
                 // IndexedDB store
                 db: null,
+                
+                // START: New state for tooltip
+                nutrientInfo: {},
+                tooltip: {
+                    visible: false,
+                    content: '',
+                    top: 0,
+                    left: 0,
+                    nutrient: null
+                },
+                // END: New state for tooltip
 
                 // --- COMPUTED PROPERTIES ---
                 get filteredAvailableNutrients() {
@@ -765,10 +785,11 @@
                     this.nutrientTargets = await idbKeyval.get('nutrientTargets', this.db) || {};
 
                     this.isLoading = true;
-                    // await Promise.all([this.loadNutrientTree(), this.loadFoodData()]);
-                    const defaultNutrientTargets = await this.loadNutrientTree();
 
+                    const defaultNutrientTargets = await this.loadNutrientTree();
                     await this.loadFoodData();
+                    await this.loadNutrientInfo();
+                    
                     this.isLoading = false;
                     
                     // Initialize with allFoods if storedFoods is empty
@@ -885,6 +906,39 @@
 
                     this.updateFoodTableFilter();
                 },
+                
+                async loadNutrientInfo() {
+                    try {
+                        const response = await fetch('nutrientinfo.md');
+                        if (!response.ok) {
+                            console.warn('nutrientinfo.md not found.');
+                            return;
+                        }
+                        const text = await response.text();
+                        const info = {};
+                        let currentNutrient = null;
+                        let currentContent = [];
+
+                        text.split('\n').forEach(line => {
+                            if (line.startsWith('# ')) {
+                                if (currentNutrient) {
+                                    info[currentNutrient] = currentContent.join('<br>').trim();
+                                }
+                                currentNutrient = line.substring(2).trim();
+                                currentContent = [];
+                            } else if (currentNutrient) {
+                                currentContent.push(line);
+                            }
+                        });
+
+                        if (currentNutrient) {
+                            info[currentNutrient] = currentContent.join('<br>').trim();
+                        }
+                        this.nutrientInfo = info;
+                    } catch (error) {
+                        console.error('Failed to load nutrient info:', error);
+                    }
+                },
 
                 async loadNutrientTree() {
                     try {
@@ -968,6 +1022,27 @@
                     } catch (error) {
                         console.error('Error loading food data:', error);
                         alert('Error: Could not load or parse food data. Please make sure the foodnutrient.json file is present and valid.');
+                    }
+                },
+                
+                showNutrientTooltip(event, nutrient) {
+                    if (this.tooltip.visible && this.tooltip.nutrient === nutrient) {
+                        this.tooltip.visible = false;
+                        this.tooltip.nutrient = null;
+                        return;
+                    }
+
+                    const info = this.nutrientInfo[nutrient];
+                    if (info && info.trim()) {
+                        const rect = event.target.getBoundingClientRect();
+                        this.tooltip.content = `<h4 class="font-bold text-base mb-2">${nutrient}</h4>${info}`;
+                        this.tooltip.top = rect.bottom + window.scrollY + 8;
+                        this.tooltip.left = rect.left + window.scrollX + (rect.width / 2);
+                        this.tooltip.nutrient = nutrient;
+                        this.tooltip.visible = true;
+                    } else {
+                        this.tooltip.visible = false;
+                        this.tooltip.nutrient = null;
                     }
                 },
 
