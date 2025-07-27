@@ -105,10 +105,10 @@
      Cryptoxanthin, beta (μg)
      Carotene, alpha (μg)
      Carotene, beta (μg)
-+  Vitamin B1, Thiamin (mg) — 1.2
-+  Vitamin B2, Riboflavin (mg) — 1.3
++  Vitamin B1, Thiamin (mg) — 1.2–100
++  Vitamin B2, Riboflavin (mg) — 1.3–400
 +  Vitamin B3, Niacin (mg) — 16–35
-+  Vitamin B5, Pantothenic acid (mg) — 5
++  Vitamin B5, Pantothenic acid (mg) — 5–1000
 +  Vitamin B6, Pyridoxine (mg) — 1.3–100
 +  Vitamin B9, Folate (μg) — 400–1000
    Vitamin B9, Folate, DFE (μg)
@@ -129,12 +129,12 @@
 +  Copper (mg) — 0.9–10
    Fluoride (μg) — 4000–10000
 +  Iron (mg) — 8–45
-+  Magnesium (mg) — 420
++  Magnesium (mg) — 420–800
 +  Manganese (mg) — 2.3–11
 +  Phosphorus (mg) — 700–4000
-+  Potassium (mg) — 3400
++  Potassium (mg) — 3400–15000
 +  Selenium (μg) — 55–400
-+  Sodium (mg) — 1500–2300
++  Sodium (mg) — 500–1500
 +  Zinc (mg) — 11–40
  Alcohol, ethyl (g)
  Beta-sitosterol (mg)

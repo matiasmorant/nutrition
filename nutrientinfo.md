@@ -95,85 +95,115 @@ As low as possible while consuming a nutritionally adequate diet. (Source: USDA)
 
 Adults should not have more than about 5g of trans fats a day. (Source: NHS)
 
-# Choline, total (mg) — 550–3500
+# Choline, total (mg)
 
+Choline is an essential nutrient that is naturally present in some foods and available as a dietary supplement. Choline is a source of methyl groups needed for many steps in metabolism. Humans can produce choline endogenously in the liver, mostly as phosphatidylcholine, but the amount that the body naturally synthesizes is not sufficient to meet human needs.
 
+High intakes of choline are associated with a fishy body odor, vomiting, excessive sweating and salivation, hypotension, and liver toxicity [1,2]. Choline consumption has been shown to increase production of TMAO, a substance that has been linked to a higher risk of cardiovascular disease, in a dose-dependent manner in adults.
 
-# Vitamin E (alpha-tocopherol) (mg) — 15–1000
+The FNB has established a AI of 550 mg/day for men and 425 mg/day for women, and UL of 3500mg for adults.
+(Source: https://ods.od.nih.gov/factsheets/Choline-HealthProfessional/)
 
+# Vitamin E (alpha-tocopherol) (mg)
 
+The FNB established a RDA of 15mg and UL of 1000mg for adults.
+(Source: https://ods.od.nih.gov/factsheets/Vitamine-HealthProfessional/)
 
-# Vitamin A, RAE (μg) — 900–3000
+# Vitamin A, RAE (μg)
 
 Upper limit of 3000 μg is for preformed Vitamin A only (retinol), carotenes have higher upper limit. (Source: USDA)
 
-# Vitamin B1, Thiamin (mg) — 1.2
+# Vitamin B1, Thiamin (mg)
+
+Min by USDA (Source: USDA)
+Max taken from Usual Adult Dose for Vitamin/Mineral Supplementation (https://www.drugs.com/dosage/thiamine.html)
+
+# Vitamin B2, Riboflavin (mg)
+
+The FNB established a AI of 1.3 mg for men and 1.1 mg for women. Adverse effects from high riboflavin intakes from foods or supplements (400 mg/day for at least 3 months) have not been reported.
+(Source: https://ods.od.nih.gov/factsheets/Riboflavin-HealthProfessional/)
+
+# Vitamin B3, Niacin (mg)
 
 (Source: USDA)
 
-# Vitamin B2, Riboflavin (mg) — 1.3
+# Vitamin B5, Pantothenic acid (mg)
 
-(Source: USDA)
+For adults, AI is 5 mg/day.
+Large doses of pantothenic acid do not cause symptoms, other than (possibly) diarrhea. Taking very high doses of pantothenic acid supplements (such as 10,000 mg per day) can cause an upset stomach and diarrhea.
+(Source: https://medlineplus.gov/ency/article/002410.htm, https://ods.od.nih.gov/factsheets/PantothenicAcid-Consumer/#:~:text=heart%2Dhealthy%20diet.-,Can%20pantothenic%20acid%20be%20harmful?,an%20upset%20stomach%20and%20diarrhea.)
 
-# Vitamin B3, Niacin (mg) — 16–35
+# Vitamin B6, Pyridoxine (mg)
 
-(Source: USDA)
+The FNB has established a RDA of 1.3mg, and UL of 100mg for adults.
+(Source: https://ods.od.nih.gov/factsheets/Vitaminb6-HealthProfessional/)
 
-# Vitamin B5, Pantothenic acid (mg) — 5
+# Vitamin B9, Folate (μg)
 
-(Source: USDA)
+The FNB has established a RDA of 400μg, and UL of 1000mg for adults.
+(Source: https://ods.od.nih.gov/factsheets/folate-HealthProfessional/)
 
-# Vitamin B6, Pyridoxine (mg) — 1.3–100
+# Vitamin C, total ascorbic acid (mg)
 
-(Source: USDA)
+The FNB has established a RDA of 90 mg for males and 75 mg for females, and UL of 2000mg for adults
+(Source: https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/)
 
-# Vitamin B9, Folate (μg) — 400–1000
+# Calcium (mg)
 
-(Source: USDA)
+The FNB has established a RDA of 1000 mg and UL of 2500mg for adults.
 
-# Vitamin C, total ascorbic acid (mg) — 90–2000
+(Source: https://ods.od.nih.gov/factsheets/calcium-HealthProfessional/)
 
-(Source: USDA)
+# Copper (mg)
 
-# Calcium (mg) — 1000–2500
+The FNB has established a RDA of 0.9 mg and UL of 10 mg for adults.
 
-(Source: USDA)
+(Source: https://ods.od.nih.gov/factsheets/Copper-HealthProfessional/#:~:text=Sources%20of%20Copper-,Food,mg/day%20%5B3%5D.)
 
-# Copper (mg) — 0.9–10
+# Iron (mg)
 
-(Source: USDA)
+The FNB has established a RDA of 8 mg for males and 18 mg for females, and UL of 45mg for adults.
+(Source: https://ods.od.nih.gov/factsheets/iron-HealthProfessional/)
 
-# Iron (mg) — 8–45
+# Magnesium (mg)
 
-(Source: USDA)
+The RDI for magnesium is 420mg (men) and 310 mg (women). The UL for magnesium is 350 mg, if taken from supplements. (Source: USDA)
 
-# Magnesium (mg) — 420
+Extra magnesium from food is safe because the kidneys will eliminate excess amounts in urine. (Source: https://nutritionsource.hsph.harvard.edu/magnesium/)
 
-(Source: USDA)
+# Manganese (mg)
 
-# Manganese (mg) — 2.3–11
+The FNB has established an AI of 2.3 mg for males and 1.8 mg for females, and UL of 11mg for adults.
+(Source: https://lpi.oregonstate.edu/mic/minerals/manganese)
 
-(Source: USDA)
+# Phosphorus (mg)
 
-# Phosphorus (mg) — 700–4000
+The FNB has established an RDA of 700 mg, and UL of 4000 mg for adults.
+(Source: https://ods.od.nih.gov/factsheets/Phosphorus-HealthProfessional/)
 
-(Source: USDA)
+# Potassium (mg)
 
-# Potassium (mg) — 3400
+A NASEM committee has established an AI of 3,400 mg for males and 2,600 mg for females.
+In healthy people with normal kidney function, high dietary potassium intakes do not pose a health risk because the kidneys eliminate excess amounts in the urine.
 
-(Source: USDA)
+(Source: https://ods.od.nih.gov/factsheets/Potassium-HealthProfessional/)
 
-# Selenium (μg) — 55–400
+# Selenium (μg)
 
-(Source: USDA)
+The FNB has established a RDA of 55 μg, and UL of 400 μg for adults.
+(Source: https://ods.od.nih.gov/factsheets/Selenium-HealthProfessional/)
 
-# Sodium (mg) — 1500–2300
+# Sodium (mg)
 
-(Source: USDA)
+The Institute of Medicine (IOM) suggests keeping sodium under 1,500 mg per day. A healthy, active adult needs between 200 and 500 mg of sodium per day.
+
+(Source: https://www.brownhealth.org/be-well/how-much-sodium-day-do-you-need)
 
 # Zinc (mg) — 11–40
 
-(Source: USDA)
+The FNB has established a RDA of 11 mg for males and 8 mg for females, and UL of 40 mg for adults.
+
+(Source: https://ods.od.nih.gov/factsheets/Zinc-HealthProfessional/)
 
 # Cholesterol (mg) — 0–0.1
 
