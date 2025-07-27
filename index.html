@@ -302,7 +302,7 @@
         <div id="content-targets" class="tab-content flex flex-col w-fit mx-auto items-end gap-4 p-6 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
             <button @click="openAddNutrientModal()" class="blue-btn">Add Nutrient</button>
             <div id="targets-list" class="grid grid-cols-1 lg:grid-cols-2 gap-x-20 gap-y-1 max-w-fit">
-                <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
+                <template x-for="nutrient in Object.keys(nutrientTargets)" :key="nutrient">
                     <div class="grid grid-cols-[1fr_min-content_min-content] items-center gap-x-1">
                         <div class="flex items-center">
                             <span @click="removeNutrientColumn(nutrient)" class="remove-icon">&times;</span>
@@ -1207,11 +1207,8 @@
                     iterations = iterations ?? 8;
                     if(iterations===0) return;
                     targets = targets || Object.fromEntries(Object.entries(this.nutrientTargets).map(([k,v])=>[k,v.min]));
-                    const nutrients = this.displayHeaders.filter(h => h !== 'name' && targets[h] && targets[h] > 0);
-                    if (nutrients.length === 0) {
-                        alert("Please set targets for at least one nutrient.");
-                        return;
-                    }
+                    const nutrients = Object.keys(targets);
+                    if (nutrients.length === 0) {alert("Please set targets for at least one nutrient.");return;}
                     
                     try {
                         const dietFoods=this.selectedDiet.foods;
@@ -1412,8 +1409,8 @@
                         const foodItem = this.selectedDiet.foods.find(f => f.foodName === foodName);
                         if (!food || !foodItem) return;
                         const items = [];
-                        this.displayHeaders
-                            .filter(h => h !== 'name' && food[h] > 0)
+                        Object.keys(this.nutrientTargets)
+                            .filter(x => food[x] > 0)
                             .forEach(nutrient => {
                                 const value = (food[nutrient] || 0) * foodItem.quantity / 100 / this.calculateNutrientTotal(nutrient) * 100;
                                 if (value > 0) {
@@ -1429,7 +1426,7 @@
                 suggestFood() {
                     if (!this.selectedDiet || this.selectedDiet.foods.length === 0) return alert("Please add foods to your diet first.");
 
-                    const nutrients = this.displayHeaders.filter(h => h !== 'name' && this.nutrientTargets[h] && this.nutrientTargets[h].min > 0);
+                    const nutrients = Object.entries(this.nutrientTargets).filter(([k,v]) => v.min>0).map(([k,v])=>k);
                     if (nutrients.length === 0) return alert("Please set nutrient targets first.");
 
                     const D = nutrients.map(nutrient => {
