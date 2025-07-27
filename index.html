@@ -728,6 +728,7 @@
                 foodTableFilter: '',
                 
                 // Diets state
+                predefinedDiets: [],
                 diets: [],
                 selectedDiet: null,
                 dietTimeframe: 'day',
@@ -795,6 +796,18 @@
                     // Create IndexedDB store
                     this.db = idbKeyval.createStore('food-app-db', 'food-app-store4');
                     
+                    // Load predefined diets
+                    try {
+                        const response = await fetch('diets.json');
+                        if (response.ok) {
+                            this.predefinedDiets = await response.json();
+                        } else {
+                            console.warn('diets.json not found or failed to load.');
+                        }
+                    } catch (error) {
+                        console.error('Error loading predefined diets:', error);
+                    }
+
                     // Load data from IndexedDB
                     this.storedFoods = (await idbKeyval.get('storedFoods', this.db) || []).reduce((obj, food) => {
                         if (food && food.name) obj[food.name] = food;
@@ -1126,11 +1139,26 @@
                 
                 // Diets methods
                 async createDiet() {
+                    let templateDiet;
+
+                    if (this.predefinedDiets && this.predefinedDiets.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * this.predefinedDiets.length);
+                        templateDiet = this.predefinedDiets[randomIndex];
+                    } else {
+                        // Fallback if diets.json is missing or empty
+                        templateDiet = {
+                            name: `Diet ${this.diets.length + 1}`,
+                            foods: []
+                        };
+                    }
+
                     const newDiet = {
                         id: Date.now().toString(),
-                        name: `Diet ${this.diets.length + 1}`,
-                        foods: []
+                        name: templateDiet.name,
+                        // Use a deep copy for the foods array
+                        foods: JSON.parse(JSON.stringify(templateDiet.foods))
                     };
+                    
                     this.diets.push(newDiet);
                     await this.saveDiets();
                     this.selectDiet(newDiet);

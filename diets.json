@@ -1,0 +1,18 @@
+[
+{
+id: "1753490965973",
+name: "Demo Diet",
+foods: [
+{foodName: 'Broccoli, frozen, chopped, cooked, boiled, drained, ', quantity: 1200, locked: false},
+{foodName: 'Cereals, oats, regular and quick, not fortified, dry', quantity: 30, locked: false},
+{foodName: 'Peanuts, all types, dry-roasted, ', quantity: 8.4, locked: false},
+{foodName: 'Peas, green, frozen, cooked, boiled, drained, ', quantity: 280, locked: false},
+{foodName: 'Rice, white, long-grain, parboiled, unenriched, dry', quantity: 180, locked: false},
+{foodName: 'Seeds, chia seeds, dried', quantity: 7, locked: false},
+{foodName: 'Mushrooms, shiitake, dried', quantity: 17, locked: false},
+{foodName: 'Oil, corn, industrial and retail, all purpose salad or cooking', quantity: 37, locked: false},
+{foodName: 'Tomatoes, sun-dried', quantity: 27, locked: false},
+{foodName: 'Parsley, freeze-dried', quantity: 22, locked: false},
+{foodName: 'Tofu yogurt', quantity: 890, locked: false}]
+}
+]
