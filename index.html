@@ -264,7 +264,7 @@
 <body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-cloak>
 
     <div x-show="installPromptEvent && !isStandalone" class="fixed top-4 right-4 z-50">
-        <button @click="installPWA()" class="flex items-center gap-2 bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition-colors">
+        <button @click="installPWA()" class="flex flex-col w-min items-center gap-2 bg-blue-500 text-white font-semibold px-2 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition-colors">
             <i class="fas fa-mobile-alt"></i>
             Install App
         </button>
@@ -698,6 +698,19 @@
           const scale = Math.pow(10, -Math.floor(Math.log10(x)) + 1);
           return Math.round(x * scale) / scale;
         }
+        function argmin(arr) {
+          return arr.reduce((minI, x, i, array) => x < array[minI] ? i : minI, 0);
+        }
+        function nnls(A,b){
+            let x = math.multiply(math.pinv(A), b).flat();
+            const mini = argmin(x);
+            if(x[mini]>0) return x;
+            A.forEach(row=>row.splice(mini,1));
+            x = nnls(A,b);
+            x.splice(mini,0,0);
+            return x;
+        }
+
         Object.defineProperty(Array.prototype, 'sum', {
             value: function (selector = x => x) {
               return this.reduce((s,x) => s + selector(x), 0);
@@ -1223,28 +1236,27 @@
 
                     return (total / min) * 100;
                 },
-                argmin(arr) {
-                  return arr.reduce((minI, x, i, array) => x < array[minI] ? i : minI, 0);
+                easierTargets() {
+                    return Object.entries(this.nutrientTargets).map(([nutrient,target])=>{
+                            const min = target.min || 0;
+                            if(target.isRange){
+                                const current=this.calculateNutrientTotal(nutrient);
+                                const max = target.max || (100 * target.min);
+                                return [nutrient, math.median([min,max,current])];
+                            }
+                            return [nutrient, min];
+                        });
                 },
-                nnls(A,b){
-                    let x = math.multiply(math.pinv(A), b).flat();
-                    const mini = this.argmin(x);
-                    if(x[mini]>0) return x;
-                    A.forEach(row=>row.splice(mini,1));
-                    x = this.nnls(A,b);
-                    x.splice(mini,0,0);
-                    return x;
-                },
-                optimizeDiet(targets, iterations, preverror) {
+
+                optimizeDiet(targets, maxIter, preverror) {
                     if (!this.selectedDiet || this.selectedDiet.foods.length === 0) {
                         alert("Please add foods to the diet first.");
                         return;
                     }
-                    iterations = iterations ?? 80;
-                    if(iterations===0) return;
-                    targets = targets || Object.fromEntries(Object.entries(this.nutrientTargets).map(([k,v])=>[k,v.min]));
-                    const nutrients = Object.keys(targets);
-                    if (nutrients.length === 0) {alert("Please set targets for at least one nutrient.");return;}
+                    maxIter = maxIter ?? 200;
+                    if(maxIter===0) return;
+                    targets = targets || Object.entries(this.nutrientTargets).map(([k,v])=>[k,v.min || 0]);
+                    if (targets.length === 0) {alert("Please set targets for at least one nutrient.");return;}
                     
                     const dietFoods=this.selectedDiet.foods;
                     const locked = dietFoods.filter(f => f.locked);
@@ -1255,18 +1267,18 @@
                     if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
 
                     try {
-                        const lockedNutrients = nutrients.map(nutrient => locked.sum(food => 
+                        const lockedNutrients = targets.map(([nutrient,target]) => locked.sum(food => 
                             (getA(food,nutrient) * food.quantity)
                         ));                        
-                        const A = nutrients.map(nutrient => unlocked.map(food => (
-                            getA(food,nutrient) /(targets[nutrient] > 0 ? targets[nutrient] : 1)
+                        const A = targets.map(([nutrient,target]) => unlocked.map(food => (
+                            getA(food,nutrient) /(target > 0 ? target : 1)
                         )));
-                        const b = nutrients.map((nutrient, i) => (
-                            targets[nutrient] > 0 ? 1 - lockedNutrients[i] / targets[nutrient] : -lockedNutrients[i]
+                        const b = targets.map(([nutrient,target],i) => (
+                            target > 0 ? 1 - lockedNutrients[i] / target : -lockedNutrients[i]
                         ));
 
                         const copyA=JSON.parse(JSON.stringify(A));
-                        const solution = this.nnls(A, b);
+                        const solution = nnls(A, b);
                         const error = math.norm(math.subtract(math.multiply(copyA,solution),b));
                         // console.log(error);
                         if(preverror && preverror-error<1e-4) return;
@@ -1274,15 +1286,7 @@
                         unlocked.forEach((food, i) => {food.quantity = round(Math.max(0, solution[i]));});                        
                         this.saveDiets();
 
-                        targets = Object.fromEntries(Object.entries(targets).map(([k,v])=>{
-                            if(this.nutrientTargets[k].isRange){
-                                const current=this.calculateNutrientTotal(k);
-                                const max = this.nutrientTargets[k].max || (100 * this.nutrientTargets[k].min);
-                                v = math.median([this.nutrientTargets[k].min,max, current]);
-                            }
-                            return [k,v]
-                        }));
-                        this.optimizeDiet(targets, iterations-1, error);
+                        this.optimizeDiet(this.easierTargets(), maxIter-1, error);
                     } catch (error) {
                         console.error("Optimization error:", error);
                         alert("Failed to optimize diet. The combination of foods and targets may not be solvable.");
@@ -1444,24 +1448,42 @@
                 suggestFood() {
                     if (!this.selectedDiet || this.selectedDiet.foods.length === 0) return alert("Please add foods to your diet first.");
 
-                    const nutrients = Object.entries(this.nutrientTargets).filter(([k,v]) => v.min>0).map(([k,v])=>k);
-                    if (nutrients.length === 0) return alert("Please set nutrient targets first.");
+                    // const targets = Object.entries(this.nutrientTargets).map(([k,v])=>[k,v.min||0]);
+                    const targets = this.easierTargets();
 
-                    const D = nutrients.map(nutrient => {
-                        const minTarget = this.nutrientTargets[nutrient]?.min;
-                        return minTarget > 0 ? this.calculateNutrientTotal(nutrient) / minTarget : 0;
-                    });
-                    const mD = math.mean(D), mD2 = math.mean(math.dotPow(D, 2));
+                    const D = targets.map(([name,target]) => (
+                        this.calculateNutrientTotal(name)/(target > 0 ? target : 1)
+                    ));
+                    const b=targets.map(([nutrient,target])=>(target > 0 ? 1 : 0));
+                    const D1 = math.multiply(D,b);
+                    const DD = math.multiply(D,D);
+                    // const mD = math.mean(D), mD2 = math.mean(math.dotPow(D, 2));
 
                     const foodScores = this.allFoods.filter(food => !this.selectedDiet.foods.some(f => f.foodName === food.name))
                         .map(food => {
-                            const F = nutrients.map(nutrient => (food[nutrient] || 0) / 100);
-                            const mF = math.mean(F), mF2 = math.mean(math.dotPow(F, 2)), mFD = math.mean(math.dotMultiply(F, D));
-                            const denominator = mF2 * mD2 - mFD**2;
-                            const optimalAmount = (mF * mD2 - mD * mFD) * denominator; // only sign matters
-                            const dietAmount = (mD * mF2 - mF * mFD) * denominator;
-                            const score = (optimalAmount > 0 && denominator !== 0) ? (mF2 * mD**2 + mD2 * mF**2 - 2 * mFD * mF * mD) / denominator : -Infinity;
-                            return { food, score, dietAmount};
+                            const F = targets.map(([nutrient,target]) => (food[nutrient] || 0) / 100/(target > 0 ? target : 1));
+
+                            const F1 = math.multiply(F,b);
+                            const FF = math.multiply(F,F);
+                            const FD = math.multiply(F,D);
+                            const determinant = FF*DD - FD*FD;
+                            const xF = ( DD*F1 - FD*D1) / determinant;
+                            const xD = (-FD*F1 + FF*D1) / determinant;
+                            const score = xF>0?-(FF*xF*xF+2*FD*xF*xD+DD*xD*xD-2*(F1*xF+D1*xD)):-Infinity;
+                            return { food, score, optimalAmount: xF, dietAmount: xD};
+
+                            // const A=math.transpose([D,F]);
+                            // const x=math.multiply(math.pinv(A),b);
+                            // const [dietAmount,optimalAmount]=x;
+                            // const score = optimalAmount>0?-math.norm(math.subtract(math.multiply(A,x),b)):-Infinity;
+                            // return { food, score, optimalAmount, dietAmount};
+
+                            // const mF = math.mean(F), mF2 = math.mean(math.dotPow(F, 2)), mFD = math.mean(math.dotMultiply(F, D));
+                            // const denominator = mF2 * mD2 - mFD**2;
+                            // const optimalAmount = (mF * mD2 - mD * mFD) * denominator; // only sign matters
+                            // const dietAmount = (mD * mF2 - mF * mFD) * denominator;
+                            // const score = (optimalAmount > 0 && denominator !== 0) ? (mF2 * mD**2 + mD2 * mF**2 - 2 * mFD * mF * mD) / denominator : -Infinity;
+                            // return { food, score, optimalAmount: (mF * mD2 - mD * mFD) / denominator, dietAmount: (mD * mF2 - mF * mFD) / denominator};
                         });
 
                     foodScores.sort((a, b) => b.score - a.score);
@@ -1470,10 +1492,11 @@
                     for (const item of foodScores) {
                         const prefix = item.food.name.substring(0, 12);
                         if (!seenPrefixes.has(prefix)) {
+                            console.log(item);
                             distinctFoods.push(item.food);
                             seenPrefixes.add(prefix);
                         }
-                        if (distinctFoods.length >= 20) break;
+                        if (distinctFoods.length >= 50) break;
                     }
                     
                     this.suggestedFoods = distinctFoods;
