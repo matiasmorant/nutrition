@@ -320,22 +320,22 @@
                                 class="w-14 p-2 border rounded-md text-sm"
                                 placeholder="Min"
                             >
-                            <span x-show="getTarget(nutrient).show === 2">-</span>
+                            <span x-show="getTarget(nutrient).isRange">-</span>
                             <input 
                                 type="number" 
                                 :id="`target-max-${nutrient}`" 
                                 x-model.number="getTarget(nutrient).max" 
                                 @change="saveTargets()"
-                                x-show="getTarget(nutrient).show === 2"
+                                x-show="getTarget(nutrient).isRange"
                                 class="w-14 p-2 border rounded-md text-sm"
                                 placeholder="Max"
                             >
                         </div>
-                        <button @click="toggleTargetInputs(nutrient)" class="w-[30px] p-2 rounded-full hover:bg-gray-200 focus:outline-none" :title="getTarget(nutrient).show === 1 ? 'Set range' : 'Set single value'">
-                            <span x-show="getTarget(nutrient).show === 2">
+                        <button @click="toggleTargetInputs(nutrient)" class="w-[30px] p-2 rounded-full hover:bg-gray-200 focus:outline-none" :title="!getTarget(nutrient).isRange ? 'Set range' : 'Set single value'">
+                            <span x-show="getTarget(nutrient).isRange">
                                 <svg width="16" height="16" viewBox="0 0 16 16" class="text-gray-600"><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
                             </span>
-                            <span x-show="getTarget(nutrient).show !== 2">
+                            <span x-show="!getTarget(nutrient).isRange">
                                 <svg width="16" height="16" viewBox="0 0 16 16" class="text-gray-600"><circle cx="5" cy="8" r="2" fill="currentColor"/><circle cx="11" cy="8" r="2" fill="currentColor"/></svg>
                             </span>
                         </button>
@@ -1020,12 +1020,12 @@
                                     if (valuePart.includes('–')) {
                                         const range = valuePart.split(/–/).map(p => parseFloat(p.trim()));
                                         if (range.length === 2 && !isNaN(range[0]) && !isNaN(range[1])) {
-                                            defaultNutrientTargets[nutrientName] = { min: range[0], max: range[1], show: 2 };
+                                            defaultNutrientTargets[nutrientName] = { min: range[0], max: range[1], isRange: true };
                                         }
                                     } else {
                                         const defaultValue = parseFloat(valuePart);
                                         if (!isNaN(defaultValue)) {
-                                            defaultNutrientTargets[nutrientName] = { min: defaultValue, max: null, show: 1 };
+                                            defaultNutrientTargets[nutrientName] = { min: defaultValue, max: null, isRange: false };
                                         }
                                     }
                                 }
@@ -1126,15 +1126,12 @@
                 },
 
                 getTarget(nutrient) {
-                    return this.nutrientTargets[nutrient] ?? { min: 0, max: null, show: 1 };
+                    return this.nutrientTargets[nutrient] ?? { min: 0, max: null, isRange: false };
                 },
 
                 toggleTargetInputs(nutrient) {
                     const target = this.getTarget(nutrient);
-                    target.show = target.show === 1 ? 2 : 1;
-                    if (target.show === 1) {
-                        target.max = null;
-                    }
+                    target.isRange = !target.isRange;
                 },
                 
                 // Diets methods
@@ -1226,27 +1223,38 @@
 
                     return (total / min) * 100;
                 },
-                
-                optimizeDiet(targets, iterations) {
+                argmin(arr) {
+                  return arr.reduce((minI, x, i, array) => x < array[minI] ? i : minI, 0);
+                },
+                nnls(A,b){
+                    let x = math.multiply(math.pinv(A), b).flat();
+                    const mini = this.argmin(x);
+                    if(x[mini]>0) return x;
+                    A.forEach(row=>row.splice(mini,1));
+                    x = this.nnls(A,b);
+                    x.splice(mini,0,0);
+                    return x;
+                },
+                optimizeDiet(targets, iterations, preverror) {
                     if (!this.selectedDiet || this.selectedDiet.foods.length === 0) {
                         alert("Please add foods to the diet first.");
                         return;
                     }
-                    iterations = iterations ?? 8;
+                    iterations = iterations ?? 80;
                     if(iterations===0) return;
                     targets = targets || Object.fromEntries(Object.entries(this.nutrientTargets).map(([k,v])=>[k,v.min]));
                     const nutrients = Object.keys(targets);
                     if (nutrients.length === 0) {alert("Please set targets for at least one nutrient.");return;}
                     
-                    try {
-                        const dietFoods=this.selectedDiet.foods;
-                        const locked = dietFoods.filter(f => f.locked);
-                        const unlocked = dietFoods.filter(f => !f.locked);
-                        const nutrientData=Object.fromEntries(dietFoods.map(x=>[x.foodName,this.storedFoods[x.foodName]]));
-                        const getA=(food,nutrient)=>(nutrientData[food.foodName][nutrient] || 0) / 100;
-                        
-                        if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
+                    const dietFoods=this.selectedDiet.foods;
+                    const locked = dietFoods.filter(f => f.locked);
+                    const unlocked = dietFoods.filter(f => !f.locked);
+                    const nutrientData=Object.fromEntries(dietFoods.map(x=>[x.foodName,this.storedFoods[x.foodName]]));
+                    const getA=(food,nutrient)=>(nutrientData[food.foodName][nutrient] || 0) / 100;
+                    
+                    if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
 
+                    try {
                         const lockedNutrients = nutrients.map(nutrient => locked.sum(food => 
                             (getA(food,nutrient) * food.quantity)
                         ));                        
@@ -1256,41 +1264,25 @@
                         const b = nutrients.map((nutrient, i) => (
                             targets[nutrient] > 0 ? 1 - lockedNutrients[i] / targets[nutrient] : -lockedNutrients[i]
                         ));
-                        const solution = math.multiply(math.pinv(A), b).flat();
-                        unlocked.forEach((food, i) => {
-                            food.quantity = round(Math.max(0, solution[i]));
-                        });
-                        
+
+                        const copyA=JSON.parse(JSON.stringify(A));
+                        const solution = this.nnls(A, b);
+                        const error = math.norm(math.subtract(math.multiply(copyA,solution),b));
+                        // console.log(error);
+                        if(preverror && preverror-error<1e-4) return;
+
+                        unlocked.forEach((food, i) => {food.quantity = round(Math.max(0, solution[i]));});                        
                         this.saveDiets();
+
                         targets = Object.fromEntries(Object.entries(targets).map(([k,v])=>{
-                            if(this.nutrientTargets[k].show === 2){
+                            if(this.nutrientTargets[k].isRange){
                                 const current=this.calculateNutrientTotal(k);
                                 const max = this.nutrientTargets[k].max || (100 * this.nutrientTargets[k].min);
                                 v = math.median([this.nutrientTargets[k].min,max, current]);
                             }
                             return [k,v]
                         }));
-                        if(solution.some(x=>x<0)){
-                            let unlockedIndex = 0;
-                            const foodsToLock = [];
-                            
-                            for (let i = 0; i < this.selectedDiet.foods.length; i++) {
-                                const foodItem = this.selectedDiet.foods[i];
-                                if (!foodItem.locked) {
-                                    if (solution[unlockedIndex] < 0) {
-                                        foodsToLock.push(i);
-                                        foodItem.locked = true;
-                                    }
-                                    unlockedIndex++;
-                                }
-                            }
-                            
-                            this.optimizeDiet(targets, iterations-1);
-                            
-                            foodsToLock.forEach(i => {this.selectedDiet.foods[i].locked = false;});
-                        } else{
-                            this.optimizeDiet(targets, iterations-1);
-                        }
+                        this.optimizeDiet(targets, iterations-1, error);
                     } catch (error) {
                         console.error("Optimization error:", error);
                         alert("Failed to optimize diet. The combination of foods and targets may not be solvable.");
@@ -1377,14 +1369,12 @@
                     if (this.pieChart) this.pieChart.destroy();
                     
                     const combined = data.map((value, i) => ({ value, label: labels[i] })).sort((a, b) => b.value - a.value);
-                    const sortedLabels = combined.map(item => item.label);
-                    const sortedData = combined.map(item => item.value);
 
                     this.pieChart = this._createPieChart(
                         'pieChart',
                         title,
-                        sortedLabels,
-                        sortedData
+                        combined.map(item => item.label),
+                        combined.map(item => item.value)
                     );
                 },
 
