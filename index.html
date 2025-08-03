@@ -805,8 +805,8 @@
                     const [predefinedDiets, storedFoods, diets, nutrientTargets, nutrientTree, foodData, nutrientInfo] = await Promise.all([
                         dataService.fetchPredefinedDiets(),
                         dataService.loadStoredFoods(),
-                        dataService.loadDiets(),
-                        dataService.loadNutrientTargets(),
+                        dataService.get('diets')||[],
+                        dataService.get('nutrientTargets')||{},
                         dataService.fetchNutrientTree(),
                         dataService.fetchFoodData(),
                         dataService.fetchNutrientInfo()
@@ -968,9 +968,9 @@
                     delete this.nutrientTargets[nutrient];
                 },
 
-                async saveTargets() { await dataService.saveNutrientTargets(this.nutrientTargets); },
+                async saveTargets() { await dataService.set('nutrientTargets',this.nutrientTargets); },
                 async saveStoredFoods() { await dataService.saveStoredFoods(this.storedFoods); },
-                async saveDiets() { await dataService.saveDiets(this.diets); },
+                async saveDiets() { await dataService.set('diets',this.diets); },
 
                 getTarget(nutrient) {
                     return this.nutrientTargets[nutrient] ?? { min: 0, max: null, isRange: false };

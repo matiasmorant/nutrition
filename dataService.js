@@ -8,7 +8,7 @@ const dataService = {
     // --- IndexedDB (Local Storage) Operations ---
 
     async loadStoredFoods() {
-        const foodsArray = await idbKeyval.get('storedFoods', this.db) || [];
+        const foodsArray = await this.get('storedFoods') || [];
         // Convert array to an object map for faster lookups
         return foodsArray.reduce((obj, food) => {
             if (food && food.name) obj[food.name] = food;
@@ -17,14 +17,11 @@ const dataService = {
     },
 
     async saveStoredFoods(foodsObject) {
-        const foodsArray = JSON.parse(JSON.stringify(Object.values(foodsObject)));
-        await idbKeyval.set('storedFoods', foodsArray, this.db);
+        await this.set('storedFoods', Object.values(foodsObject));
     },
 
-    async loadDiets() {return await idbKeyval.get('diets', this.db) || [];},
-    async saveDiets(diets) {await idbKeyval.set('diets', JSON.parse(JSON.stringify(diets)), this.db);},
-    async loadNutrientTargets() {return await idbKeyval.get('nutrientTargets', this.db) || {};},
-    async saveNutrientTargets(targets) {await idbKeyval.set('nutrientTargets', JSON.parse(JSON.stringify(targets)), this.db);},
+    async get(key) {return await idbKeyval.get(key, this.db);},
+    async set(key, value) {await idbKeyval.set(key, JSON.parse(JSON.stringify(value)), this.db);},
 
     // --- Fetch External Data Files ---
 
