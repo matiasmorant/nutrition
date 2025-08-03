@@ -805,8 +805,8 @@
                     const [predefinedDiets, storedFoods, diets, nutrientTargets, nutrientTree, foodData, nutrientInfo] = await Promise.all([
                         dataService.fetchPredefinedDiets(),
                         dataService.loadStoredFoods(),
-                        dataService.get('diets')||[],
-                        dataService.get('nutrientTargets')||{},
+                        dataService.get('diets',[]),
+                        dataService.get('nutrientTargets',{}),
                         dataService.fetchNutrientTree(),
                         dataService.fetchFoodData(),
                         dataService.fetchNutrientInfo()
@@ -885,6 +885,7 @@
                         if (header === 'name') {
                             columns.push({ 
                                 title: "Name", field: "name", cssClass: "nameColumnCell nutrient-clickable",
+                                headerCssClass: "nameColumnCell",
                                 resizable: false, frozen: true, headerWordWrap: true,
                                 cellClick: (e, cell) => this.openEditFoodModal(cell.getRow().getData())
                             });

@@ -8,7 +8,7 @@ const dataService = {
     // --- IndexedDB (Local Storage) Operations ---
 
     async loadStoredFoods() {
-        const foodsArray = await this.get('storedFoods') || [];
+        const foodsArray = await this.get('storedFoods',[]);
         // Convert array to an object map for faster lookups
         return foodsArray.reduce((obj, food) => {
             if (food && food.name) obj[food.name] = food;
@@ -20,7 +20,7 @@ const dataService = {
         await this.set('storedFoods', Object.values(foodsObject));
     },
 
-    async get(key) {return await idbKeyval.get(key, this.db);},
+    async get(key,defaultValue) {return await idbKeyval.get(key, this.db) || defaultValue;},
     async set(key, value) {await idbKeyval.set(key, JSON.parse(JSON.stringify(value)), this.db);},
 
     // --- Fetch External Data Files ---

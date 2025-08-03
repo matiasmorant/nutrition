@@ -95,7 +95,7 @@ legacy=pivot('USDA_FoodData_Central_sr_legacy_food')
 foundation=pivot('FoodData_Central_foundation_food_csv_2025-04-24')
 foundation.index=['👑 '+x for x in foundation.index]
 big=pd.concat([legacy,foundation])
-# rec=[x.dropna().to_dict() for _, x in big.reset_index().iterrows()]
+# rec=[x.dropna().to_dict() for _, x in big.reset_index(names='food').iterrows()]
 # with open('foodnutrient.json','w') as f: f.write(json.dumps(rec))
 
 # big[big.index.str.startswith('Chickpea')]
