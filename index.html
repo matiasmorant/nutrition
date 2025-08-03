@@ -653,7 +653,7 @@
                                 </button>
                             </div>
                             <div class="border rounded-md p-3 flex-grow max-h-96 overflow-y-auto">
-                                <template x-for="nutrient in Object.keys(nutrientTargets).filter(n => nutrientTargets[n]?.min > 0 && (showZeroNutrientsInEdit || editingFood[n] > 0)).sort()" :key="nutrient">
+                                <template x-for="nutrient in Object.keys(nutrientTargets).filter(n => (showZeroNutrientsInEdit || editingFood[n] > 0)).sort()" :key="nutrient">
                                     <div class="flex items-center justify-between mb-2">
                                         <label :for="'edit-nutrient-'+nutrient" class="text-sm font-medium text-gray-700 max-w-name" x-text="nutrient"></label>
                                         <input type="number" step="any" min="0" :id="'edit-nutrient-'+nutrient" x-model.lazy="editingFood[nutrient]" class="w-24 p-1 border rounded-md text-sm text-right">
@@ -892,6 +892,11 @@
                             columns.push({
                                 title: header, field: header, editor: "number", resizable: false,
                                 editorParams: { step: 0.01 }, sorter: "number", headerSort:false,
+                                cellEdited: async (cell) => {
+                                    const foodData = cell.getRow().getData();
+                                    this.storedFoods[foodData.name] = foodData;
+                                    await this.saveStoredFoods();
+                                },
                                 headerClick: (e,column) => {
                                     const field = column.getField();
                                     const isDesc = this.foodTable.getSorters().some(s => s.field === field && s.dir === "desc");
@@ -915,11 +920,6 @@
                         layout: "fitDataStretch",
                         height: "600px",
                         headerHeight: 50,
-                        cellEdited: async (cell) => {
-                            const foodData = cell.getRow().getData();
-                            this.storedFoods[foodData.name] = foodData;
-                            await this.saveStoredFoods();
-                        },
                         rowDeleted: async (row) => {
                             const deletedFoodName = row.getData().name;
                             delete this.storedFoods[deletedFoodName];
