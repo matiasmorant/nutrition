@@ -41,7 +41,7 @@ The AMDR for carbohydrate is 45-65% of total energy intake for children age 1-18
 
 (Source: USDA)
 
-# Fiber, total dietary (g)
+# Fiber, dietary (g)
 
 The recommended amount of dietary fiber is 14 grams for every 1,000 calories per day. That results in around 25 g for women and 38 g for men. (Source: USDA)
 
@@ -81,7 +81,7 @@ Acceptable Macronutrient Distribution Range (AMDR) is set at 5–10% of energy (
 
 (Source: https://www.canada.ca/en/health-canada/services/food-nutrition/healthy-eating/dietary-reference-intakes/tables/reference-values-macronutrients.html#tbl2#)
 
-# Fatty acids, total saturated (g)
+# Fatty acids, saturated (g)
 
 As low as possible while consuming a nutritionally adequate diet. (Source: USDA)
 
@@ -89,13 +89,13 @@ Men should not eat more than 30g of saturated fat a day.
 Women should not eat more than 20g of saturated fat a day.
 (Source: NHS)
 
-# Fatty acids, total trans (g)
+# Fatty acids, trans (g)
 
 As low as possible while consuming a nutritionally adequate diet. (Source: USDA)
 
 Adults should not have more than about 5g of trans fats a day. (Source: NHS)
 
-# Choline, total (mg)
+# Choline (mg)
 
 Choline is an essential nutrient that is naturally present in some foods and available as a dietary supplement. Choline is a source of methyl groups needed for many steps in metabolism. Humans can produce choline endogenously in the liver, mostly as phosphatidylcholine, but the amount that the body naturally synthesizes is not sufficient to meet human needs.
 
@@ -143,7 +143,7 @@ The FNB has established a RDA of 1.3mg, and UL of 100mg for adults.
 The FNB has established a RDA of 400μg, and UL of 1000mg for adults.
 (Source: https://ods.od.nih.gov/factsheets/folate-HealthProfessional/)
 
-# Vitamin C, total ascorbic acid (mg)
+# Vitamin C (mg)
 
 The FNB has established a RDA of 90 mg for males and 75 mg for females, and UL of 2000mg for adults
 (Source: https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/)

@@ -94,16 +94,15 @@ const dataService = {
             const nutrientHeaders = new Set();
             foodData.forEach(food => {
                 Object.keys(food).forEach(key => {
-                    if (key !== 'food') nutrientHeaders.add(key);
+                    if (key !== 'name') nutrientHeaders.add(key);
                 });
             });
 
             const allFoods = foodData.map(food => {
-                const foodObj = { name: food.food || '' };
                 nutrientHeaders.forEach(nutrient => {
-                    foodObj[nutrient] = parseFloat(food[nutrient]) || 0;
+                    food[nutrient] = parseFloat(food[nutrient]) || 0;
                 });
-                return foodObj;
+                return food;
             });
             return { allFoods, nutrientHeaders: ['name', ...Array.from(nutrientHeaders)] };
         } catch (error) {

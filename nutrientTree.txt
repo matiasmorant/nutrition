@@ -29,9 +29,9 @@
      Maltose (g)
      Sucrose (g)
    Starch (g)
-+  Fiber, total dietary (g) — 38–70
++  Fiber, dietary (g) — 38–70
 +Fat (g) — 61–106
-   Fatty acids, total monounsaturated (g)
+   Fatty acids, monounsaturated (g)
      MUFA 14:1 (g)
      MUFA 15:1 (g)
      MUFA 16:1 (g)
@@ -50,7 +50,7 @@
      MUFA 17:1 c (g)
      MUFA 20:1 c (g)
      MUFA 22:1 n-9 (g)
-   Fatty acids, total polyunsaturated (g)
+   Fatty acids, polyunsaturated (g)
 +    Omega-3 (ALA) (g) — 1.6–3.6
      Omega-3 (EPA) (g)
      Omega-3 (DPA) (g)
@@ -82,7 +82,7 @@
      PUFA 20:3 n-6 (g)
      PUFA 18:3 c (g)
      PUFA 22:5 c (g)
-+  Fatty acids, total saturated (g) — 0–20
++  Fatty acids, saturated (g) — 0–20
      SFA 10:0 (g)
      SFA 12:0 (g)
      SFA 13:0 (g)
@@ -97,19 +97,19 @@
      SFA 4:0 (g)
      SFA 6:0 (g)
      SFA 8:0 (g)
-+  Fatty acids, total trans (g) — 0–5
-     Fatty acids, total trans-monoenoic (g)
++  Fatty acids, trans (g) — 0–5
+     Fatty acids, trans-monoenoic (g)
        TFA 16:1 t (g)
        TFA 18:1 t (g)
        TFA 22:1 t (g)
-     Fatty acids, total trans-polyenoic (g)
+     Fatty acids, trans-polyenoic (g)
        TFA 18:2 t not further defined (g)
        TFA 18:2 t,t (g)
      TFA 14:1 t (g)
      TFA 18:3 t (g)
      TFA 18:2 t (g)
  Vitamins
-+  Choline, total (mg) — 550–3500
++  Choline (mg) — 550–3500
    Vitamin E, added (mg)
 +  Vitamin E (alpha-tocopherol) (mg) — 15–1000
    Vitamin E, beta Tocopherol (mg)
@@ -136,7 +136,7 @@
    Vitamin B9, Folic acid (μg)
    Vitamin B-12 (μg) — 2.4
    Vitamin B-12, added (μg)
-+  Vitamin C, total ascorbic acid (mg) — 90–2000
++  Vitamin C (mg) — 90–2000
    Vitamin D (D2 + D3) (μg) — 15–100
    Vitamin D (D2 + D3), International Units (IU)
    Vitamin D2 (ergocalciferol) (μg)

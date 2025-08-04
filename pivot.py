@@ -44,6 +44,15 @@ def pivot(folder):
          'Selenium, Se (UG)':'Selenium (UG)',
          'Sodium, Na (MG)':'Sodium (MG)',
          'Zinc, Zn (MG)':'Zinc (MG)',
+         'Fiber, total dietary (G)':'Fiber, dietary (G)',
+         'Fatty acids, total monounsaturated (G)':'Fatty acids, monounsaturated (G)',
+         'Fatty acids, total polyunsaturated (G)':'Fatty acids, polyunsaturated (G)',
+         'Fatty acids, total saturated (G)':'Fatty acids, saturated (G)',
+         'Fatty acids, total trans (G)':'Fatty acids, trans (G)',
+         'Fatty acids, total trans-monoenoic (G)':'Fatty acids, trans-monoenoic (G)',
+         'Fatty acids, total trans-polyenoic (G)':'Fatty acids, trans-polyenoic (G)',
+         'Choline, total (MG)':'Choline (MG)',
+         'Vitamin C, total ascorbic acid (MG)':'Vitamin C (MG)',
          }.get(x,x).replace('(G)','(g)').replace('(MG)','(mg)').replace('(UG)','(μg)'))
 
   csv['food_category']=csv['food_category'].set_index('id')
@@ -95,7 +104,7 @@ legacy=pivot('USDA_FoodData_Central_sr_legacy_food')
 foundation=pivot('FoodData_Central_foundation_food_csv_2025-04-24')
 foundation.index=['👑 '+x for x in foundation.index]
 big=pd.concat([legacy,foundation])
-# rec=[x.dropna().to_dict() for _, x in big.reset_index(names='food').iterrows()]
+# rec=[x.dropna().to_dict() for _, x in big.reset_index(names='name').iterrows()]
 # with open('foodnutrient.json','w') as f: f.write(json.dumps(rec))
 
 # big[big.index.str.startswith('Chickpea')]
