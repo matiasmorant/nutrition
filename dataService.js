@@ -1,14 +1,26 @@
 const dataService = {
     db: null,
 
-    init() {
-        this.db = idbKeyval.createStore('food-app-db', 'food-app-store4');
+    async init() {
+        this.db = await idb.openDB('food-app-db', 1, {
+            upgrade(db) {
+                // Create a 'foods' object store with 'name' as the key and an index on 'name'
+                if (!db.objectStoreNames.contains('foods')) {
+                    const store = db.createObjectStore('foods', { keyPath: 'name' });
+                    store.createIndex('name', 'name', { unique: true });
+                }
+                // Create a generic key-value store for other app data
+                if (!db.objectStoreNames.contains('keyval')) {
+                    db.createObjectStore('keyval');
+                }
+            },
+        });
     },
 
     // --- IndexedDB (Local Storage) Operations ---
 
     async loadStoredFoods() {
-        const foodsArray = await this.get('storedFoods',[]);
+        const foodsArray = await this.db.getAll('foods');
         // Convert array to an object map for faster lookups
         return foodsArray.reduce((obj, food) => {
             if (food && food.name) obj[food.name] = food;
@@ -17,11 +29,26 @@ const dataService = {
     },
 
     async saveStoredFoods(foodsObject) {
-        await this.set('storedFoods', Object.values(foodsObject));
+        const tx = this.db.transaction('foods', 'readwrite');
+        await Promise.all([
+            tx.store.clear(),
+            ...Object.values(foodsObject).map(food => {
+            tx.store.put(
+                JSON.parse(JSON.stringify(food))
+            )
+        })
+        ]);
+        await tx.done;
+    },
+    
+    async addOrUpdateFood(food) {return await this.db.put('foods', food);},
+
+    async get(key, defaultValue) {
+        const value = await this.db.get('keyval', key);
+        return value !== undefined ? value : defaultValue;
     },
 
-    async get(key,defaultValue) {return await idbKeyval.get(key, this.db) || defaultValue;},
-    async set(key, value) {await idbKeyval.set(key, JSON.parse(JSON.stringify(value)), this.db);},
+    async set(key, value) { return await this.db.put('keyval', JSON.parse(JSON.stringify(value)), key); },
 
     // --- Fetch External Data Files ---
 
@@ -146,6 +173,3 @@ const dataService = {
         }
     },
 };
-
-// Initialize the service immediately so it's ready for use.
-dataService.init();

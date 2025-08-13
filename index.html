@@ -19,7 +19,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6.2.0/dist/umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/idb@8/build/umd.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -802,6 +802,7 @@
                     this.isLoading = true;
 
                     // Load all data using the dataService
+                    await dataService.init();
                     const [predefinedDiets, storedFoods, diets, nutrientTargets, nutrientTree, foodData, nutrientInfo] = await Promise.all([
                         dataService.fetchPredefinedDiets(),
                         dataService.loadStoredFoods(),
@@ -896,7 +897,7 @@
                                 cellEdited: async (cell) => {
                                     const foodData = cell.getRow().getData();
                                     this.storedFoods[foodData.name] = foodData;
-                                    await this.saveStoredFoods();
+                                    await dataService.addOrUpdateFood(foodData);
                                 },
                                 headerClick: (e,column) => {
                                     const field = column.getField();
@@ -949,7 +950,7 @@
                     if (this.storedFoods[foodObject.name]) return;
                     this.storedFoods[foodObject.name] = foodObject;
                     this.foodTable.addRow(foodObject);
-                    await this.saveStoredFoods();
+                    await dataService.addOrUpdateFood(foodObject);
                 },
 
                 async removeFood(name) {
@@ -1310,7 +1311,7 @@
                     }
                     this.storedFoods[this.editingFood.name] = this.editingFood;
                     this.foodTable.updateData([this.editingFood]);
-                    await this.saveStoredFoods();
+                    await dataService.addOrUpdateFood(this.editingFood);
                     this.closeEditFoodModal();
                 },
 
