@@ -530,7 +530,7 @@
                 </div>
                 <div class="max-h-60 overflow-y-auto border rounded-md">
                     <button 
-                        x-show="searchQuery" 
+                        x-show="searchQuery && (addFoodContext != 'diet')"
                         @click="createNewFoodFromSearch()" 
                         class="create-food-btn"
                     >
