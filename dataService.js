@@ -9,7 +9,6 @@ const dataService = {
                 // Create a 'foods' object store with 'name' as the key and an index on 'name'
                 if (!db.objectStoreNames.contains('foods')) {
                     const store = db.createObjectStore('foods', { keyPath: 'name' });
-                    store.createIndex('name', 'name', { unique: true });
                 }
                 // Create a generic key-value store for other app data
                 if (!db.objectStoreNames.contains('keyval')) {

@@ -302,10 +302,10 @@
         <div id="content-targets" class="tab-content flex flex-col w-fit mx-auto items-end gap-4 p-6 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'targets'">
             <button @click="openAddNutrientModal()" class="blue-btn">Add Nutrient</button>
             <div id="targets-list" class="grid grid-cols-1 lg:grid-cols-2 gap-x-20 gap-y-1 max-w-fit">
-                <template x-for="nutrient in Object.keys(nutrientTargets)" :key="nutrient">
+                <template x-for="nutrient in nutrientNames" :key="nutrient">
                     <div class="grid grid-cols-[1fr_min-content_min-content] items-center gap-x-1">
                         <div class="flex items-center">
-                            <span @click="removeNutrientColumn(nutrient)" class="remove-icon">&times;</span>
+                            <span @click="removeNutrient(nutrient)" class="remove-icon">&times;</span>
                             <label :for="`target-min-${nutrient}`" 
                                    x-text="nutrient" 
                                    @click="openNutrientInfoModal(nutrient)"
@@ -492,7 +492,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
+                                    <template x-for="nutrient in nutrientNames" :key="nutrient">
                                         <tr class="py-1">
                                             <td class="text-left nutrient-clickable max-w-name" @click="showNutrientContribution(nutrient)" x-text="nutrient"></td>
                                             <td x-text="(x=>x<10?x.toFixed(2):x.toFixed(0))(dietTotals[nutrient] || 0)"></td>
@@ -580,8 +580,8 @@
                                 <input 
                                     type="checkbox" 
                                     :id="'nutrient-'+nutrient" 
-                                    :checked="displayHeaders.includes(nutrient)"
-                                    @change="toggleNutrientColumn(nutrient)"
+                                    :checked="nutrientNames.includes(nutrient)"
+                                    @change="toggleNutrient(nutrient)"
                                     class="mr-3"
                                 >
                                 <label :for="'nutrient-'+nutrient" x-text="nutrient" class="flex-1 modal-label max-w-name"></label>
@@ -653,7 +653,7 @@
                                 </button>
                             </div>
                             <div class="border rounded-md p-3 flex-grow max-h-96 overflow-y-auto">
-                                <template x-for="nutrient in Object.keys(nutrientTargets).filter(n => (showZeroNutrientsInEdit || editingFood[n] > 0)).sort()" :key="nutrient">
+                                <template x-for="nutrient in nutrientNames.filter(n => (showZeroNutrientsInEdit || editingFood[n] > 0)).sort()" :key="nutrient">
                                     <div class="flex items-center justify-between mb-2">
                                         <label :for="'edit-nutrient-'+nutrient" class="text-sm font-medium text-gray-700 max-w-name" x-text="nutrient"></label>
                                         <input type="number" step="any" min="0" :id="'edit-nutrient-'+nutrient" x-model.lazy="editingFood[nutrient]" class="w-24 p-1 border rounded-md text-sm text-right">
@@ -726,8 +726,8 @@
                 allFoods: [],
                 foodNames: [],
                 nutrientHeaders: [],
+                nutrientNames: [],
                 nutrientTreeNames: [],
-                displayHeaders: ['name'],
                 searchQuery: '',
                 searchResults: [],
                 isLoading: false,
@@ -824,7 +824,7 @@
                     this.nutrientHeaders = foodData.nutrientHeaders;
 
                     this.nutrientTreeNames = nutrientTree.allNutrients;
-                    this.displayHeaders = ['name', ...nutrientTree.defaultDisplayNutrients];
+                    this.nutrientNames = [...nutrientTree.defaultDisplayNutrients];
                     
                     this.isLoading = false;
                     
@@ -889,7 +889,7 @@
                         },
                     }];
 
-                    this.displayHeaders.forEach(header => {
+                    ['name', ...this.nutrientNames].forEach(header => {
                         if (header === 'name') {
                             columns.push({ 
                                 title: "Name", field: "name", cssClass: "nameColumnCell nutrient-clickable",
@@ -968,14 +968,14 @@
                     await this.saveDiets();
                 },
 
-                addNutrientColumn(nutrient) {
-                    if (!this.displayHeaders.includes(nutrient)) {
-                        this.displayHeaders.push(nutrient);
+                addNutrient(nutrient) {
+                    if (!this.nutrientNames.includes(nutrient)) {
+                        this.nutrientNames.push(nutrient);
                     }
                 },
 
-                removeNutrientColumn(nutrient) {
-                    this.displayHeaders = this.displayHeaders.filter(h => h !== nutrient);
+                removeNutrient(nutrient) {
+                    this.nutrientNames = this.nutrientNames.filter(n => n !== nutrient);
                     delete this.nutrientTargets[nutrient];
                 },
 
@@ -1034,7 +1034,7 @@
                     const dietTotals = {};
 
                     // Calculate totals for each nutrient
-                    for (const nutrient of this.displayHeaders.filter(h => h !== 'name')) {
+                    for (const nutrient of this.nutrientNames) {
                         let total = 0;
                         for (const foodItem of this.selectedDiet.foods) {
                             const food = await dataService.getFood(foodItem.foodName);
@@ -1162,11 +1162,11 @@
                     }
                 },
                 
-                toggleNutrientColumn(nutrient) {
-                    if (this.displayHeaders.includes(nutrient)) {
-                        this.removeNutrientColumn(nutrient);
+                toggleNutrient(nutrient) {
+                    if (this.nutrientNames.includes(nutrient)) {
+                        this.removeNutrient(nutrient);
                     } else {
-                        this.addNutrientColumn(nutrient);
+                        this.addNutrient(nutrient);
                     }
                     this.initFoodTable();
                 },
@@ -1246,7 +1246,7 @@
                         const foodItem = this.selectedDiet.foods.find(f => f.foodName === foodName);
                         if (!food || !foodItem) return;
                         const items = [];
-                        Object.keys(this.nutrientTargets)
+                        this.nutrientNames
                             .filter(x => food[x] > 0)
                             .forEach(nutrient => {
                                 const value = (food[nutrient] || 0) * foodItem.quantity / 100 / this.dietTotals[nutrient] * 100;
@@ -1342,7 +1342,7 @@
                     const food = this.editingFood;
                     const chartItems = [];
 
-                    Object.keys(this.nutrientTargets).forEach(nutrient => {
+                    this.nutrientNames.forEach(nutrient => {
                         const target = this.getTarget(nutrient);
                         if (target && target.min > 0) {
                             const foodValue = food[nutrient] || 0;
