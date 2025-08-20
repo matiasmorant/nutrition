@@ -879,27 +879,24 @@
 
                     const foods = await dataService.getAllFoods();
                     
-                    const columns = [{
-                        formatter: (cell, formatterParams, onRendered) => `<span class="remove-icon" title="Remove food">&times;</span>`,
-                        width: 40, hozAlign: "center", headerSort: false, resizable: false,
-                        cellClick: async (e, cell) => {
-                            if (confirm('Are you sure you want to remove this food? This cannot be undone.')) {
-                                await this.removeFood(cell.getRow().getData().name);
-                            }
+                    const columns = [
+                        {
+                            formatter: (cell, formatterParams, onRendered) => `<span class="remove-icon" title="Remove food">&times;</span>`,
+                            width: 40, hozAlign: "center", headerSort: false, resizable: false,
+                            cellClick: async (e, cell) => {
+                                if (confirm('Are you sure you want to remove this food? This cannot be undone.')) {
+                                    await this.removeFood(cell.getRow().getData().name);
+                                }
+                            },
                         },
-                    }];
-
-                    ['name', ...this.nutrientNames].forEach(header => {
-                        if (header === 'name') {
-                            columns.push({ 
-                                title: "Name", field: "name", cssClass: "nameColumnCell nutrient-clickable",
-                                headerCssClass: "nameColumnCell",
-                                resizable: false, frozen: true, headerWordWrap: true,
-                                cellClick: (e, cell) => this.openEditFoodModal(cell.getRow().getData().name)
-                            });
-                        } else {
-                            columns.push({
-                                title: header, field: header, editor: "number", resizable: false,
+                        { 
+                            title: "Name", field: "name", cssClass: "nameColumnCell nutrient-clickable",
+                            minWidth: 150,
+                            resizable: false, frozen: true, headerWordWrap: true,
+                            cellClick: (e, cell) => this.openEditFoodModal(cell.getRow().getData().name)
+                        },
+                        ...this.nutrientNames.map(nutrient => {return {
+                                title: nutrient, field: nutrient, editor: "number", resizable: false,
                                 editorParams: { step: 0.01 }, sorter: "number", headerSort:false,
                                 cellEdited: async (cell) => {
                                     await dataService.addOrUpdateFood(cell.getRow().getData());
@@ -916,9 +913,9 @@
                                     return value;
                                 },
                                 headerWordWrap: true,
-                            });
-                        }
-                    });
+                            };
+                        })
+                    ];
 
                     this.foodTable = new Tabulator("#food-table-container", {
                         index: "name",
