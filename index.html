@@ -291,9 +291,9 @@
                     </div>
                 </div>
 
-                <div id="food-table-container" class="mt-4 bg-white rounded-lg shadow" x-show="Object.keys(storedFoods).length > 0"></div>
+                <div id="food-table-container" class="mt-4 bg-white rounded-lg shadow" x-show="foodNames.length > 0"></div>
 
-                <div id="table-placeholder" class="text-center p-8 text-gray-500" x-show="Object.keys(storedFoods).length === 0">
+                <div id="table-placeholder" class="text-center p-8 text-gray-500" x-show="foodNames.length === 0">
                     <p>Your added foods will appear here.</p>
                 </div>
             </div>
@@ -495,7 +495,7 @@
                                     <template x-for="nutrient in displayHeaders.filter(h => h !== 'name')" :key="nutrient">
                                         <tr class="py-1">
                                             <td class="text-left nutrient-clickable max-w-name" @click="showNutrientContribution(nutrient)" x-text="nutrient"></td>
-                                            <td x-text="(x=>x<10?x.toFixed(2):x.toFixed(0))(calculateNutrientTotal(nutrient))"></td>
+                                            <td x-text="(x=>x<10?x.toFixed(2):x.toFixed(0))(dietTotals[nutrient] || 0)"></td>
                                             <td>
                                                 <span x-text="calculateNutrientPercentage(nutrient).toFixed(0) + '%'"></span>
                                                 <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
@@ -545,7 +545,7 @@
                                     :id="'food-'+food.name" 
                                     :checked="addFoodContext === 'diet' ? 
                                         (selectedDiet && selectedDiet.foods.some(f => f.foodName === food.name)) :
-                                        !!storedFoods[food.name]"
+                                        foodNames.includes(food.name)"
                                     @change="toggleFoodSelection(food)"
                                     class="mr-3"
                                 >
@@ -724,7 +724,7 @@
             return {
                 // --- STATE ---
                 allFoods: [],
-                storedFoods: {},
+                foodNames: [],
                 nutrientHeaders: [],
                 nutrientTreeNames: [],
                 displayHeaders: ['name'],
@@ -746,6 +746,7 @@
                 selectedDiet: null,
                 dietTimeframe: 'day',
                 showUnusedDietFoods: true,
+                dietTotals: {},
                 
                 // Chart state
                 isChartModalVisible: false,
@@ -803,9 +804,9 @@
 
                     // Load all data using the dataService
                     await dataService.init();
-                    const [predefinedDiets, storedFoods, diets, nutrientTargets, nutrientTree, foodData, nutrientInfo] = await Promise.all([
+                    const [predefinedDiets, foodNames, diets, nutrientTargets, nutrientTree, foodData, nutrientInfo] = await Promise.all([
                         dataService.fetchPredefinedDiets(),
-                        dataService.loadStoredFoods(),
+                        dataService.getAllFoodNames(),
                         dataService.get('diets',[]),
                         dataService.get('nutrientTargets',{}),
                         dataService.fetchNutrientTree(),
@@ -814,7 +815,7 @@
                     ]);
                     
                     this.predefinedDiets = predefinedDiets;
-                    this.storedFoods = storedFoods;
+                    this.foodNames = foodNames;
                     this.diets = diets;
                     this.nutrientTargets = nutrientTargets;
                     this.nutrientInfo = nutrientInfo;
@@ -827,12 +828,9 @@
                     
                     this.isLoading = false;
                     
-                    if (Object.keys(this.storedFoods).length === 0 && this.allFoods.length > 0) {
-                        this.storedFoods = this.allFoods.reduce((obj, food) => {
-                            if (food && food.name) obj[food.name] = food;
-                            return obj;
-                        }, {});
-                        await this.saveStoredFoods();
+                    if (this.foodNames.length === 0 && this.allFoods.length > 0) {
+                        this.foodNames = this.allFoods.map(food => food.name);
+                        await dataService.saveFoods(this.allFoods);
                     }
                     
                     this.nutrientTargets = { ...nutrientTree.defaultNutrientTargets, ...this.nutrientTargets };
@@ -845,6 +843,12 @@
                     this.$watch('foodTableFilter', () => this.updateFoodTableFilter());
                     this.$watch('editingFood', (newValue) => {
                         if (this.isEditingFood && newValue) this.renderEditFoodPieChart();
+                    }, { deep: true });
+                    
+                    this.$watch('selectedDiet', async () => {
+                        if (this.selectedDiet) {
+                            await this.recalculateDietTotals();
+                        }
                     }, { deep: true });
                 },
 
@@ -870,14 +874,17 @@
                     }
                 },
 
-                initFoodTable() {
+                async initFoodTable() {
                     if (this.foodTable) this.foodTable.destroy();
+
+                    const foods = await dataService.getAllFoods();
+                    
                     const columns = [{
                         formatter: (cell, formatterParams, onRendered) => `<span class="remove-icon" title="Remove food">&times;</span>`,
                         width: 40, hozAlign: "center", headerSort: false, resizable: false,
-                        cellClick: (e, cell) => {
+                        cellClick: async (e, cell) => {
                             if (confirm('Are you sure you want to remove this food? This cannot be undone.')) {
-                                cell.getRow().delete();
+                                await this.removeFood(cell.getRow().getData().name);
                             }
                         },
                     }];
@@ -888,16 +895,14 @@
                                 title: "Name", field: "name", cssClass: "nameColumnCell nutrient-clickable",
                                 headerCssClass: "nameColumnCell",
                                 resizable: false, frozen: true, headerWordWrap: true,
-                                cellClick: (e, cell) => this.openEditFoodModal(cell.getRow().getData())
+                                cellClick: (e, cell) => this.openEditFoodModal(cell.getRow().getData().name)
                             });
                         } else {
                             columns.push({
                                 title: header, field: header, editor: "number", resizable: false,
                                 editorParams: { step: 0.01 }, sorter: "number", headerSort:false,
                                 cellEdited: async (cell) => {
-                                    const foodData = cell.getRow().getData();
-                                    this.storedFoods[foodData.name] = foodData;
-                                    await dataService.addOrUpdateFood(foodData);
+                                    await dataService.addOrUpdateFood(cell.getRow().getData());
                                 },
                                 headerClick: (e,column) => {
                                     const field = column.getField();
@@ -917,26 +922,23 @@
 
                     this.foodTable = new Tabulator("#food-table-container", {
                         index: "name",
-                        data: Object.values(this.storedFoods),
+                        data: foods,
                         columns: columns,
                         layout: "fitDataStretch",
                         height: "600px",
                         headerHeight: 50,
                         rowDeleted: async (row) => {
-                            const deletedFoodName = row.getData().name;
-                            delete this.storedFoods[deletedFoodName];
-                            this.diets.forEach(diet => {
-                                diet.foods = diet.foods.filter(item => item.foodName !== deletedFoodName);
-                            });
-                            await this.saveDiets();
-                            await this.saveStoredFoods();
+                            await this.removeFood(row.getData().name);
                         },
                     });
                     this.updateFoodTableFilter();
                 },
                 
-                searchFoods() {
-                    const source = this.addFoodContext === 'diet' ? Object.values(this.storedFoods) : this.allFoods;
+                async searchFoods() {
+                    const source = this.addFoodContext === 'diet' ? 
+                        await dataService.getAllFoods() : 
+                        this.allFoods;
+                    
                     if (this.searchQuery === '') {
                         this.searchResults = source;
                     } else {
@@ -947,16 +949,23 @@
                 },
 
                 async addFood(foodObject) {
-                    if (this.storedFoods[foodObject.name]) return;
-                    this.storedFoods[foodObject.name] = foodObject;
+                    if (this.foodNames.includes(foodObject.name)) return;
+                    this.foodNames.push(foodObject.name);
                     this.foodTable.addRow(foodObject);
                     await dataService.addOrUpdateFood(foodObject);
                 },
 
                 async removeFood(name) {
-                    delete this.storedFoods[name];
+                    await dataService.deleteFood(name);
+                    this.foodNames = this.foodNames.filter(n => n !== name);
+                    
                     const row = this.foodTable.getRows().find(r => r.getData().name === name);
                     if (row) row.delete();
+                    
+                    this.diets.forEach(diet => {
+                        diet.foods = diet.foods.filter(item => item.foodName !== name);
+                    });
+                    await this.saveDiets();
                 },
 
                 addNutrientColumn(nutrient) {
@@ -971,7 +980,6 @@
                 },
 
                 async saveTargets() { await dataService.set('nutrientTargets',this.nutrientTargets); },
-                async saveStoredFoods() { await dataService.saveStoredFoods(this.storedFoods); },
                 async saveDiets() { await dataService.set('diets',this.diets); },
 
                 getTarget(nutrient) {
@@ -1020,19 +1028,27 @@
                     await this.saveDiets();
                 },
                 
-                calculateNutrientTotal(nutrient) {
-                    if (!this.selectedDiet) return 0;
-                    return this.selectedDiet.foods.reduce((total, foodItem) => {
-                        const food = this.storedFoods[foodItem.foodName];
-                        if (food && food[nutrient] !== undefined) {
-                            return total + (food[nutrient] * foodItem.quantity) / 100;
+                async recalculateDietTotals() {
+                    if (!this.selectedDiet) return;
+                    
+                    const dietTotals = {};
+
+                    // Calculate totals for each nutrient
+                    for (const nutrient of this.displayHeaders.filter(h => h !== 'name')) {
+                        let total = 0;
+                        for (const foodItem of this.selectedDiet.foods) {
+                            const food = await dataService.getFood(foodItem.foodName);
+                            if (food && food[nutrient] !== undefined) {
+                                total += (food[nutrient] * foodItem.quantity) / 100;
+                            }
                         }
-                        return total;
-                    }, 0);
+                        dietTotals[nutrient] = total;
+                    }
+                    this.dietTotals = dietTotals;
                 },
                 
                 calculateNutrientPercentage(nutrient) {
-                    const total = this.calculateNutrientTotal(nutrient);
+                    const total = this.dietTotals[nutrient] || 0;
                     const target = this.nutrientTargets[nutrient];
                     if (!target) return 100;
 
@@ -1049,7 +1065,7 @@
                     return Object.entries(this.nutrientTargets).map(([nutrient,target])=>{
                             const min = target.min || 0;
                             if(target.isRange){
-                                const current=this.calculateNutrientTotal(nutrient);
+                                const current=this.dietTotals[nutrient] || 0;
                                 const max = target.max || (100 * target.min);
                                 return [nutrient, math.median([min,max,current])];
                             }
@@ -1057,7 +1073,7 @@
                         });
                 },
 
-                optimizeDiet(targets, maxIter, preverror) {
+                async optimizeDiet(targets, maxIter, preverror) {
                     if (!this.selectedDiet || this.selectedDiet.foods.length === 0) {
                         alert("Please add foods to the diet first.");
                         return;
@@ -1070,7 +1086,12 @@
                     const dietFoods=this.selectedDiet.foods;
                     const locked = dietFoods.filter(f => f.locked);
                     const unlocked = dietFoods.filter(f => !f.locked);
-                    const nutrientData=Object.fromEntries(dietFoods.map(x=>[x.foodName,this.storedFoods[x.foodName]]));
+                    
+                    const nutrientData = {};
+                    for (const foodItem of dietFoods) {
+                        nutrientData[foodItem.foodName] = await dataService.getFood(foodItem.foodName);
+                    }
+
                     const getA=(food,nutrient)=>(nutrientData[food.foodName][nutrient] || 0) / 100;
                     
                     if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
@@ -1092,7 +1113,7 @@
                         if(preverror && preverror-error<1e-4) return;
 
                         unlocked.forEach((food, i) => {food.quantity = round(Math.max(0, solution[i]));});                        
-                        this.saveDiets();
+                        await this.saveDiets();
 
                         this.optimizeDiet(this.easierTargets(), maxIter-1, error);
                     } catch (error) {
@@ -1104,7 +1125,7 @@
                 async createNewFoodFromSearch() {
                     const name = this.searchQuery.trim();
                     if (!name) return alert('Please enter a food name');
-                    if (Object.keys(this.storedFoods).some(key => key.toLowerCase() === name.toLowerCase())) return alert('A food with this name already exists.');
+                    if (this.foodNames.includes(name)) return alert('A food with this name already exists.');
                     
                     const newFood = { name };
                     this.nutrientHeaders.forEach(header => {
@@ -1122,7 +1143,7 @@
                     this.searchQuery = '';
                     
                     this.showZeroNutrientsInEdit = true;
-                    this.openEditFoodModal(newFood);
+                    this.openEditFoodModal(name);
                 },
 
                 async toggleFoodSelection(food) {
@@ -1133,7 +1154,7 @@
                             await this.addFoodToDiet(food.name);
                         }
                     } else {
-                        if (this.storedFoods[food.name]) {
+                        if (this.foodNames.includes(food.name)) {
                             await this.removeFood(food.name);
                         } else {
                             await this.addFood(food);
@@ -1202,33 +1223,33 @@
                     return {labels, values}
                 },
 
-                showNutrientContribution(nutrient) {
+                async showNutrientContribution(nutrient) {
                     this.isChartModalVisible = true;
-                    this.$nextTick(() => {
+                    this.$nextTick(async () => {
                         const items = [];
-                        this.selectedDiet.foods.forEach(foodItem => {
-                            const food = this.storedFoods[foodItem.foodName];
+                        for (const foodItem of this.selectedDiet.foods) {
+                            const food = await dataService.getFood(foodItem.foodName);
                             if (food && food[nutrient]) {
                                 const value = (food[nutrient] * foodItem.quantity) / 100;
                                 if (value > 0) items.push({ name: food.name, value });
                             }
-                        });
+                        }
                         const { labels, values } = this.groupPie(items);
                         this.renderPieChart(`Contribution to ${nutrient}`, values, labels.map((x,i)=>`${values[i].toFixed(0)} ${x}`));
                     });
                 },
                 
-                showFoodContribution(foodName) {
+                async showFoodContribution(foodName) {
                     this.isChartModalVisible = true;
-                    this.$nextTick(() => {
-                        const food = this.storedFoods[foodName];
+                    this.$nextTick(async () => {
+                        const food = await dataService.getFood(foodName);
                         const foodItem = this.selectedDiet.foods.find(f => f.foodName === foodName);
                         if (!food || !foodItem) return;
                         const items = [];
                         Object.keys(this.nutrientTargets)
                             .filter(x => food[x] > 0)
                             .forEach(nutrient => {
-                                const value = (food[nutrient] || 0) * foodItem.quantity / 100 / this.calculateNutrientTotal(nutrient) * 100;
+                                const value = (food[nutrient] || 0) * foodItem.quantity / 100 / this.dietTotals[nutrient] * 100;
                                 if (value > 0) items.push({ name: nutrient, value });
                             });
                         const { labels, values } = this.groupPie(items);
@@ -1237,10 +1258,10 @@
                     });
                 },
                 
-                suggestFood() {
+                async suggestFood() {
                     if (!this.selectedDiet || this.selectedDiet.foods.length === 0) return alert("Please add foods to your diet first.");
                     const targets = this.easierTargets();
-                    const D = targets.map(([name,target]) => (this.calculateNutrientTotal(name)/(target > 0 ? target : 1)));
+                    const D = targets.map(([name,target]) => (this.dietTotals[name]/(target > 0 ? target : 1)));
                     const b=targets.map(([nutrient,target])=>(target > 0 ? 1 : 0));
                     const D1 = math.multiply(D,b);
                     const DD = math.multiply(D,D);
@@ -1281,16 +1302,16 @@
                 },
                 
                 async addSuggestedFood(food) {
-                    if (!this.storedFoods[food.name]) {
+                    if (!this.foodNames.includes(food.name)) {
                         await this.addFood(food);
                     }
                     await this.addFoodToDiet(food.name);
                     this.showSuggestModal = false;
                 },
 
-                openEditFoodModal(food) {
+                async openEditFoodModal(foodName) {
                     this.isEditingFood = true;
-                    this.editingFood = JSON.parse(JSON.stringify(food));
+                    this.editingFood = await dataService.getFood(foodName);
                 },
 
                 closeEditFoodModal() {
@@ -1309,7 +1330,6 @@
                             this.editingFood[key] = parseFloat(this.editingFood[key]) || 0;
                         }
                     }
-                    this.storedFoods[this.editingFood.name] = this.editingFood;
                     this.foodTable.updateData([this.editingFood]);
                     await dataService.addOrUpdateFood(this.editingFood);
                     this.closeEditFoodModal();

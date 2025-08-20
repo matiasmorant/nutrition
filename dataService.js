@@ -1,3 +1,5 @@
+const jsonCopy = x=>JSON.parse(JSON.stringify(x));
+
 const dataService = {
     db: null,
 
@@ -18,37 +20,27 @@ const dataService = {
     },
 
     // --- IndexedDB (Local Storage) Operations ---
-
-    async loadStoredFoods() {
-        const foodsArray = await this.db.getAll('foods');
-        // Convert array to an object map for faster lookups
-        return foodsArray.reduce((obj, food) => {
-            if (food && food.name) obj[food.name] = food;
-            return obj;
-        }, {});
-    },
-
-    async saveStoredFoods(foodsObject) {
+    
+    async addOrUpdateFood(food) {return await this.db.put('foods', jsonCopy(food));},
+    async getFood(name) { return await this.db.get('foods', name);},
+    async deleteFood(name) { await this.db.delete('foods', name); },
+    async getAllFoodNames() { return await this.db.getAllKeys('foods'); },
+    async getAllFoods() { return await this.db.getAll('foods');},
+    async saveFoods(foods) {
         const tx = this.db.transaction('foods', 'readwrite');
         await Promise.all([
             tx.store.clear(),
-            ...Object.values(foodsObject).map(food => {
-            tx.store.put(
-                JSON.parse(JSON.stringify(food))
-            )
-        })
+            ...foods.map(x=>tx.store.put(jsonCopy(x)))
         ]);
         await tx.done;
     },
     
-    async addOrUpdateFood(food) {return await this.db.put('foods', food);},
-
     async get(key, defaultValue) {
         const value = await this.db.get('keyval', key);
         return value !== undefined ? value : defaultValue;
     },
 
-    async set(key, value) { return await this.db.put('keyval', JSON.parse(JSON.stringify(value)), key); },
+    async set(key, value) { return await this.db.put('keyval', jsonCopy(value), key); },
 
     // --- Fetch External Data Files ---
 
