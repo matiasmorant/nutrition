@@ -713,6 +713,37 @@
             return x;
         }
 
+        function constrain(values, bounds){
+            return bounds.map((bound,i)=>{
+                const min = bound.min || 0;
+                if(bound.isRange){
+                    const current= values[i] || 0;
+                    const max = bound.max || (100 * bound.min);
+                    return math.median([min,max,current]);
+                }
+                return min;
+            });
+        }
+
+        function boundls(A,c, bounds, targets=null, maxIter=200, preverror=null){
+            // A.x+c = *bounds*
+            targets = targets || bounds.map(v=>v.min || 0);
+            if (targets.length === 0) {alert("Please set targets for at least one nutrient.");return;}
+
+            const relA = targets.map((target,i) => A[i].map(x=>x/(target > 0 ? target : 1) ));
+            const b = targets.map((target,i) => (target > 0 ? 1 - c[i] / target : -c[i]) );
+
+            const copyA=JSON.parse(JSON.stringify(relA));
+            const solution = nnls(relA, b);
+            const error = math.norm(math.subtract(math.multiply(copyA,solution),b));
+            console.log(maxIter,error);
+            if(preverror && preverror-error<1e-4) return solution;
+            const LHS = math.add(math.multiply(A,solution),c);
+            const easier = constrain(LHS, bounds);
+            if(maxIter===0) return solution;
+            return boundls(A, c, bounds, easier, maxIter-1, error);
+        }
+
         Object.defineProperty(Array.prototype, 'sum', {
             value: function (selector = x => x) {
               return this.reduce((s,x) => s + selector(x), 0);
@@ -1059,30 +1090,22 @@
                 },
 
                 easierTargets() {
-                    return Object.entries(this.nutrientTargets).map(([nutrient,target])=>{
-                            const min = target.min || 0;
-                            if(target.isRange){
-                                const current=this.dietTotals[nutrient] || 0;
-                                const max = target.max || (100 * target.min);
-                                return [nutrient, math.median([min,max,current])];
-                            }
-                            return [nutrient, min];
-                        });
+                    const bounds = Object.values(this.nutrientTargets);
+                    const values = Object.keys(this.nutrientTargets).map(nutrient=>this.dietTotals[nutrient]);
+                    return constrain(values, bounds);
                 },
 
-                async optimizeDiet(targets, maxIter, preverror) {
+                async optimizeDiet() {
                     if (!this.selectedDiet || this.selectedDiet.foods.length === 0) {
                         alert("Please add foods to the diet first.");
                         return;
                     }
-                    maxIter = maxIter ?? 200;
-                    if(maxIter===0) return;
-                    targets = targets || Object.entries(this.nutrientTargets).map(([k,v])=>[k,v.min || 0]);
-                    if (targets.length === 0) {alert("Please set targets for at least one nutrient.");return;}
                     
                     const dietFoods=this.selectedDiet.foods;
                     const locked = dietFoods.filter(f => f.locked);
                     const unlocked = dietFoods.filter(f => !f.locked);
+
+                    if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
                     
                     const nutrientData = {};
                     for (const foodItem of dietFoods) {
@@ -1090,29 +1113,20 @@
                     }
 
                     const getA=(food,nutrient)=>(nutrientData[food.foodName][nutrient] || 0) / 100;
-                    
-                    if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
+
+                    const nutrientNames = Object.keys(this.nutrientTargets);
+                    const lockedNutrients = nutrientNames.map(nutrient => locked.sum(food => 
+                        (getA(food,nutrient) * food.quantity)
+                    ));                        
+
+                    const bounds = Object.values(this.nutrientTargets);
+                    let A = nutrientNames.map(nutrient => unlocked.map(food => getA(food,nutrient) ));
 
                     try {
-                        const lockedNutrients = targets.map(([nutrient,target]) => locked.sum(food => 
-                            (getA(food,nutrient) * food.quantity)
-                        ));                        
-                        const A = targets.map(([nutrient,target]) => unlocked.map(food => (
-                            getA(food,nutrient) /(target > 0 ? target : 1)
-                        )));
-                        const b = targets.map(([nutrient,target],i) => (
-                            target > 0 ? 1 - lockedNutrients[i] / target : -lockedNutrients[i]
-                        ));
-
-                        const copyA=JSON.parse(JSON.stringify(A));
-                        const solution = nnls(A, b);
-                        const error = math.norm(math.subtract(math.multiply(copyA,solution),b));
-                        if(preverror && preverror-error<1e-4) return;
-
-                        unlocked.forEach((food, i) => {food.quantity = round(Math.max(0, solution[i]));});                        
+                        const solution = boundls(A, lockedNutrients, bounds);
+                        unlocked.forEach((food, i) => {food.quantity = round(Math.max(0, solution[i]));});
                         await this.saveDiets();
-
-                        this.optimizeDiet(this.easierTargets(), maxIter-1, error);
+                        this.recalculateDietTotals();
                     } catch (error) {
                         console.error("Optimization error:", error);
                         alert("Failed to optimize diet. The combination of foods and targets may not be solvable.");
