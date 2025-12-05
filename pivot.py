@@ -2,6 +2,25 @@ import pandas as pd; D=pd.DataFrame
 from pathlib import Path
 from rapidfuzz.distance import Levenshtein
 import re, json
+from collections import Counter
+from tqdm import tqdm
+
+def merge_foods(names, df, newname=None):
+  names=list(names)
+  subdf=df.loc[names]
+  c,p=subdf.count(),subdf.prod()
+  c,p=c[c>0],p[c>0]
+  newfood=(p**(1/c))
+  newfood.name= newname or names[0]
+  return pd.concat([df.drop(index=names), newfood.to_frame().T])
+
+def merge_sets(sets):
+    merged = []
+    for s in sets:
+        overlap = s.union(*[x for x in merged if s & x])
+        merged = [x for x in merged if not s & x]
+        merged.append(overlap)
+    return merged
 
 def pivot(folder):
   csv={x.name.replace('.csv',''): pd.read_csv(x) for x in Path(folder).glob('*.csv')}
@@ -83,10 +102,10 @@ def pivot(folder):
   big=readable.pivot_table(columns='nutrient',index='food',values='amount')
 
   # SALT
-  reNo=r'(without|no)( added)? salt( added)?'
-  reYes=r'with( added)? salt( added)?'
-  ws =big[big.index.str.match('.*with( added)? salt( added)?')]
-  wos=big[big.index.str.match('.*(without|no)( added)? salt( added)?')]
+  reNo=r'(without|no)( added)? (salt|sodium)( added)?'
+  reYes=r'(with( added)? (salt|sodium)( added)?)|(added (salt|sodium))|((salt|sodium) added)'
+  ws =big[big.index.str.match('.*(with( added)? (salt|sodium)( added)?)|(added (salt|sodium))|((salt|sodium) added)')]
+  wos=big[big.index.str.match('.*(without|no)( added)? (salt|sodium)( added)?')]
   matches=[[x,[y for y in wos.index if Levenshtein.distance(re.sub(reNo,'',y),re.sub(reYes,'',x))<2]] for x in ws.index]
   matches=[[k,v[0]]for k,v in matches if len(v)==1]
   #merge
@@ -95,15 +114,33 @@ def pivot(folder):
   nd=[(m,d) for m,d in diffs if len(d)!=1]
   for m,d in nd: big.loc[m[1]].update(d.drop('Sodium (mg)',errors='ignore').apply(lambda x: x.fillna(x.sum()), axis=1).apply(lambda x: x.prod()**.5, axis=1))
   discard=[mws for mws,mwos in matches]
-  rename={mwos: re.sub(reNo,'',mwos) for mws,mwos in matches}
+  rename={mwos: re.sub(r'(, )?'+reNo,'',mwos) for mws,mwos in matches}
   big=big.drop(index=discard).rename(index=rename)
 
   return big
 
 legacy=pivot('USDA_FoodData_Central_sr_legacy_food')
 foundation=pivot('FoodData_Central_foundation_food_csv_2025-04-24')
-foundation.index=['👑 '+x for x in foundation.index]
+# foundation.index=['👑 '+x for x in foundation.index]
 big=pd.concat([legacy,foundation])
+
+normalizecasing= lambda x: x[0].upper()+x[1:].lower()
+big.index=big.index.map(lambda x: x.strip()).map(normalizecasing)
+
+# 3916
+matches=big.index.groupby([x.lower().replace(',','') for x in big.index])
+matches=[set(v) for k,v in matches.items() if len(v)>1]
+for m in matches: big = merge_foods(m,big)
+
+# match=[[x,[y for y in big.index if 0<Levenshtein.distance(x,y)<3]] for x in tqdm(big.index)]
+# match=[{x,*y} for x,y in match if y]
+
+# big.index.sort_values().to_frame().to_csv('foodmerge.csv',index=False)
+mergedf=pd.read_csv('foodmerge.csv').dropna(subset=['merge'])
+mergedf['food']=mergedf['food'].map(normalizecasing)
+for newname, names in mergedf['food'].groupby(mergedf['merge']): big=merge_foods(names,big,newname)
+big=big.sort_index()
+
 # rec=[x.dropna().to_dict() for _, x in big.reset_index(names='name').iterrows()]
 # with open('foodnutrient.json','w') as f: f.write(json.dumps(rec))
 
