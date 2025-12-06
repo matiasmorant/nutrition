@@ -1,4 +1,5 @@
 import pandas as pd; D=pd.DataFrame
+import numpy as np
 from pathlib import Path
 from rapidfuzz.distance import Levenshtein
 import re, json
@@ -7,10 +8,7 @@ from tqdm import tqdm
 
 def merge_foods(names, df, newname=None):
   names=list(names)
-  subdf=df.loc[names]
-  c,p=subdf.count(),subdf.prod()
-  c,p=c[c>0],p[c>0]
-  newfood=(p**(1/c))
+  newfood=df.loc[names].apply(lambda x: np.exp(np.log(x).mean()))
   newfood.name= newname or names[0]
   return pd.concat([df.drop(index=names), newfood.to_frame().T])
 
@@ -140,6 +138,9 @@ mergedf=pd.read_csv('foodmerge.csv').dropna(subset=['merge'])
 mergedf['food']=mergedf['food'].map(normalizecasing)
 for newname, names in mergedf['food'].groupby(mergedf['merge']): big=merge_foods(names,big,newname)
 big=big.sort_index()
+
+def digits_round(x,N):return round(x, N - int(np.floor(np.log10(abs(x)))))
+big=big.applymap(lambda x: digits_round(x,2), na_action='ignore')
 
 # rec=[x.dropna().to_dict() for _, x in big.reset_index(names='name').iterrows()]
 # with open('foodnutrient.json','w') as f: f.write(json.dumps(rec))

@@ -1301,9 +1301,9 @@ Beans snap canned drained,
 "Beverages, tea, ready-to-drink, lemon, diet",
 "Beverages, vegetable and fruit juice blend, 100% juice, with added vitamins A, C, E",
 "Beverages, water, bottled, yumberry, pomegranate with anti-oxidants, zero calories",
-"Beverages, water, tap, drinking",
-"Beverages, water, tap, municipal",
-"Beverages, water, tap, well",
+"Beverages, water, tap, drinking","Water, tap"
+"Beverages, water, tap, municipal","Water, tap"
+"Beverages, water, tap, well","Water, tap"
 "Beverages, yellow green colored citrus soft drink with caffeine",
 "Blackberries, canned, heavy syrup, solids and liquids",
 "Blackberries, frozen, unsweetened",
@@ -2444,9 +2444,9 @@ Octopus (Alaska Native),
 "Oil, flaxseed, contains added sliced flaxseed",
 "Oil, grapeseed",
 "Oil, hazelnut",
-"Oil, industrial, canola (partially hydrogenated) oil for deep fat frying",
-"Oil, industrial, canola for salads, woks and light frying",
-"Oil, industrial, canola with antifoaming agent, principal uses salads, woks and light frying",
+"Oil, industrial, canola (partially hydrogenated) oil for deep fat frying","Oil, industrial, canola, frying"
+"Oil, industrial, canola for salads, woks and light frying","Oil, industrial, canola, frying"
+"Oil, industrial, canola with antifoaming agent, principal uses salads, woks and light frying","Oil, industrial, canola, frying"
 "Oil, industrial, canola, high oleic",
 "Oil, industrial, coconut (hydrogenated), used for whipped toppings and coffee whiteners",
 "Oil, industrial, coconut, confection fat, typical basis for ice cream coatings",
@@ -2454,17 +2454,17 @@ Octopus (Alaska Native),
 "Oil, industrial, cottonseed, fully hydrogenated",
 "Oil, industrial, mid-oleic, sunflower",
 "Oil, industrial, palm and palm kernel, filling fat (non-hydrogenated)",
-"Oil, industrial, palm kernel (hydrogenated) , used for whipped toppings, non-dairy",
-"Oil, industrial, palm kernel (hydrogenated), confection fat, intermediate grade product",
-"Oil, industrial, palm kernel (hydrogenated), confection fat, uses similar to 95 degree hard butter",
-"Oil, industrial, palm kernel (hydrogenated), filling fat",
-"Oil, industrial, palm kernel, confection fat, uses similar to high quality cocoa butter",
-"Oil, industrial, soy ( partially hydrogenated), all purpose",
-"Oil, industrial, soy (partially hydrogenated ) and soy (winterized), pourable clear fry",
-"Oil, industrial, soy (partially hydrogenated ), palm, principal uses icings and fillings",
-"Oil, industrial, soy (partially hydrogenated)  and cottonseed, principal use as a tortilla shortening",
-"Oil, industrial, soy (partially hydrogenated), multiuse for non-dairy butter flavor",
-"Oil, industrial, soy (partially hydrogenated), principal uses popcorn and flavoring vegetables",
+"Oil, industrial, palm kernel (hydrogenated) , used for whipped toppings, non-dairy","Oil, industrial, palm kernel"
+"Oil, industrial, palm kernel (hydrogenated), confection fat, intermediate grade product","Oil, industrial, palm kernel"
+"Oil, industrial, palm kernel (hydrogenated), confection fat, uses similar to 95 degree hard butter","Oil, industrial, palm kernel"
+"Oil, industrial, palm kernel (hydrogenated), filling fat","Oil, industrial, palm kernel"
+"Oil, industrial, palm kernel, confection fat, uses similar to high quality cocoa butter","Oil, industrial, palm kernel"
+"Oil, industrial, soy ( partially hydrogenated), all purpose","Oil, industrial, soy ( partially hydrogenated)"
+"Oil, industrial, soy (partially hydrogenated ) and soy (winterized), pourable clear fry","Oil, industrial, soy ( partially hydrogenated)"
+"Oil, industrial, soy (partially hydrogenated ), palm, principal uses icings and fillings","Oil, industrial, soy ( partially hydrogenated)"
+"Oil, industrial, soy (partially hydrogenated)  and cottonseed, principal use as a tortilla shortening","Oil, industrial, soy ( partially hydrogenated)"
+"Oil, industrial, soy (partially hydrogenated), multiuse for non-dairy butter flavor","Oil, industrial, soy ( partially hydrogenated)"
+"Oil, industrial, soy (partially hydrogenated), principal uses popcorn and flavoring vegetables","Oil, industrial, soy ( partially hydrogenated)"
 "Oil, industrial, soy, fully hydrogenated",
 "Oil, industrial, soy, low linolenic",
 "Oil, industrial, soy, refined, for woks and light frying",
@@ -2476,8 +2476,8 @@ Octopus (Alaska Native),
 "Oil, olive, extra virgin",
 "Oil, olive, salad or cooking",
 "Oil, palm",
-"Oil, peanut",
-"Oil, peanut, salad or cooking",
+"Oil, peanut","Oil, peanut"
+"Oil, peanut, salad or cooking","Oil, peanut"
 "Oil, poppyseed",
 "Oil, rice bran",
 "Oil, safflower",
@@ -2520,10 +2520,10 @@ Okara,
 "Onions, canned, solids and liquids",
 "Onions, cooked, boiled, drained",
 "Onions, dehydrated flakes",
-"Onions, frozen, chopped, cooked, boiled, drained",
-"Onions, frozen, chopped, unprepared",
-"Onions, frozen, whole, cooked, boiled, drained",
-"Onions, frozen, whole, unprepared",
+"Onions, frozen, chopped, cooked, boiled, drained","Onions, frozen, cooked, boiled, drained"
+"Onions, frozen, chopped, unprepared","Onions, frozen, unprepared"
+"Onions, frozen, whole, cooked, boiled, drained","Onions, frozen, cooked, boiled, drained"
+"Onions, frozen, whole, unprepared","Onions, frozen, unprepared"
 "Onions, raw",
 "Onions, red, raw",
 "Onions, spring or scallions (includes tops and bulb), raw",
