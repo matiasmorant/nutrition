@@ -154,9 +154,9 @@ Ascidians (tunughnak) (Alaska Native),
 "Asparagus, raw",
 "Avocado, Hass, peeled, pit removed, raw",
 "Avocado, Hass, peeled, raw",
-"Avocados, raw, California",
-"Avocados, raw, Florida",
-"Avocados, raw, all commercial varieties",
+"Avocados, raw, California","Avocados, raw"
+"Avocados, raw, Florida","Avocados, raw"
+"Avocados, raw, all commercial varieties","Avocados, raw"
 "Balsam-pear (bitter gourd), leafy tips, cooked, boiled, drained",
 "Balsam-pear (bitter gourd), leafy tips, raw",
 "Balsam-pear (bitter gourd), pods, cooked, boiled, drained",
@@ -1943,12 +1943,12 @@ Grapefruit juice white shelf stable,
 "Grapefruit juice, white, frozen concentrate, unsweetened, undiluted",
 "Grapefruit juice, white, raw",
 "Grapefruit, raw, pink and red and white, all areas",
-"Grapefruit, raw, pink and red, California and Arizona",
-"Grapefruit, raw, pink and red, Florida",
-"Grapefruit, raw, pink and red, all areas",
-"Grapefruit, raw, white, California",
-"Grapefruit, raw, white, Florida",
-"Grapefruit, raw, white, all areas",
+"Grapefruit, raw, pink and red, California and Arizona","Grapefruit, raw, pink and red"
+"Grapefruit, raw, pink and red, Florida","Grapefruit, raw, pink and red"
+"Grapefruit, raw, pink and red, all areas","Grapefruit, raw, pink and red"
+"Grapefruit, raw, white, California","Grapefruit, raw, white"
+"Grapefruit, raw, white, Florida","Grapefruit, raw, white"
+"Grapefruit, raw, white, all areas","Grapefruit, raw, white"
 "Grapefruit, sections, canned, juice pack, solids and liquids",
 "Grapefruit, sections, canned, light syrup pack, solids and liquids",
 "Grapefruit, sections, canned, water pack, solids and liquids",
@@ -1990,9 +1990,9 @@ Heavy cream,
 Horned melon (Kiwano),
 "Horseradish, prepared",
 "Huckleberries, raw (Alaska Native)",
-Hummus,
-"Hummus, commercial",
-"Hummus, home prepared",
+Hummus,Hummus
+"Hummus, commercial",Hummus
+"Hummus, home prepared",Hummus
 "Hyacinth beans, mature seeds, cooked, boiled",
 "Hyacinth beans, mature seeds, raw",
 "Hyacinth-beans, immature seeds, cooked, boiled, drained",
@@ -2028,23 +2028,23 @@ Ice cream sundae cone,
 "Jujube, raw",
 "Jute, potherb, cooked, boiled, drained",
 "Jute, potherb, raw",
-Kale,
+Kale,"Kale, raw"
 "Kale, cooked, boiled, drained",
 "Kale, frozen, cooked, boiled, drained",
 "Kale, frozen, cooked, boiled, drained, without salt",
 "Kale, frozen, unprepared",
-"Kale, raw",
+"Kale, raw","Kale, raw"
 "Kanpyo, (dried gourd strips)",
-Ketchup,
-"Ketchup, restaurant",
+Ketchup,Ketchup
+"Ketchup, restaurant",Ketchup
 "Khorasan, grain, dry, raw",
 "Khorasan, grain, wheat berry, dry, raw",
-"Kiwi, Raw, Region 1, n/a, Yes, Carotenoid",
-"Kiwi, Raw, Region 2, n/a, Yes, Carotenoid",
-"Kiwi, Raw, Region 3, n/a, Yes, Carotenoid",
-"Kiwi, Raw, Region 4, n/a, Yes, Carotenoid",
-"Kiwifruit (kiwi), green, peeled, raw",
-"Kiwifruit, green, raw",
+"Kiwi, Raw, Region 1, n/a, Yes, Carotenoid",Kiwi
+"Kiwi, Raw, Region 2, n/a, Yes, Carotenoid",Kiwi
+"Kiwi, Raw, Region 3, n/a, Yes, Carotenoid",Kiwi
+"Kiwi, Raw, Region 4, n/a, Yes, Carotenoid",Kiwi
+"Kiwifruit (kiwi), green, peeled, raw",Kiwi
+"Kiwifruit, green, raw",Kiwi
 "Kohlrabi, cooked, boiled, drained",
 "Kohlrabi, raw",
 "Kumquats, raw",
@@ -2244,14 +2244,14 @@ Millet flour,
 "Millet, raw",
 "Millet, whole grain",
 Miso,
-"Mission Figs, Dried, Region 1, n/a, No, Pantothenic Acid",
-"Mission Figs, Dried, Region 2, n/a, Yes, Amino Acids  - N",
-"Mission Figs, Dried, Region 2, n/a, Yes, Carotenoids  - N",
-"Mission Figs, Dried, Region 2, n/a, Yes, Pantothenic Acid",
-"Mission Figs, Dried, Region 3, n/a, Yes, Amino Acids  - N",
-"Mission Figs, Dried, Region 3, n/a, Yes, Carotenoids  - N",
-"Mission Figs, Dried, Region 3, n/a, Yes, Pantothenic Acid",
-"Mission Figs, Dried, Region 4, n/a, No, Pantothenic Acid",
+"Mission Figs, Dried, Region 1, n/a, No, Pantothenic Acid","Mission Figs, Dried"
+"Mission Figs, Dried, Region 2, n/a, Yes, Amino Acids  - N","Mission Figs, Dried"
+"Mission Figs, Dried, Region 2, n/a, Yes, Carotenoids  - N","Mission Figs, Dried"
+"Mission Figs, Dried, Region 2, n/a, Yes, Pantothenic Acid","Mission Figs, Dried"
+"Mission Figs, Dried, Region 3, n/a, Yes, Amino Acids  - N","Mission Figs, Dried"
+"Mission Figs, Dried, Region 3, n/a, Yes, Carotenoids  - N","Mission Figs, Dried"
+"Mission Figs, Dried, Region 3, n/a, Yes, Pantothenic Acid","Mission Figs, Dried"
+"Mission Figs, Dried, Region 4, n/a, No, Pantothenic Acid","Mission Figs, Dried"
 "Monterey jack cheese, block",
 "Mothbeans, mature seeds, cooked, boiled",
 "Mothbeans, mature seeds, raw",

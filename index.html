@@ -16,6 +16,7 @@
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.6.1/dist/js/tabulator.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/ml-matrix/matrix.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -703,8 +704,63 @@
         function argmin(arr) {
           return arr.reduce((minI, x, i, array) => x < array[minI] ? i : minI, 0);
         }
+
+        /**
+         * Solves Ax = b using SVD (GELSD logic) with pure ml-matrix.
+         * * @param {Array|Matrix} A - The coefficient matrix
+         * @param {Array|Matrix} b - The dependent variables
+         * @param {Number} rcond - Relative condition number threshold (default 1e-15)
+         * @returns {Array} The solution vector x
+         */
+        function LAPACK_GELSD(A, b, rcond = 1e-15) {
+            // 1. Compute SVD: A = U * S * V^T
+            // ml-matrix automatically computes the "thin" SVD which is efficient
+            const svd = new mlMatrix.SVD(A);
+            
+            const U = svd.leftSingularVectors;  // Columns are Left Singular Vectors
+            const V = svd.rightSingularVectors; // Columns are Right Singular Vectors
+            const s = svd.diagonal;             // 1D Array of singular values
+
+            // 2. Apply rcond threshold (GELSD logic)
+            // SVD singular values are typically sorted descending
+            const maxS = s[0];
+            const threshold = rcond * maxS;
+
+            // 3. Calculate: x = V * Σ⁺ * Uᵀ * b
+            // We break this down for efficiency to avoid creating a large diagonal matrix
+            
+            // Step A: Project b onto U: d = Uᵀ * b
+            // Note: U is orthogonal, so transpose is inverse
+            let d = U.transpose().mmul(b);
+
+            // Step B: Scale by inverse singular values (Σ⁺ * d)
+            // We do this element-wise on the vector d
+            for (let i = 0; i < d.rows; i++) {
+                const sigma = s[i];
+                const val = d.get(i, 0);
+                
+                // If sigma is valid (above noise floor), divide; otherwise set to 0
+                if (sigma > threshold) {
+                    d.set(i, 0, val / sigma);
+                } else {
+                    d.set(i, 0, 0);
+                }
+            }
+
+            // Step C: Project back onto V: x = V * d
+            return V.mmul(d);
+        }
+        function lstsq(A,b){
+            [A,b]=[new mlMatrix.Matrix(A), mlMatrix.Matrix.columnVector(b)]
+            try {
+                return mlMatrix.solve(A,b);
+            } catch (e) {
+                return LAPACK_GELSD(A,b);
+            }
+        }
         function nnls(A,b){
-            let x = math.multiply(math.pinv(A), b).flat();
+            // let x = math.multiply(math.pinv(A), b).flat();
+            let x=lstsq(A,b).to1DArray();
             const mini = argmin(x);
             if(x[mini]>0) return x;
             A.forEach(row=>row.splice(mini,1));
@@ -1087,6 +1143,34 @@
                     if (max !== null && total >= min && total <= max) return 100;
                     if (max !== null && total > max) return (total / max) * 100;
                     return (total / min) * 100;
+                },
+
+                async dietMatrices() {
+                    const nutrientNames = Object.keys(this.nutrientTargets);
+                    const dietFoods=this.selectedDiet.foods;
+
+                    const bounds = Object.values(this.nutrientTargets);
+
+                    const nutrientData = {};
+                    for (const foodItem of dietFoods) {
+                        nutrientData[foodItem.foodName] = await dataService.getFood(foodItem.foodName);
+                    }
+
+                    const getA=(food,nutrient)=>(nutrientData[food.foodName][nutrient] || 0) / 100;
+
+                    const locked = dietFoods.filter(f => f.locked);
+                    const unlocked = dietFoods.filter(f => !f.locked);
+
+                    const lockedNutrients = nutrientNames.map(nutrient => locked.sum(food => 
+                        (getA(food,nutrient) * food.quantity)
+                    ));                        
+
+                    const A = nutrientNames.map(nutrient => unlocked.map(food => getA(food,nutrient) ));
+                    const nutrientValue = nutrientNames.map(nutrient=>this.dietTotals[nutrient]);
+
+                    const unlockedamounts=null; // TODO
+
+                    return {A, lockedNutrients, unlockedamounts, nutrientValue, bounds};
                 },
 
                 easierTargets() {

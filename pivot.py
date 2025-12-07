@@ -21,6 +21,7 @@ def merge_sets(sets):
     return merged
 
 def pivot(folder):
+  print(f'Pivoting {folder}')
   csv={x.name.replace('.csv',''): pd.read_csv(x) for x in Path(folder).glob('*.csv')}
   csv['nutrient']=csv['nutrient'].set_index('id').apply(lambda x: f"{x['name']} ({x['unit_name']})", axis=1)\
      .map(lambda x:{'PUFA 22:5 n-3 (DPA) (G)'       :'Omega-3 (DPA) (G)',
@@ -126,9 +127,10 @@ normalizecasing= lambda x: x[0].upper()+x[1:].lower()
 big.index=big.index.map(lambda x: x.strip()).map(normalizecasing)
 
 # 3916
+print(f'Merging foods')
 matches=big.index.groupby([x.lower().replace(',','') for x in big.index])
 matches=[set(v) for k,v in matches.items() if len(v)>1]
-for m in matches: big = merge_foods(m,big)
+for m in tqdm(matches): big = merge_foods(m,big)
 
 # match=[[x,[y for y in big.index if 0<Levenshtein.distance(x,y)<3]] for x in tqdm(big.index)]
 # match=[{x,*y} for x,y in match if y]
@@ -136,7 +138,7 @@ for m in matches: big = merge_foods(m,big)
 # big.index.sort_values().to_frame().to_csv('foodmerge.csv',index=False)
 mergedf=pd.read_csv('foodmerge.csv').dropna(subset=['merge'])
 mergedf['food']=mergedf['food'].map(normalizecasing)
-for newname, names in mergedf['food'].groupby(mergedf['merge']): big=merge_foods(names,big,newname)
+for newname, names in tqdm(mergedf['food'].groupby(mergedf['merge'])): big=merge_foods(names,big,newname)
 big=big.sort_index()
 
 def digits_round(x,N):return round(x, N - int(np.floor(np.log10(abs(x)))))
