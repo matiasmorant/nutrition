@@ -120,74 +120,77 @@
    Vitamin E, gamma Tocotrienol (mg)
    Vitamin E, delta Tocotrienol (mg)
    Vitamin A, IU (IU)
-+  Vitamin A, RAE (μg) — 900–3000
-     Retinol (μg)
-     Cryptoxanthin, beta (μg)
-     Carotene, alpha (μg)
-     Carotene, beta (μg)
++  Vitamin A, RAE (µg) — 900–3000
+     Retinol (µg)
+     Cryptoxanthin, beta (µg)
+     Carotene, alpha (µg)
+     Carotene, beta (µg)
 +  Vitamin B1, Thiamin (mg) — 1.2–100
 +  Vitamin B2, Riboflavin (mg) — 1.3–400
 +  Vitamin B3, Niacin (mg) — 16–35
 +  Vitamin B5, Pantothenic acid (mg) — 5–1000
 +  Vitamin B6, Pyridoxine (mg) — 1.3–100
-+  Vitamin B9, Folate (μg) — 400–1000
-   Vitamin B9, Folate, DFE (μg)
-   Vitamin B9, Folate, food (μg)
-   Vitamin B9, Folic acid (μg)
-   Vitamin B-12 (μg) — 2.4
-   Vitamin B-12, added (μg)
++  Vitamin B9, Folate (µg) — 400–1000
+   Vitamin B9, Folate, DFE (µg)
+   Vitamin B9, Folate, food (µg)
+   Vitamin B9, Folic acid (µg)
+   Vitamin B-12 (µg) — 2.4
+   Vitamin B-12, added (µg)
 +  Vitamin C (mg) — 90–2000
-   Vitamin D (D2 + D3) (μg) — 15–100
+   Vitamin D (D2 + D3) (µg) — 15–100
    Vitamin D (D2 + D3), International Units (IU)
-   Vitamin D2 (ergocalciferol) (μg)
-   Vitamin D3 (cholecalciferol) (μg)
-   Vitamin K (Dihydrophylloquinone) (μg) — 120
-   Vitamin K (Menaquinone-4) (μg)
-   Vitamin K (phylloquinone) (μg)
+   Vitamin D2 (ergocalciferol) (µg)
+   Vitamin D3 (cholecalciferol) (µg)
+   Vitamin K (Dihydrophylloquinone) (µg) — 120
+   Vitamin K (Menaquinone-4) (µg)
+   Vitamin K (phylloquinone) (µg)
  Minerals
 +  Calcium (mg) — 1000–2500
 +  Copper (mg) — 0.9–10
-   Fluoride (μg) — 4000–10000
+   Fluoride (µg) — 4000–10000
 +  Iron (mg) — 8–45
 +  Magnesium (mg) — 420–800
 +  Manganese (mg) — 2.3–11
 +  Phosphorus (mg) — 700–4000
 +  Potassium (mg) — 3400–15000
-+  Selenium (μg) — 55–400
++  Selenium (µg) — 55–400
 +  Sodium (mg) — 500–1500
 +  Zinc (mg) — 11–40
+   Nickel (µg)
+   Sulfur (mg)
+
  Alcohol, ethyl (g)
  Beta-sitosterol (mg)
  Betaine (mg)
  Caffeine (mg)
  Campesterol (mg)
 +Cholesterol (mg) — 0–0.1
- Lutein + zeaxanthin (μg)
- Lycopene (μg)
+ Lutein + zeaxanthin (µg)
+ Lycopene (µg)
  Phytosterols (mg)
  Stigmasterol (mg)
  Theobromine (mg)
  Phytosterols, other (mg)
  Raffinose (g)
- trans-Lycopene (μg)
+ trans-Lycopene (µg)
  Ergosta-7,22-dienol (mg)
  Nitrogen (g)
  Glycitin (mg)
  Ergosta-7-enol (mg)
  Verbascose (g)
- cis-Lutein/Zeaxanthin (μg)
+ cis-Lutein/Zeaxanthin (µg)
  Genistin (mg)
  Ergosta-5,7-dienol (mg)
- trans-beta-Carotene (μg)
+ trans-beta-Carotene (µg)
  Daidzin (mg)
  Choline, free (mg)
  SFA 21:0 (g)
  Total dietary fiber (AOAC 2011.25) (g)
- Cobalt, Co (μg)
+ Cobalt, Co (µg)
  Resistant starch (g)
- Vitamin D4 (μg)
+ Vitamin D4 (µg)
  Choline, from phosphocholine (mg)
- Biotin (μg)
+ Biotin (µg)
  Choline, from sphingomyelin (mg)
  Glutathione (mg)
  Stachyose (g)
@@ -196,41 +199,39 @@
  Ergothioneine (mg)
  Ergosterol (mg)
  Carbohydrate, by summation (g)
- Cryptoxanthin, alpha (μg)
- Molybdenum, Mo (μg)
+ Cryptoxanthin, alpha (µg)
+ Molybdenum, Mo (µg)
  Fiber, insoluble (g)
  Delta-5-avenasterol (mg)
  Beta-glucan (g)
  Fiber, soluble (g)
- 10-Formyl folic acid (10HCOFA) (μg)
+ 10-Formyl folic acid (10HCOFA) (µg)
  Energy (Atwater Specific Factors) (KCAL)
  Cysteine (g)
  Specific Gravity (SP_GR)
- 5-methyl tetrahydrofolate (5-MTHF) (μg)
+ 5-methyl tetrahydrofolate (5-MTHF) (µg)
  Genistein (mg)
  Fatty acids, total trans-dienoic (g)
- Iodine, I (μg)
+ Iodine, I (µg)
  Energy (Atwater General Factors) (KCAL)
- Carotene, gamma (μg)
- 25-hydroxycholecalciferol (μg)
+ Carotene, gamma (µg)
+ 25-hydroxycholecalciferol (µg)
  Choline, from glycerophosphocholine (mg)
  Quinic acid (mg)
  Brassicasterol (mg)
- cis-Lycopene (μg)
+ cis-Lycopene (µg)
  Delta-7-Stigmastenol (mg)
- cis-beta-Carotene (μg)
+ cis-beta-Carotene (µg)
  SFA 11:0 (g)
  Beta-sitostanol (mg)
- Zeaxanthin (μg)
+ Zeaxanthin (µg)
  Daidzein (mg)
  Citric acid (mg)
- Sulfur, S (mg)
  Low Molecular Weight Dietary Fiber (LMWDF) (g)
  Campestanol (mg)
  High Molecular Weight Dietary Fiber (HMWDF) (g)
- Boron, B (μg)
- 5-Formyltetrahydrofolic acid (5-HCOH4 (μg)
+ Boron, B (µg)
+ 5-Formyltetrahydrofolic acid (5-HCOH4 (µg)
  Total Sugars (g)
- Nickel, Ni (μg)
  Choline, from phosphotidyl choline (mg)
- Lutein (μg)
+ Lutein (µg)

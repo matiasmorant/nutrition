@@ -5,73 +5,211 @@ from rapidfuzz.distance import Levenshtein
 import re, json
 from collections import Counter
 from tqdm import tqdm
+from glom import glom, Iter, T, Fold, Flatten, Merge
 
 def merge_foods(names, df, newname=None):
   names=list(names)
-  newfood=df.loc[names].apply(lambda x: np.exp(np.log(x).mean()))
+  newfood=df.loc[names].apply(lambda x: np.exp(np.log(x[x>0]).mean()))
   newfood.name= newname or names[0]
   return pd.concat([df.drop(index=names), newfood.to_frame().T])
 
 def merge_sets(sets):
-    merged = []
-    for s in sets:
-        overlap = s.union(*[x for x in merged if s & x])
-        merged = [x for x in merged if not s & x]
-        merged.append(overlap)
-    return merged
+  merged = []
+  for s in sets:
+    overlap = s.union(*[x for x in merged if s & x])
+    merged = [x for x in merged if not s & x]
+    merged.append(overlap)
+  return merged
+
+meatRe=".*(chicken|poultry|beef|meat|fish|liver|steak|free range|bacon|Whale|Sea lion|turkey|salmon|deer|pork)"
+
+def replace(pairs,string):
+  for r in pairs.items(): string=string.replace(*r)
+  return string
+
+def nutrientmap(n):
+  return replace({
+    'PUFA 22:5 n-3 (DPA)'       :'Omega-3 (DPA)',
+    'PUFA 22:5 c'               :'Omega-3 (DPA)',
+    'PUFA 18:3 n-3 c,c,c (ALA)' :'Omega-3 (ALA)',
+    'PUFA 18:3 c'               :'Omega-3 (ALA)',
+    'PUFA 20:5 n-3 (EPA)'       :'Omega-3 (EPA)',
+    'PUFA 20:5c'                :'Omega-3 (EPA)',
+    'PUFA 22:6 n-3 (DHA)'       :'Omega-3 (DHA)',
+    'PUFA 22:6 c'               :'Omega-3 (DHA)',
+    'PUFA 18:2 n-6 c,c'         :'Omega-6 (Linoleic Acid)',
+    'PUFA 18:2 c'               :'Omega-6 (Linoleic Acid)',
+    'PUFA 18:3 n-6 c,c,c'       :'Omega-6 (GLA)',
+    'PUFA 20:2 n-6 c,c'         :'Omega-6 (Eicosadienoic Acid)',
+    'PUFA 20:4 n-6'             :'Omega-6 (AA)',
+    'PUFA 20:4c'                :'Omega-6 (AA)',
+    # 'PUFA 18:2 CLAs'            :,
+    # 'PUFA 18:2 i'               :,
+    # 'PUFA 18:3i'                :,
+    # 'PUFA 20:2 c'               :,
+    # 'PUFA 20:3'                 :,
+    # 'PUFA 20:3 c'               :,
+    # 'PUFA 20:3 n-3'             :,
+    # 'PUFA 20:3 n-6'             :,
+    # 'PUFA 21:5'                 :,
+    # 'PUFA 22:2'                 :,
+    # 'PUFA 22:3'                 :,
+    # 'PUFA 22:4'                 :,
+    ', by difference':'',
+    ', by summation':'',
+    'Sugars, Total'             :'Sugars',
+    'Total lipid (fat)'         :'Fat',
+    'Thiamin'          :'Vitamin B1, Thiamin',
+    'Riboflavin'       :'Vitamin B2, Riboflavin',
+    'Niacin'           :'Vitamin B3, Niacin',
+    'Pantothenic acid' :'Vitamin B5, Pantothenic acid',
+    'Vitamin B-6'      :'Vitamin B6, Pyridoxine',
+    'Folate, total'    :'Vitamin B9, Folate',
+    'Folate, DFE'      :'Vitamin B9, Folate, DFE',
+    'Folate, food'     :'Vitamin B9, Folate, food',
+    'Folic acid'       :'Vitamin B9, Folic acid',
+    'Tocopherol, beta'   :'Vitamin E, beta Tocopherol',
+    'Tocopherol, delta'  :'Vitamin E, delta Tocopherol',
+    'Tocopherol, gamma'  :'Vitamin E, gamma Tocopherol',
+    'Tocotrienol, alpha' :'Vitamin E, alpha Tocotrienol',
+    'Tocotrienol, beta'  :'Vitamin E, beta Tocotrienol',
+    'Tocotrienol, delta' :'Vitamin E, delta Tocotrienol',
+    'Tocotrienol, gamma' :'Vitamin E, gamma Tocotrienol',
+    'Calcium, Ca'   :'Calcium',
+    'Cobalt, Co'    :'Cobalt',
+    'Copper, Cu'    :'Copper',
+    'Fluoride, F'   :'Fluoride',
+    'Iron, Fe'      :'Iron',
+    'Iodine, I'     :'Iodine',
+    'Magnesium, Mg' :'Magnesium',
+    'Manganese, Mn' :'Manganese',
+    'Molybdenum, Mo':'Molybdenum',
+    'Nickel, Ni'    :'Nickel',
+    'Phosphorus, P' :'Phosphorus',
+    'Potassium, K'  :'Potassium',
+    'Selenium, Se'  :'Selenium',
+    'Sodium, Na'    :'Sodium',
+    'Sulfur, S'     :'Sulfur',
+    'Zinc, Zn'      :'Zinc',
+    'Fiber, total dietary':'Fiber, dietary',
+    'Fatty acids, total monounsaturated':'Fatty acids, monounsaturated',
+    'Fatty acids, total polyunsaturated':'Fatty acids, polyunsaturated',
+    'Fatty acids, total saturated':'Fatty acids, saturated',
+    'Fatty acids, total trans':'Fatty acids, trans',
+    'Fatty acids, total trans-monoenoic':'Fatty acids, trans-monoenoic',
+    'Fatty acids, total trans-polyenoic':'Fatty acids, trans-polyenoic',
+    'Choline, total':'Choline',
+    'Vitamin C, total ascorbic acid':'Vitamin C',
+    '(G)'   :'(g)',
+    '(MG)'  :'(mg)',
+    '(UG)'  :'(µg)',
+    '(kcal)':'(KCAL)',
+    chr(956):chr(181),
+  },n)
+
+def pivotJSON():
+    with open('surveyDownload.json') as p: sfoods=json.load(p)['SurveyFoods']
+    nutrient={'name':'nutrient.name','unit':'nutrient.unitName','amount':'amount'}
+    # nutrients=('foodNutrients',Fold([nutrient], init=dict, op=lambda r,x: {**r, f"{x['name']} ({x['unit']})": x['amount']}) )
+    nutrients=('foodNutrients',Merge([(nutrient, lambda x: {f"{x['name']} ({x['unit']})": x['amount']})]) )
+    # data=glom(sfoods, {'food':['description'],'nutrients':[nutrients], 'category':['wweiaFoodCategory.wweiaFoodCategoryDescription']})
+    # return D(data['nutrients'],index=data['food'])
+    data=D(glom(sfoods, [({'food':'description','nutrients':nutrients, 'category':'wweiaFoodCategory.wweiaFoodCategoryDescription'},lambda x: {**x.pop('nutrients'),**x})]))
+    categories = {
+    # dairy
+    "Human milk",
+    "Milk, reduced fat","Milk, whole","Milk, lowfat","Milk, nonfat",
+    "Flavored milk, whole",
+    "Yogurt, regular","Yogurt, Greek",
+    "Ice cream and frozen dairy desserts",
+    "Flavored milk, lowfat","Flavored milk, reduced fat","Flavored milk, nonfat",
+    "Milk shakes and other dairy drinks",
+    "Cheese",
+    "Cream cheese, sour cream, whipped cream",
+    "Cottage/ricotta cheese",
+    "Butter and animal fats",
+    "Eggs and omelets",
+    # vegetables
+    "Citrus fruits",
+    "Citrus juice","Other fruit juice",
+    "Dried fruits",
+    "Other fruits and fruit salads",
+    "Other vegetables and combinations",
+    "Apples","Bananas","Melons","Grapes","Mango and papaya",
+    "Peaches and nectarines","Pears","Pineapple","Strawberries",
+    "Blueberries and other berries",
+    "Apple juice",
+    "Nuts and seeds",
+    "Plant-based milk",
+    "Oatmeal",
+    "Rice",
+    "Ready-to-eat cereal, higher sugar (>21.2g/100g)",
+    "Ready-to-eat cereal, lower sugar (=<21.2g/100g)",
+    "White potatoes, baked or boiled",
+    "Mashed potatoes and white potato mixtures",
+    "French fries and other fried white potatoes",
+    "Other starchy vegetables",
+    "Fried vegetables",
+    "Lettuce and lettuce salads",
+    "Vegetable juice",
+    "Other red and orange vegetables",
+    "Olives, pickles, pickled vegetables",
+    "Tomato-based condiments",
+    "String beans",
+    "Broccoli","Spinach","Carrots","Tomatoes","Cabbage","Onions",
+    "Corn",
+    "Dips, gravies, other sauces",
+    "Smoothies and grain drinks",
+    "Formula, prepared from powder","Formula, ready-to-feed",
+    "Not included in a food category",
+    "Cream and cream substitutes",
+    "Coleslaw, non-lettuce salads",
+    "Shellfish",
+    "Stir-fry and soy-based sauce mixtures",
+    "Pasta sauces, tomato-based",
+    "Soy-based condiments",
+    "Fried rice and lo/chow mein",
+    "Other dark green vegetables",
+    "Beans, peas, legumes",
+    "Soy and meat-alternative products",
+    "Plant-based yogurt",
+    "Mustard and other condiments",
+    "Fruit drinks",
+    "Yeast breads",
+    "Turnovers and other grain-based items",
+    "Nutrition bars",
+    "Popcorn",
+    "Pasta, noodles, cooked grains",
+    "Grits and other cooked cereals",
+    "Gelatins, ices, sorbets",
+    "Jams, syrups, toppings",
+    "Margarine",
+    "Mayonnaise",
+    "Salad dressings and vegetable oils",
+    "Sugars and honey",
+    "Sugar substitutes",
+    "Coffee","Tea",
+    "Soft drinks",
+    "Diet soft drinks",
+    "Flavored or carbonated water",
+    "Other diet drinks",
+    "Liquor and cocktails",
+    "Beer","Wine",
+    "Tap water","Bottled water",
+    "Enhanced water",
+    "Protein and nutritional powders",
+    "Sport and energy drinks",
+    "Diet sport and energy drinks",
+    }
+    data=data[data.apply(lambda x: (x['category'] in categories) and pd.notna(x['food']) and not re.match(meatRe,x['food'],re.I), axis=1)]
+    data=data.rename(columns=nutrientmap)
+
+    return data.set_index('food').drop(columns=['category'])
 
 def pivot(folder):
   print(f'Pivoting {folder}')
   csv={x.name.replace('.csv',''): pd.read_csv(x) for x in Path(folder).glob('*.csv')}
-  csv['nutrient']=csv['nutrient'].set_index('id').apply(lambda x: f"{x['name']} ({x['unit_name']})", axis=1)\
-     .map(lambda x:{'PUFA 22:5 n-3 (DPA) (G)'       :'Omega-3 (DPA) (G)',
-         'PUFA 18:3 n-3 c,c,c (ALA) (G)' :'Omega-3 (ALA) (G)',
-         'PUFA 20:5 n-3 (EPA) (G)'       :'Omega-3 (EPA) (G)',
-         'PUFA 22:6 n-3 (DHA) (G)'       :'Omega-3 (DHA) (G)',
-         'PUFA 18:2 n-6 c,c (G)'         :'Omega-6 (Linoleic Acid) (G)',
-         'PUFA 18:3 n-6 c,c,c (G)'       :'Omega-6 (GLA) (G)',
-         'PUFA 20:2 n-6 c,c (G)'         :'Omega-6 (Eicosadienoic Acid) (G)',
-         'PUFA 20:4 n-6 (G)'             :'Omega-6 (AA) (G)',
-         'Carbohydrate, by difference (G)':'Carbohydrate (G)',
-         'Sugars, Total (G)'             :'Sugars (G)',
-         'Total lipid (fat) (G)'         :'Fat (G)',
-         'Thiamin (MG)'          :'Vitamin B1, Thiamin (MG)',
-         'Riboflavin (MG)'       :'Vitamin B2, Riboflavin (MG)',
-         'Niacin (MG)'           :'Vitamin B3, Niacin (MG)',
-         'Pantothenic acid (MG)' :'Vitamin B5, Pantothenic acid (MG)',
-         'Vitamin B-6 (MG)'      :'Vitamin B6, Pyridoxine (MG)',
-         'Folate, total (UG)'    :'Vitamin B9, Folate (UG)',
-         'Folate, DFE (UG)'      :'Vitamin B9, Folate, DFE (UG)',
-         'Folate, food (UG)'     :'Vitamin B9, Folate, food (UG)',
-         'Folic acid (UG)'       :'Vitamin B9, Folic acid (UG)',
-         'Tocopherol, beta (MG)'   :'Vitamin E, beta Tocopherol (MG)',
-         'Tocopherol, delta (MG)'  :'Vitamin E, delta Tocopherol (MG)',
-         'Tocopherol, gamma (MG)'  :'Vitamin E, gamma Tocopherol (MG)',
-         'Tocotrienol, alpha (MG)' :'Vitamin E, alpha Tocotrienol (MG)',
-         'Tocotrienol, beta (MG)'  :'Vitamin E, beta Tocotrienol (MG)',
-         'Tocotrienol, delta (MG)' :'Vitamin E, delta Tocotrienol (MG)',
-         'Tocotrienol, gamma (MG)' :'Vitamin E, gamma Tocotrienol (MG)',
-         'Calcium, Ca (MG)':'Calcium (MG)',
-         'Copper, Cu (MG)':'Copper (MG)',
-         'Fluoride, F (UG)':'Fluoride (UG)',
-         'Iron, Fe (MG)':'Iron (MG)',
-         'Magnesium, Mg (MG)':'Magnesium (MG)',
-         'Manganese, Mn (MG)':'Manganese (MG)',
-         'Phosphorus, P (MG)':'Phosphorus (MG)',
-         'Potassium, K (MG)':'Potassium (MG)',
-         'Selenium, Se (UG)':'Selenium (UG)',
-         'Sodium, Na (MG)':'Sodium (MG)',
-         'Zinc, Zn (MG)':'Zinc (MG)',
-         'Fiber, total dietary (G)':'Fiber, dietary (G)',
-         'Fatty acids, total monounsaturated (G)':'Fatty acids, monounsaturated (G)',
-         'Fatty acids, total polyunsaturated (G)':'Fatty acids, polyunsaturated (G)',
-         'Fatty acids, total saturated (G)':'Fatty acids, saturated (G)',
-         'Fatty acids, total trans (G)':'Fatty acids, trans (G)',
-         'Fatty acids, total trans-monoenoic (G)':'Fatty acids, trans-monoenoic (G)',
-         'Fatty acids, total trans-polyenoic (G)':'Fatty acids, trans-polyenoic (G)',
-         'Choline, total (MG)':'Choline (MG)',
-         'Vitamin C, total ascorbic acid (MG)':'Vitamin C (MG)',
-         }.get(x,x).replace('(G)','(g)').replace('(MG)','(mg)').replace('(UG)','(μg)'))
+  csv['nutrient']=csv['nutrient'].set_index('id').apply(lambda x: f"{x['name']} ({x['unit_name']})", axis=1).map(nutrientmap)
 
   csv['food_category']=csv['food_category'].set_index('id')
   csv['food']=csv['food'].set_index('fdc_id').join(csv['food_category'].rename(columns={'description':'category'}),on='food_category_id')[['description','category']]
@@ -92,7 +230,7 @@ def pivot(folder):
   'American Indian/Alaska Native Foods' #(some meat here)
   }
   def branded(food): return any(bool(re.match(r'.*[A-Z]{2,}',w)) for w in food.split())
-  csv['food']=csv['food'][csv['food'].apply(lambda x: (x['category'] in categories) and pd.notna(x['description']) and not branded(x['description']) and not re.match(".*(chicken|beef|meat|fish|liver|steak|free range|bacon|Whale|Sea lion|turkey|salmon|deer)",x['description'],re.I), axis=1)]
+  csv['food']=csv['food'][csv['food'].apply(lambda x: (x['category'] in categories) and pd.notna(x['description']) and not branded(x['description']) and not re.match(meatRe,x['description'],re.I), axis=1)]
 
   readable=csv['food_nutrient']\
     .join(csv['nutrient'].to_frame('nutrient'), on='nutrient_id')\
@@ -118,19 +256,22 @@ def pivot(folder):
 
   return big
 
-legacy=pivot('USDA_FoodData_Central_sr_legacy_food')
-foundation=pivot('FoodData_Central_foundation_food_csv_2025-04-24')
-# foundation.index=['👑 '+x for x in foundation.index]
-big=pd.concat([legacy,foundation])
-
+big=pd.concat([
+  pivot('USDA_FoodData_Central_sr_legacy_food'),
+  pivot('FoodData_Central_foundation_food_csv_2025-04-24'),
+  pivotJSON()
+])
+print(len(big))
 normalizecasing= lambda x: x[0].upper()+x[1:].lower()
-big.index=big.index.map(lambda x: x.strip()).map(normalizecasing)
+big.index=big.index.map(lambda x: normalizecasing(x.strip()))
 
+big=big.replace(0,np.nan)
 # 3916
 print(f'Merging foods')
 matches=big.index.groupby([x.lower().replace(',','') for x in big.index])
 matches=[set(v) for k,v in matches.items() if len(v)>1]
 for m in tqdm(matches): big = merge_foods(m,big)
+print(len(big))
 
 # match=[[x,[y for y in big.index if 0<Levenshtein.distance(x,y)<3]] for x in tqdm(big.index)]
 # match=[{x,*y} for x,y in match if y]
@@ -139,9 +280,11 @@ for m in tqdm(matches): big = merge_foods(m,big)
 mergedf=pd.read_csv('foodmerge.csv').dropna(subset=['merge'])
 mergedf['food']=mergedf['food'].map(normalizecasing)
 for newname, names in tqdm(mergedf['food'].groupby(mergedf['merge'])): big=merge_foods(names,big,newname)
+print(len(big))
+
 big=big.sort_index()
 
-def digits_round(x,N):return round(x, N - int(np.floor(np.log10(abs(x)))))
+def digits_round(x,N):return round(x, N - int(np.floor(np.log10(abs(x))))) if x>0 else 0.0
 big=big.applymap(lambda x: digits_round(x,2), na_action='ignore')
 
 # rec=[x.dropna().to_dict() for _, x in big.reset_index(names='name').iterrows()]
