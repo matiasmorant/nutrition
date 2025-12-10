@@ -724,7 +724,7 @@
             const s = svd.diagonal;
 
             // 2. Scale by Inverse Singular Values
-            const y = Matrix.zeros(n, 1);
+            const y = mlMatrix.Matrix.zeros(n, 1);
             
             const maxS = s[0];
             const threshold = rcond * maxS;
