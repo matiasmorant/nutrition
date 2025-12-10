@@ -713,42 +713,36 @@
          * @returns {Array} The solution vector x
          */
         function LAPACK_GELSD(A, b, rcond = 1e-15) {
+            const m = A.rows;
+            const n = A.columns;
+
             // 1. Compute SVD: A = U * S * V^T
-            // ml-matrix automatically computes the "thin" SVD which is efficient
             const svd = new mlMatrix.SVD(A);
             
-            const U = svd.leftSingularVectors;  // Columns are Left Singular Vectors
-            const V = svd.rightSingularVectors; // Columns are Right Singular Vectors
-            const s = svd.diagonal;             // 1D Array of singular values
+            const U = svd.leftSingularVectors;
+            const V = svd.rightSingularVectors;
+            const s = svd.diagonal;
 
-            // 2. Apply rcond threshold (GELSD logic)
-            // SVD singular values are typically sorted descending
+            // 2. Scale by Inverse Singular Values
+            const y = Matrix.zeros(n, 1);
+            
             const maxS = s[0];
             const threshold = rcond * maxS;
 
-            // 3. Calculate: x = V * Σ⁺ * Uᵀ * b
-            // We break this down for efficiency to avoid creating a large diagonal matrix
-            
-            // Step A: Project b onto U: d = Uᵀ * b
-            // Note: U is orthogonal, so transpose is inverse
-            let d = U.transpose().mmul(b);
+            // 3. Project b onto U: d = U^T * b
+            const d = U.transpose().mmul(b);
 
-            // Step B: Scale by inverse singular values (Σ⁺ * d)
-            // We do this element-wise on the vector d
-            for (let i = 0; i < d.rows; i++) {
+            for (let i = 0; i < Math.min(m, n); i++) {
                 const sigma = s[i];
-                const val = d.get(i, 0);
-                
-                // If sigma is valid (above noise floor), divide; otherwise set to 0
+                // Filter small singular values (noise)
                 if (sigma > threshold) {
-                    d.set(i, 0, val / sigma);
-                } else {
-                    d.set(i, 0, 0);
+                    const val = d.get(i, 0);
+                    y.set(i, 0, val / sigma);
                 }
             }
 
-            // Step C: Project back onto V: x = V * d
-            return V.mmul(d);
+            // 4. Project back onto V: x = V * y
+            return V.mmul(y);
         }
         function lstsq(A,b){
             [A,b]=[new mlMatrix.Matrix(A), mlMatrix.Matrix.columnVector(b)]
