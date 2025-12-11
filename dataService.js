@@ -104,25 +104,49 @@ const dataService = {
 
     async fetchFoodData() {
         try {
-            const response = await fetch('foodnutrient.json');
-            if (!response.ok) throw new Error('foodnutrient.json not found');
-            const foodData = await response.json();
-            if (!Array.isArray(foodData)) throw new Error('Invalid JSON format');
+            const response = await fetch('foodnutrient.csv');
+            if (!response.ok) throw new Error('foodnutrient.csv not found');
+            const csvText = await response.text();
 
-            const nutrientHeaders = new Set();
-            foodData.forEach(food => {
-                Object.keys(food).forEach(key => {
-                    if (key !== 'name') nutrientHeaders.add(key);
+            return new Promise((resolve, reject) => {
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    dynamicTyping: true,   // Automatically converts numbers
+                    complete: (results) => {
+                        if (results.errors.length) {
+                            console.warn('CSV Parse Warnings:', results.errors);
+                        }
+
+                        const data = results.data;
+                        if (!data || !data.length) {
+                            console.error('CSV file is empty or invalid');
+                            resolve({ allFoods: [], nutrientHeaders: [] });
+                            return;
+                        }
+
+                        const headers = Object.keys(data[0]);
+                        const nutrientHeaders = headers.filter(h => h !== 'name');
+
+                        const allFoods = data.map(food => {
+                            nutrientHeaders.forEach(nutrient => {
+                                food[nutrient] = typeof food[nutrient] === 'number' ? food[nutrient] : 0;
+                            });
+                            return food;
+                        });
+
+                        resolve({ 
+                            allFoods, 
+                            nutrientHeaders: ['name', ...nutrientHeaders] 
+                        });
+                    },
+                    error: (err) => {
+                        console.error('Papa Parse error:', err);
+                        reject(err);
+                    }
                 });
             });
 
-            const allFoods = foodData.map(food => {
-                nutrientHeaders.forEach(nutrient => {
-                    food[nutrient] = parseFloat(food[nutrient]) || 0;
-                });
-                return food;
-            });
-            return { allFoods, nutrientHeaders: ['name', ...Array.from(nutrientHeaders)] };
         } catch (error) {
             console.error('Error loading food data:', error);
             alert('Error: Could not load or parse food data.');
