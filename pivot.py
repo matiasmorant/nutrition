@@ -8,7 +8,8 @@ from tqdm import tqdm
 from glom import glom, Iter, T, Fold, Flatten, Merge
 
 def merge_foods(names, df, newname=None):
-  names=list(names)
+  names=[x for x in names if x in df.index]
+  if not names: return df
   newfood=df.loc[names].apply(lambda x: np.exp(np.log(x[x>0]).mean()))
   newfood.name= newname or names[0]
   return pd.concat([df.drop(index=names), newfood.to_frame().T])
@@ -262,8 +263,20 @@ big=pd.concat([
   pivotJSON()
 ])
 print(len(big))
-normalizecasing= lambda x: x[0].upper()+x[1:].lower()
-big.index=big.index.map(lambda x: normalizecasing(x.strip()))
+
+foodreplace=pd.read_csv('foodreplace.csv').fillna('')
+foodreplace={x['from']:x['to'] for _, x in foodreplace.iterrows()}
+
+def _normalizeFoodName(x):
+  x=x.strip()
+  x=x[0].upper()+x[1:].lower()
+  x=replace(foodreplace,x)
+  x=re.sub(r', raw$','',x)
+  x=re.sub(r'Oil, ([\w\s]+)($|,)',r'\1 oil\2',x)
+  return x.strip()
+normalizeFoodName=lambda x: _normalizeFoodName(_normalizeFoodName(x))
+
+big.index=big.index.map(normalizeFoodName)
 
 big=big.replace(0,np.nan)
 # 3916
@@ -278,8 +291,8 @@ print(len(big))
 
 # big.index.sort_values().to_frame().to_csv('foodmerge.csv',index=False)
 mergedf=pd.read_csv('foodmerge.csv').dropna(subset=['merge'])
-mergedf['food']=mergedf['food'].map(normalizecasing)
-for newname, names in tqdm(mergedf['food'].groupby(mergedf['merge'])): big=merge_foods(names,big,newname)
+mergedf['food']=mergedf['food'].map(normalizeFoodName)
+for newname, names in tqdm(mergedf['food'].groupby(mergedf['merge'])): big=merge_foods(names,big,normalizeFoodName(newname))
 print(len(big))
 
 big=big.sort_index()
@@ -287,6 +300,7 @@ big=big.sort_index()
 def digits_round(x,N):return round(x, N - int(np.floor(np.log10(abs(x))))) if x>0 else 0.0
 big=big.applymap(lambda x: digits_round(x,2), na_action='ignore')
 
+# with open('foods.txt','w') as p: p.write('\n'.join(big.index))
 # rec=[x.dropna().to_dict() for _, x in big.reset_index(names='name').iterrows()]
 # with open('foodnutrient.json','w') as f: f.write(json.dumps(rec))
 

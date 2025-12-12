@@ -1,0 +1,55 @@
+from,to
+Almonds,Almond
+Apples,Apple
+Apricots,Apricot
+Artichokes,Artichoke
+Avocados,Avocado
+Bananas,Banana
+Blackberries,Blackberry
+Blueberries,Blueberry
+Carrots,Carrot
+Cherries,Cherry
+Chickpeas,Chickpea
+Clementines,Clementine
+Clams,Clam
+Cranberries,Cranberry
+Dates,Date
+Eggs,Egg
+Figs,Fig
+Grapes,Grape
+Limes,Lime
+Mangos,Mango
+Mushrooms,Mushroom
+Nectarines,Nectarine
+Oranges,Orange
+Oysters,Oyster
+Papayas,Papaya
+Peaches,Peach
+Peanuts,Peanut
+Persimmons,Persimmon
+Pickles,Pickle
+Plantains,Plantain
+Plums,Plum
+Potatoes,Potato
+Rolls,Roll
+Strawberries,Strawberry
+Tangerines,Tangerine
+Tomatoes,Tomato
+Yams,Yam
+  , 
+"Bean, pinto",Pinto beans
+"Beans, black",Black beans
+"Beans, navy",Navy beans
+"Beans, great northern",Great northern beans
+Broadbeans,Fava beans
+West Indian cherry,Acerola
+Carambola,Starfruit
+Cilantro,Coriander
+Balsam-pear,Bitter gourd
+Tendergreen,Mustard spinach
+from canned,canned
+from dried,dry
+", industrial,",","
+industrial,
+" ,",","
+",,",","
