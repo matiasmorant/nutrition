@@ -295,6 +295,9 @@ mergedf['food']=mergedf['food'].map(normalizeFoodName)
 for newname, names in tqdm(mergedf['food'].groupby(mergedf['merge'])): big=merge_foods(names,big,normalizeFoodName(newname))
 print(len(big))
 
+foodsdelete=Path('foodsdelete.txt').read_text().split('\n')
+big=big.drop(index=foodsdelete, errors='ignore')
+
 big=big.sort_index()
 
 def digits_round(x,N):return round(x, N - int(np.floor(np.log10(abs(x))))) if x>0 else 0.0
