@@ -300,6 +300,11 @@ big=big.sort_index()
 def digits_round(x,N):return round(x, N - int(np.floor(np.log10(abs(x))))) if x>0 else 0.0
 big=big.applymap(lambda x: digits_round(x,2), na_action='ignore')
 
+def check_diet_foods(big):
+  with open('diets.json') as p: diets=json.load(p)
+  foods=glom(diets, Flatten([('foods',['foodName'])]))
+  return [x for x in foods if x not in big.index]
+
 # with open('foods.txt','w') as p: p.write('\n'.join(big.index))
 # rec=[x.dropna().to_dict() for _, x in big.reset_index(names='name').iterrows()]
 # with open('foodnutrient.json','w') as f: f.write(json.dumps(rec))
