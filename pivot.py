@@ -22,7 +22,13 @@ def merge_sets(sets):
     merged.append(overlap)
   return merged
 
-meatRe=".*(chicken|poultry|beef|meat|fish|liver|steak|free range|bacon|Whale|Sea lion|turkey|salmon|deer|pork)"
+deleteRe=[
+"chicken|poultry|beef|meat|fish|liver|steak|free range|bacon|Whale|Sea lion|turkey|salmon|deer|pork",
+"(with|and) (cheese|milk|oil|margarine|tomato|cream|sour|raisin|dairy|non|mayo|egg|chili)",
+"with (butter|peanuts|soy)",
+]
+deleteRe='|'.join([f"({x})"for x in deleteRe])
+deleteRe=f".*({deleteRe})"
 
 def replace(pairs,string):
   for r in pairs.items(): string=string.replace(*r)
@@ -202,7 +208,7 @@ def pivotJSON():
     "Sport and energy drinks",
     "Diet sport and energy drinks",
     }
-    data=data[data.apply(lambda x: (x['category'] in categories) and pd.notna(x['food']) and not re.match(meatRe,x['food'],re.I), axis=1)]
+    data=data[data.apply(lambda x: (x['category'] in categories) and pd.notna(x['food']) and not re.match(deleteRe,x['food'],re.I), axis=1)]
     data=data.rename(columns=nutrientmap)
 
     return data.set_index('food').drop(columns=['category'])
@@ -231,7 +237,7 @@ def pivot(folder):
   'American Indian/Alaska Native Foods' #(some meat here)
   }
   def branded(food): return any(bool(re.match(r'.*[A-Z]{2,}',w)) for w in food.split())
-  csv['food']=csv['food'][csv['food'].apply(lambda x: (x['category'] in categories) and pd.notna(x['description']) and not branded(x['description']) and not re.match(meatRe,x['description'],re.I), axis=1)]
+  csv['food']=csv['food'][csv['food'].apply(lambda x: (x['category'] in categories) and pd.notna(x['description']) and not branded(x['description']) and not re.match(deleteRe,x['description'],re.I), axis=1)]
 
   readable=csv['food_nutrient']\
     .join(csv['nutrient'].to_frame('nutrient'), on='nutrient_id')\
@@ -281,9 +287,12 @@ big.index=big.index.map(normalizeFoodName)
 big=big.replace(0,np.nan)
 # 3916
 print(f'Merging foods')
-matches=big.index.groupby([x.lower().replace(',','') for x in big.index])
-matches=[set(v) for k,v in matches.items() if len(v)>1]
-for m in tqdm(matches): big = merge_foods(m,big)
+def find_and_merge(big):
+  matches=big.index.groupby([x.lower().replace(',','') for x in big.index])
+  matches=[set(v) for k,v in matches.items() if len(v)>1]
+  for m in tqdm(matches): big = merge_foods(m,big)
+  return big
+big=find_and_merge(big)
 print(len(big))
 
 # match=[[x,[y for y in big.index if 0<Levenshtein.distance(x,y)<3]] for x in tqdm(big.index)]
@@ -302,6 +311,8 @@ big=big.sort_index()
 
 def digits_round(x,N):return round(x, N - int(np.floor(np.log10(abs(x))))) if x>0 else 0.0
 big=big.applymap(lambda x: digits_round(x,2), na_action='ignore')
+
+big=find_and_merge(big)
 
 def check_diet_foods(big):
   with open('diets.json') as p: diets=json.load(p)
