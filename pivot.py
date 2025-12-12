@@ -24,7 +24,7 @@ def merge_sets(sets):
 
 deleteRe=[
 "chicken|poultry|beef|meat|fish|liver|steak|free range|bacon|Whale|Sea lion|turkey|salmon|deer|pork",
-"(with|and) (cheese|milk|oil|margarine|tomato|cream|sour|raisin|dairy|non|mayo|egg|chili)",
+"(with|and) (cheese|milk|oil|margarine|tomato|onion|carrot|cream|sour|raisin|dairy|non|mayo|egg|chili|ham|honey)",
 "with (butter|peanuts|soy)",
 ]
 deleteRe='|'.join([f"({x})"for x in deleteRe])

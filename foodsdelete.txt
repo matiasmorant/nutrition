@@ -20,7 +20,6 @@ Fruit punch, made with fruit juice and soda
 Ice cream bar, covered with chocolate and nuts
 Juice, apple and grape blend, with added ascorbic acid
 Juice, apple, grape and pear blend, with added ascorbic acid and calcium
-Lettuce, salad with assorted vegetables excluding tomatoes and carrots, no dressing
 Potato, au gratin, dry mix, prepared with water, whole milk and butter
 Potato, scalloped, dry mix, prepared with water, whole milk and butter
 Rice and vermicelli mix, rice pilaf flavor, prepared with 80% margarine
@@ -29,7 +28,6 @@ Snacks, pretzels, gluten- free made with cornstarch and potato flour
 Snacks, trail mix, regular, with chocolate chips, salted nuts and seeds
 Snacks, trail mix, regular, with chocolate chips, unsalted nuts and seeds
 Spaghetti sauce with seafood and added vegetables
-Tomato products, canned, sauce, with onions, green peppers, and celery
 Trail mix with nuts and fruit
 Vegetable and fruit juice drink, with high vitamin c
 Vegetable and fruit juice drink, with high vitamin c, diet
@@ -198,7 +196,6 @@ Potato salad, made with light mayonnaise
 Potato salad, made with light mayonnaise-type salad dressing
 Soup, bean with frankfurters, canned, condensed
 Soup, bean with frankfurters, canned, prepared with equal volume water
-Soup, bean with ham, canned, chunky, ready-to-serve
 Soup, black bean, canned, prepared with equal volume water
 Soup, cheese, canned, prepared with equal volume milk
 Soup, cheese, canned, prepared with equal volume water
@@ -217,7 +214,6 @@ Soup, cream of potato, canned, prepared with equal volume milk
 Soup, cream of potato, canned, prepared with equal volume water
 Soup, cream of shrimp, canned, prepared with equal volume low fat (2%) milk
 Soup, cream of shrimp, canned, prepared with equal volume water
-Soup, lentil with ham, canned, ready-to-serve
 Soup, minestrone, canned, prepared with equal volume water
 Soup, mushroom barley, canned, prepared with equal volume water
 Soup, oyster stew, canned, prepared with equal volume milk
@@ -225,9 +221,6 @@ Soup, oyster stew, canned, prepared with equal volume water
 Soup, pea, green, canned, prepared with equal volume milk
 Soup, pea, green, canned, prepared with equal volume water
 Soup, pea, low sodium, prepared with equal volume water
-Soup, pea, split with ham, canned, chunky, ready-to-serve
-Soup, pea, split with ham, canned, condensed
-Soup, pea, split with ham, canned, prepared with equal volume water
 Soup, tomato bisque, canned, prepared with equal volume milk
 Soup, tomato bisque, canned, prepared with equal volume water
 Soup, tomato rice, canned, prepared with equal volume water
@@ -241,7 +234,6 @@ Stew, dumpling with mutton (navajo)
 Stew, hominy with mutton (navajo)
 Succotash, (corn and limas), canned, with whole kernel corn, solids and liquids
 Tomato products, canned, sauce, with mushrooms
-Tomato products, canned, sauce, with onions
 Tomato, red, ripe, canned, with green chilies
 Popcorn, caramel coated, with nuts
 Trail mix with nuts
@@ -273,7 +265,6 @@ Frozen mocha coffee drink, decaffeinated, nonfat, with whipped cream
 Frozen mocha coffee drink, decaffeinated, with whipped cream
 Frozen mocha coffee drink, nonfat, with whipped cream
 Frozen mocha coffee drink, with whipped cream
-Rice, sweet, cooked with honey
 Popcorn, air-popped, with added butter
 Popcorn, microwave, regular (butter) flavor, made with palm oil
 Popcorn, movie theater, with added butter
@@ -290,7 +281,6 @@ Beverages, fruit juice drink, greater than 3% fruit juice, high vitamin c and ad
 Beverages, orange and apricot juice drink, canned
 Beverages, pineapple and grapefruit juice drink, canned
 Beverages, pineapple and orange juice drink, canned
-Beverages, tea, green, ready to drink, ginseng and honey, sweetened
 Brandy and cola
 Bread, cornmeal and molasses
 Bread, cornmeal and molasses, toasted
@@ -298,8 +288,6 @@ Bread, marble rye and pumpernickel
 Bread, marble rye and pumpernickel, toasted
 Broccoli and cauliflower, cooked, fat added
 Broccoli and cauliflower, cooked, no added fat
-Broccoli, cauliflower and carrots, cooked, fat added
-Broccoli, cauliflower and carrots, cooked, no added fat
 Coffee and chicory, brewed
 Coffee and chicory, brewed, decaffeinated
 Corn and canola oil
@@ -326,21 +314,8 @@ Peanut butter and jelly
 Peanut butter, chunky, vitamin and mineral fortified
 Peanut butter, smooth, vitamin and mineral fortified
 Peanut butter, vitamin and mineral fortified
-Peas and carrots, canned, cooked, fat added
-Peas and carrots, canned, cooked, no added fat
-Peas and carrots, cooked, ns as to form
-Peas and carrots, fresh, cooked, fat added
-Peas and carrots, fresh, cooked, no added fat
-Peas and carrots, frozen, cooked, boiled, drained
-Peas and carrots, frozen, cooked, fat added
-Peas and carrots, frozen, cooked, no added fat
-Peas and carrots, frozen, unprepared
 Peas and corn, cooked, fat added
 Peas and corn, cooked, no added fat
-Peas and onions, frozen, cooked, boiled, drained
-Peas and onions, frozen, unprepared
-Peppers and onions, cooked, fat added
-Peppers and onions, cooked, no added fat
 Potato only from puerto rican mixed dishes, gravy and other components reported separately
 Potato, mashed, dehydrated, prepared from flakes without milk, whole milk and butter added
 Potato, mashed, dehydrated, prepared from granules without milk, whole milk and butter added
@@ -366,7 +341,6 @@ Shrimp and vegetables excluding carrots, broccoli, and dark-green leafy; no pota
 Shrimp and vegetables including carrots, broccoli, and/or dark-green leafy; no potatoes, soy-based sauce
 Snacks, granola bars, soft, uncoated, chocolate chip, graham and marshmallow
 Snacks, granola bars, soft, uncoated, peanut butter and chocolate chip
-Snacks, potato chips, made dry potatoes, sour-cream and onion-flavor
 Snacks, pretzels, hard, whole-wheat including both salted and unsalted
 Soup, bouillon cubes and granules, low sodium, dry
 Spinach and artichoke dip
