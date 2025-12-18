@@ -18,6 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/ml-matrix/matrix.umd.min.js"></script>
+    <script src="https://www.lactame.com/lib/ml/6.0.0/ml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -706,72 +707,6 @@
           return arr.reduce((minI, x, i, array) => x < array[minI] ? i : minI, 0);
         }
 
-        /**
-         * Solves Ax = b using SVD (GELSD logic) with pure ml-matrix.
-         * * @param {Array|Matrix} A - The coefficient matrix
-         * @param {Array|Matrix} b - The dependent variables
-         * @param {Number} rcond - Relative condition number threshold (default 1e-15)
-         * @returns {Array} The solution vector x
-         */
-        function LAPACK_GELSD(A, b, rcond = 1e-15) {
-            const m = A.rows;
-            const n = A.columns;
-
-            // 1. Compute SVD
-            const svd = new mlMatrix.SVD(A, { autoTranspose: true });
-
-            let U, V;
-            
-            if (svd.transposed) {
-                U = svd.rightSingularVectors;
-                V = svd.leftSingularVectors;
-            } else {
-                U = svd.leftSingularVectors;
-                V = svd.rightSingularVectors;
-            }
-
-            const s = svd.diagonal;
-
-            // 2. Scale by Inverse Singular Values
-            const k = s.length;
-            const y = mlMatrix.Matrix.zeros(k, 1);
-            
-            const maxS = s[0];
-            const threshold = rcond * maxS;
-
-            // 3. Project b onto U: d = U^T * b
-            const d = U.transpose().mmul(b);
-
-            for (let i = 0; i < k; i++) {
-                const sigma = s[i];
-                if (sigma > threshold) {
-                    const val = d.get(i, 0);
-                    y.set(i, 0, val / sigma);
-                }
-            }
-
-            // 4. Project back onto V: x = V * y
-            return V.mmul(y);
-        }
-        function lstsq(A,b){
-            [A,b]=[new mlMatrix.Matrix(A), mlMatrix.Matrix.columnVector(b)]
-            try {
-                return mlMatrix.solve(A,b);
-            } catch (e) {
-                return LAPACK_GELSD(A,b);
-            }
-        }
-        function nnls(A,b){
-            // let x = math.multiply(math.pinv(A), b).flat();
-            let x=lstsq(A,b).to1DArray();
-            const mini = argmin(x);
-            if(x[mini]>0) return x;
-            A.forEach(row=>row.splice(mini,1));
-            x = nnls(A,b);
-            x.splice(mini,0,0);
-            return x;
-        }
-
         function constrain(values, bounds){
             return bounds.map((bound,i)=>{
                 const min = bound.min || 0;
@@ -792,9 +727,8 @@
             const relA = targets.map((target,i) => A[i].map(x=>x/(target > 0 ? target : 1) ));
             const b = targets.map((target,i) => (target > 0 ? 1 - c[i] / target : -c[i]) );
 
-            const copyA=JSON.parse(JSON.stringify(relA));
-            const solution = nnls(relA, b);
-            const error = math.norm(math.subtract(math.multiply(copyA,solution),b));
+            const solution = ML.FCNNLS.fcnnlsVector(relA, b);
+            const error = math.norm(math.subtract(math.multiply(relA,solution),b));
             console.log(maxIter,error);
             if(preverror && preverror-error<1e-4) return solution;
             const LHS = math.add(math.multiply(A,solution),c);
