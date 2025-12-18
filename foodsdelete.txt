@@ -4,19 +4,13 @@ Beverages, coffee and cocoa, instant, decaffeinated, with whitener and low calor
 Beverages, dairy drink mix, chocolate, reduced calorie, with aspartame, powder, prepared with water and ice
 Beverages, energy drink with carbonated water and high fructose corn syrup
 Beverages, lemonade fruit juice drink light, fortified with vitamin e and c
-Beverages, mixed vegetable and fruit juice drink, with added nutrients
-Beverages, vegetable and fruit juice blend, 100% juice, with added vitamins a, c, e
-Beverages, vegetable and fruit juice drink, reduced calorie, with low-calorie sweetener, added vitamin c
 Beverages, water with added vitamins and minerals, bottles, sweetened, assorted fruit flavors
-Cereals ready-to-eat, wheat and bran, presweetened with nuts and fruits
 Cereals, oats, instant, fortified, with cinnamon and spice, dry
 Cereals, oats, instant, fortified, with cinnamon and spice, prepared with water
-Cheese, cottage cheese, with gelatin dessert and fruit
 Cheese, cottage cheese, with gelatin dessert and vegetables
 Cream substitute, liquid, with hydrogenated vegetable oil and soy protein
 Cream substitute, liquid, with lauric acid oil and sodium caseinate
 Cucumber salad made with cucumber and vinegar
-Fruit punch, made with fruit juice and soda
 Ice cream bar, covered with chocolate and nuts
 Juice, apple and grape blend, with added ascorbic acid
 Juice, apple, grape and pear blend, with added ascorbic acid and calcium
@@ -28,11 +22,6 @@ Snacks, pretzels, gluten- free made with cornstarch and potato flour
 Snacks, trail mix, regular, with chocolate chips, salted nuts and seeds
 Snacks, trail mix, regular, with chocolate chips, unsalted nuts and seeds
 Spaghetti sauce with seafood and added vegetables
-Trail mix with nuts and fruit
-Vegetable and fruit juice drink, with high vitamin c
-Vegetable and fruit juice drink, with high vitamin c, diet
-Vegetable and fruit juice drink, with high vitamin c, light
-Vegetable and fruit juice, 100% juice, with high vitamin c
 Water, with corn syrup and/or sugar and low calorie sweetener, fruit flavored
 Whiskey sour mix, bottled, with added potassium and sodium
 Alfredo sauce with added vegetables
@@ -79,10 +68,6 @@ Beverages, orange-flavor drink, breakfast type, with pulp, frozen concentrate.
 Beverages, strawberry-flavor beverage mix, powder, prepared with whole milk
 Beverages, water, bottled, yumberry, pomegranate with anti-oxidants, zero calories
 Beverages, yellow green colored citrus soft drink with caffeine
-Bread, pita with fruit
-Bread, reduced calorie and/or high fiber, white or nfs, with fruit and/or nuts
-Bread, reduced calorie and/or high fiber, white or nfs, with fruit and/or nuts, toasted
-Breakfast bar, corn flake crust with fruit
 Caesar salad, with romaine, no dressing
 Carrot, raw, salad with apples
 Cereal, frosted oats with marshmallows
@@ -91,10 +76,7 @@ Fruit salad, excluding citrus fruits, with marshmallows
 Fruit salad, including citrus fruits, with marshmallows
 Cheese sauce, for use with vegetables
 Cheese, cottage cheese, with gelatin dessert
-Cheese, cottage, creamed, with fruit
 Cheese, cottage, lowfat, 1% milkfat, with vegetables
-Cheese, cottage, lowfat, with fruit
-Cheese, cottage, with fruit
 Cheese, cottage, with vegetables
 Cheese, processed, with vegetables
 Cheese, with wine
@@ -159,8 +141,6 @@ Ice cream, chocolate, with additional ingredients
 Ice cream, vanilla, with additional ingredients
 Fruit salad, excluding citrus fruits, with pudding
 Fruit salad, excluding citrus fruits, with salad dressing or mayonnaise
-Fruit salad, excluding citrus fruits, with whipped cream
-Fruit salad, including citrus fruit, with whipped cream
 Fruit salad, including citrus fruits, with pudding
 Fruit salad, including citrus fruits, with salad dressing or mayonnaise
 Fruit smoothie, with whole fruit, no dairy
@@ -237,10 +217,6 @@ Tomato products, canned, sauce, with mushrooms
 Tomato, red, ripe, canned, with green chilies
 Popcorn, caramel coated, with nuts
 Trail mix with nuts
-Coleslaw, with fruit
-Gelatin dessert with fruit
-Gelatin dessert, sugar free, with fruit
-Yogurt parfait, with fruit
 Hot chocolate / cocoa, dry mix, made with lowfat (1%) or fat free (skim) milk
 Hot chocolate / cocoa, dry mix, made with whole or reduced fat (2%) milk
 Hot chocolate / cocoa, dry mix, reduced sugar, made with lowfat (1%) or fat free (skim) milk
@@ -249,7 +225,6 @@ Hot chocolate / cocoa, made with lowfat (1%) or fat free (skim) milk
 Hot chocolate / cocoa, made with whole or reduced fat (2%) milk
 Hot chocolate / cocoa, reduced sugar, made with lowfat (1%) or fat free (skim) milk
 Hot chocolate / cocoa, reduced sugar, made with whole or reduced fat (2%) milk
-Hot chocolate / cocoa, with whipped cream
 Potato from puerto rican style stuffed pot roast, with gravy
 Potato, mashed, from fast food, with gravy
 Potato, mashed, from restaurant, with gravy
@@ -257,14 +232,6 @@ Potato, mashed, ready-to-heat, with gravy
 Tomato juice, with added ingredients, from concentrate, shelf stable
 Trail mix with chocolate
 Trail mix with pretzels, cereal, or granola
-Frozen coffee drink, decaffeinated, nonfat, with whipped cream
-Frozen coffee drink, decaffeinated, with whipped cream
-Frozen coffee drink, nonfat, with whipped cream
-Frozen coffee drink, with whipped cream
-Frozen mocha coffee drink, decaffeinated, nonfat, with whipped cream
-Frozen mocha coffee drink, decaffeinated, with whipped cream
-Frozen mocha coffee drink, nonfat, with whipped cream
-Frozen mocha coffee drink, with whipped cream
 Popcorn, air-popped, with added butter
 Popcorn, microwave, regular (butter) flavor, made with palm oil
 Popcorn, movie theater, with added butter
