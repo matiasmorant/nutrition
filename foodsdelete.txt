@@ -315,7 +315,9 @@ Spinach and artichoke dip
 Stew, pinto bean and hominy, badufsuki (hopi)
 Succotash, (corn and limas)
 Succotash, (corn and limas), cooked, boiled, drained
+Succotash, (corn and limas), boiled, drained
 Succotash, (corn and limas), frozen, cooked, boiled, drained
+Succotash, (corn and limas), frozen, boiled, drained
 Succotash, (corn and limas), frozen, unprepared
 Sugar substitute and sugar blend
 Tea, tundra, herb and laborador combination (alaska native)
