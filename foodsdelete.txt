@@ -70,6 +70,7 @@ Beverages, water, bottled, yumberry, pomegranate with anti-oxidants, zero calori
 Beverages, yellow green colored citrus soft drink with caffeine
 Caesar salad, with romaine, no dressing
 Carrot, raw, salad with apples
+Carrot, salad with apples
 Cereal, frosted oats with marshmallows
 Cereals ready-to-eat, frosted oat cereal with marshmallows
 Fruit salad, excluding citrus fruits, with marshmallows

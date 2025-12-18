@@ -276,6 +276,7 @@ def _normalizeFoodName(x):
   x=re.sub(r', dried$',', dry',x)
   x=re.sub(r'Oil, ([\w\s]+)($|,)',r'\1 oil\2',x)
   x=re.sub(r'Seeds, ([\w\s]+)($|,)',r'\1\2',x)
+  x=re.sub(r'Nuts, ([\w\s]{4,})',r'\1',x)
   return x.strip()
 normalizeFoodName=lambda x: _normalizeFoodName(_normalizeFoodName(x))
 
