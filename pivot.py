@@ -23,9 +23,9 @@ def merge_sets(sets):
   return merged
 
 deleteRe=[
-"chicken|poultry|beef|meat|fish|liver|steak|free range|bacon|Whale|Sea lion|turkey|salmon|deer|pork",
-"(with|and) (cheese|milk|oil|margarine|tomato|onion|carrot|cream|sour|raisin|dairy|non|mayo|egg|chili|ham|honey)",
-"with (butter|peanuts|soy)",
+"chicken|poultry|beef|meat|fish|liver|steak|free range|bacon|Whale|seal|Sea lion|turkey|salmon|deer|pork",
+"(with|and) (cheese|milk|oil|margarine|whipped|tomato|onion|carrot|cream|sour|raisin|fruit|dairy|non|mayo|egg|chili|ham|honey)",
+"with (butter|peanuts|soy|fruit)",
 ]
 deleteRe='|'.join([f"({x})"for x in deleteRe])
 deleteRe=f".*({deleteRe})"
@@ -248,18 +248,13 @@ def pivot(folder):
   # SALT
   reNo=r'(without|no)( added)? (salt|sodium)( added)?'
   reYes=r'(with( added)? (salt|sodium)( added)?)|(added (salt|sodium))|((salt|sodium) added)'
-  ws =big[big.index.str.match('.*(with( added)? (salt|sodium)( added)?)|(added (salt|sodium))|((salt|sodium) added)')]
-  wos=big[big.index.str.match('.*(without|no)( added)? (salt|sodium)( added)?')]
-  matches=[[x,[y for y in wos.index if Levenshtein.distance(re.sub(reNo,'',y),re.sub(reYes,'',x))<2]] for x in ws.index]
+  ws =big[big.index.str.match('.*'+reYes)].index
+  wos=big[big.index.str.match('.*'+reNo)].index
+  matches=[[x,[y for y in wos if Levenshtein.distance(re.sub(reNo,'',y),re.sub(reYes,'',x))<2]] for x in ws]
   matches=[[k,v[0]]for k,v in matches if len(v)==1]
   #merge
-  def nutdiff(pair):nut=big.loc[pair];return nut.T[nut.apply(lambda r: len(r.drop_duplicates())!=1)]
-  diffs=[(m,nutdiff(m))for m in matches]
-  nd=[(m,d) for m,d in diffs if len(d)!=1]
-  for m,d in nd: big.loc[m[1]].update(d.drop('Sodium (mg)',errors='ignore').apply(lambda x: x.fillna(x.sum()), axis=1).apply(lambda x: x.prod()**.5, axis=1))
-  discard=[mws for mws,mwos in matches]
-  rename={mwos: re.sub(r'(, )?'+reNo,'',mwos) for mws,mwos in matches}
-  big=big.drop(index=discard).rename(index=rename)
+  big.loc[[mws for mws,mwos in matches],'Sodium (mg)']=np.nan
+  for mws,mwos in matches: big=merge_foods([mws,mwos], big, re.sub(r'(, )?'+reNo,'',mwos))
 
   return big
 
@@ -278,7 +273,9 @@ def _normalizeFoodName(x):
   x=x[0].upper()+x[1:].lower()
   x=replace(foodreplace,x)
   x=re.sub(r', raw$','',x)
+  x=re.sub(r', dried$',', dry',x)
   x=re.sub(r'Oil, ([\w\s]+)($|,)',r'\1 oil\2',x)
+  x=re.sub(r'Seeds, ([\w\s]+)($|,)',r'\1\2',x)
   return x.strip()
 normalizeFoodName=lambda x: _normalizeFoodName(_normalizeFoodName(x))
 
