@@ -262,6 +262,36 @@
                 max-width: 150px;
             }
         }
+        
+        /* Diet menu dropdown styles */
+        .diet-menu-dropdown {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 0.25rem;
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            min-width: 120px;
+        }
+        .diet-menu-item {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            color: #374151;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .diet-menu-item:hover {
+            background-color: #f3f4f6;
+        }
+        .diet-menu-item.delete {
+            color: #dc2626;
+        }
+        .diet-menu-item.delete:hover {
+            background-color: #fee2e2;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 text-base" x-data="foodApp()" x-cloak>
@@ -353,7 +383,7 @@
                     <button @click="createDiet()" class="blue-btn">Create Diet</button>
                 </div>
                 
-                <div class="border rounded-lg overflow-hidden">
+                <div class="border rounded-lg">
                     <template x-if="diets.length === 0">
                         <div class="p-6 bg-gray-50 rounded-lg text-center">
                             <div class="max-w-2xl mx-auto">
@@ -407,10 +437,18 @@
                     </template>
 
                     <template x-for="diet in diets" :key="diet.id">
-                        <div class="flex justify-between items-center p-4 border-b hover:bg-gray-50 cursor-pointer" @click="selectDiet(diet)">
-                            <div class="flex items-center">
-                                <span @click.stop="deleteDiet(diet.id)" class="remove-icon">&times;</span>
+                        <div class="flex justify-between items-center p-4 border-b hover:bg-gray-50">
+                            <div class="flex items-center cursor-pointer" @click="selectDiet(diet)">
                                 <span x-text="diet.name" class="font-medium max-w-name"></span>
+                            </div>
+                            <div class="relative">
+                                <button @click.stop="activeDietMenu = (activeDietMenu === diet.id ? null : diet.id)" class="p-1 rounded hover:bg-gray-200 focus:outline-none">
+                                    <i class="fas fa-ellipsis-v text-gray-500"></i>
+                                </button>
+                                <div x-show="activeDietMenu === diet.id" @click.outside="activeDietMenu = null" class="diet-menu-dropdown">
+                                    <button @click.stop="cloneDiet(diet)" class="diet-menu-item w-full text-left">Clone</button>
+                                    <button @click.stop="deleteDiet(diet.id)" class="diet-menu-item delete w-full text-left">Delete</button>
+                                </div>
                             </div>
                         </div>
                     </template>
@@ -795,6 +833,9 @@
                 installPromptEvent: null,
                 isStandalone: false,
 
+                // Diet menu state
+                activeDietMenu: null,
+
                 // --- COMPUTED PROPERTIES ---
                 get filteredAvailableNutrients() {
                     if (!this.nutrientTreeNames || !this.nutrientHeaders) return [];
@@ -1029,10 +1070,25 @@
                 async deleteDiet(id) {
                     this.diets = this.diets.filter(diet => diet.id !== id);
                     if (this.selectedDiet && this.selectedDiet.id === id) this.selectedDiet = null;
+                    this.activeDietMenu = null;
                     await this.saveDiets();
                 },
                 
-                selectDiet(diet) { this.selectedDiet = diet; },
+                selectDiet(diet) { 
+                    this.selectedDiet = diet; 
+                    this.activeDietMenu = null;
+                },
+                
+                async cloneDiet(diet) {
+                    const clonedDiet = {
+                        id: Date.now().toString(),
+                        name: `Copy of ${diet.name}`,
+                        foods: JSON.parse(JSON.stringify(diet.foods))
+                    };
+                    this.diets.push(clonedDiet);
+                    await this.saveDiets();
+                    this.activeDietMenu = null;
+                },
                 
                 async addFoodToDiet(foodName) {
                     const existingIndex = this.selectedDiet.foods.findIndex(f => f.foodName === foodName);
