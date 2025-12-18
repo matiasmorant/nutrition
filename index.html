@@ -458,7 +458,7 @@
             <template x-if="selectedDiet"><div x-show="selectedDiet">
                 <div class="flex items-center mb-6">
                     <span @click="selectedDiet = null" class="back-arrow">←</span>
-                    <input type="text" x-model="selectedDiet.name" class="text-xl font-medium border-b border-gray-300 focus:border-blue-500 focus:outline-none" placeholder="Diet name">
+                    <input type="text" x-model="selectedDiet.name" @change="saveDiets()" class="text-xl font-medium border-b border-gray-300 focus:border-blue-500 focus:outline-none" placeholder="Diet name">
                 </div>
                 
                 <div class="flex justify-center"> <div>
