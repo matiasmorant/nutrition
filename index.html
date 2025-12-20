@@ -1166,12 +1166,6 @@
                     return {A, lockedNutrients, unlockedamounts, nutrientValue, bounds};
                 },
 
-                easierTargets() {
-                    const bounds = Object.values(this.nutrientTargets);
-                    const values = Object.keys(this.nutrientTargets).map(nutrient=>this.dietTotals[nutrient]);
-                    return constrain(values, bounds);
-                },
-
                 async optimizeDiet() {
                     if (!this.selectedDiet || this.selectedDiet.foods.length === 0) {
                         alert("Please add foods to the diet first.");
@@ -1348,15 +1342,18 @@
                 
                 async suggestFood() {
                     if (!this.selectedDiet || this.selectedDiet.foods.length === 0) return alert("Please add foods to your diet first.");
-                    const targets = this.easierTargets();
-                    const D = targets.map(([name,target]) => (this.dietTotals[name]/(target > 0 ? target : 1)));
-                    const b=targets.map(([nutrient,target])=>(target > 0 ? 1 : 0));
+                    const bounds = Object.values(this.nutrientTargets);
+                    const nutrients = Object.keys(this.nutrientTargets);
+                    const current = nutrients.map(nutrient=>this.dietTotals[nutrient]);
+                    const targets = constrain(current, bounds);
+                    const D = targets.map((target,i) => (current[i]/(target > 0 ? target : 1)));
+                    const b=targets.map(target=>(target > 0 ? 1 : 0));
                     const D1 = math.multiply(D,b);
                     const DD = math.multiply(D,D);
 
                     const foodScores = this.allFoods.filter(food => !this.selectedDiet.foods.some(f => f.foodName === food.name))
                         .map(food => {
-                            const F = targets.map(([nutrient,target]) => (food[nutrient] || 0) / 100/(target > 0 ? target : 1));
+                            const F = targets.map((target,i) => (food[nutrients[i]] || 0) / 100/(target > 0 ? target : 1));
                             const F1 = math.multiply(F,b);
                             const FF = math.multiply(F,F);
                             const FD = math.multiply(F,D);
