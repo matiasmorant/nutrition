@@ -1,17 +1,17 @@
-const CACHE_NAME = 'optimal-nutrition-v2';
-const DATA_CACHE_NAME = 'optimal-nutrition-data-v1';
+const CACHE_NAME = 'optimal-nutrition-v3';
+const DATA_CACHE_NAME = 'optimal-nutrition-data-v2';
 
 // Core app files that must be cached
 const CORE_ASSETS = [
-  '/',
-  '/index.html',
-  '/dataService.js',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  './',
+  './index.html',
+  './dataService.js',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-// External CDN dependencies
+// External CDN dependencies - use cache-first approach
 const CDN_ASSETS = [
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/tabulator-tables@5.6.1/dist/css/tabulator_modern.min.css',
@@ -20,18 +20,19 @@ const CDN_ASSETS = [
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
   'https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js',
   'https://cdn.jsdelivr.net/npm/ml-matrix/matrix.umd.min.js',
+  'https://www.lactame.com/lib/ml/6.0.0/ml.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   'https://cdn.jsdelivr.net/npm/chart.js',
   'https://cdn.jsdelivr.net/npm/idb@8/build/umd.js'
 ];
 
-// Data files (optional - app may work without these if user has added their own data)
+// Data files
 const DATA_ASSETS = [
-  '/foodnutrient.csv',
-  '/nutrientTree.txt',
-  '/nutrientinfo.md',
-  '/diets.json'
+  './foodnutrient.csv',
+  './nutrientTree.txt',
+  './nutrientinfo.md',
+  './diets.json'
 ];
 
 // Install event - cache all resources
@@ -39,32 +40,18 @@ self.addEventListener('install', event => {
   console.log('[ServiceWorker] Installing...');
   
   event.waitUntil(
-    Promise.all([
-      // Cache core assets (must succeed)
-      caches.open(CACHE_NAME).then(cache => {
-        console.log('[ServiceWorker] Caching core assets');
-        return cache.addAll(CORE_ASSETS);
-      }),
+    // Cache core assets first (most important)
+    caches.open(CACHE_NAME).then(cache => {
+      console.log('[ServiceWorker] Caching core assets');
+      return cache.addAll(CORE_ASSETS.map(url => new Request(url, { mode: 'no-cors' })))
+        .catch(err => {
+          console.warn('[ServiceWorker] Failed to cache some core assets:', err);
+          // Continue even if some assets fail
+          return Promise.resolve();
+        });
+    }).then(() => {
+      console.log('[ServiceWorker] Core assets cached');
       
-      // Cache CDN assets (must succeed for offline)
-      caches.open(CACHE_NAME).then(cache => {
-        console.log('[ServiceWorker] Caching CDN assets');
-        return cache.addAll(CDN_ASSETS);
-      }),
-      
-      // Cache data assets (optional - don't fail if missing)
-      caches.open(DATA_CACHE_NAME).then(cache => {
-        console.log('[ServiceWorker] Caching data assets');
-        return Promise.allSettled(
-          DATA_ASSETS.map(url => 
-            cache.add(url).catch(err => {
-              console.warn(`[ServiceWorker] Failed to cache ${url}:`, err);
-            })
-          )
-        );
-      })
-    ]).then(() => {
-      console.log('[ServiceWorker] Installation complete');
       // Force the waiting service worker to become the active service worker
       return self.skipWaiting();
     })
@@ -89,6 +76,37 @@ self.addEventListener('activate', event => {
       );
     }).then(() => {
       console.log('[ServiceWorker] Activation complete');
+      
+      // Pre-cache CDN assets in background
+      self.caches.open(CACHE_NAME).then(cache => {
+        CDN_ASSETS.forEach(url => {
+          fetch(url, { mode: 'cors' })
+            .then(response => {
+              if (response.ok) {
+                return cache.put(url, response);
+              }
+            })
+            .catch(err => {
+              console.warn(`[ServiceWorker] Failed to cache CDN asset ${url}:`, err);
+            });
+        });
+      });
+      
+      // Pre-cache data assets in background
+      self.caches.open(DATA_CACHE_NAME).then(cache => {
+        DATA_ASSETS.forEach(url => {
+          fetch(url)
+            .then(response => {
+              if (response.ok) {
+                return cache.put(url, response);
+              }
+            })
+            .catch(err => {
+              console.warn(`[ServiceWorker] Failed to cache data asset ${url}:`, err);
+            });
+        });
+      });
+      
       // Take control of all pages immediately
       return self.clients.claim();
     })
@@ -99,57 +117,114 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   
-  // Handle data files with network-first strategy (fresher data when online)
-  if (DATA_ASSETS.some(asset => url.pathname.endsWith(asset))) {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+  
+  // For same-origin requests
+  if (url.origin === self.location.origin) {
     event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          // If fetch succeeds, update cache and return response
-          const responseClone = response.clone();
-          caches.open(DATA_CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
+      caches.match(event.request).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        
+        return fetch(event.request)
+          .then(response => {
+            // Don't cache if not a success response
+            if (!response || response.status !== 200) {
+              return response;
+            }
+            
+            // Clone the response
+            const responseToCache = response.clone();
+            
+            // Determine which cache to use
+            const isDataAsset = DATA_ASSETS.some(asset => 
+              url.pathname.includes(asset.replace('./', ''))
+            );
+            const cacheToUse = isDataAsset ? DATA_CACHE_NAME : CACHE_NAME;
+            
+            // Cache the response
+            caches.open(cacheToUse).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+            
+            return response;
+          })
+          .catch(error => {
+            console.log('[ServiceWorker] Network fetch failed:', error);
+            
+            // For HTML pages, return the cached index.html
+            if (event.request.headers.get('accept').includes('text/html')) {
+              return caches.match('./index.html');
+            }
+            
+            // For other resources, you might want to return a fallback
+            throw error;
           });
-          return response;
-        })
-        .catch(() => {
-          // If fetch fails (offline), return cached version
-          return caches.match(event.request);
-        })
+      })
     );
     return;
   }
   
-  // Handle all other requests with cache-first strategy
-  event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      if (cachedResponse) {
-        // Return cached version immediately
-        return cachedResponse;
-      }
-      
-      // Not in cache, fetch from network
-      return fetch(event.request).then(response => {
-        // Don't cache non-successful responses or non-GET requests
-        if (!response || response.status !== 200 || event.request.method !== 'GET') {
-          return response;
+  // For CDN/external requests
+  if (CDN_ASSETS.some(cdnUrl => event.request.url.startsWith(cdnUrl))) {
+    event.respondWith(
+      caches.match(event.request).then(cachedResponse => {
+        // Return cached version if available
+        if (cachedResponse) {
+          return cachedResponse;
         }
         
-        // Cache the fetched response for future use
-        const responseClone = response.clone();
-        const cacheName = CDN_ASSETS.some(asset => event.request.url.includes(asset)) 
-          ? CACHE_NAME 
-          : DATA_CACHE_NAME;
-          
-        caches.open(cacheName).then(cache => {
-          cache.put(event.request, responseClone);
-        });
+        // Otherwise fetch from network
+        return fetch(event.request)
+          .then(response => {
+            // Don't cache if not successful
+            if (!response || response.status !== 200) {
+              return response;
+            }
+            
+            // Cache the response
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+            
+            return response;
+          })
+          .catch(error => {
+            console.log('[ServiceWorker] CDN fetch failed:', error);
+            // For CDN failures, return nothing - let the app handle missing dependencies
+            throw error;
+          });
+      })
+    );
+  }
+  
+  // For other external requests (like Google Fonts)
+  if (event.request.url.startsWith('https://fonts.googleapis.com') || 
+      event.request.url.startsWith('https://fonts.gstatic.com')) {
+    event.respondWith(
+      caches.match(event.request).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
         
-        return response;
-      }).catch(error => {
-        console.error('[ServiceWorker] Fetch failed:', error);
-        // Could return a custom offline page here
-        throw error;
-      });
-    })
-  );
+        return fetch(event.request)
+          .then(response => {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+            return response;
+          })
+          .catch(error => {
+            console.log('[ServiceWorker] Font fetch failed:', error);
+            throw error;
+          });
+      })
+    );
+  }
 });
