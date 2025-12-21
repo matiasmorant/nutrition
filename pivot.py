@@ -22,8 +22,12 @@ def merge_sets(sets):
     merged.append(overlap)
   return merged
 
+# mergeSets : [], / (s,m)
+#   groups : m G &s#>0
+#   groups0 ,(groups1,s /|)
+
 deleteRe=[
-"chicken|poultry|beef|meat|fish|liver|steak|free range|bacon|Whale|seal|Sea lion|turkey|salmon|deer|pork",
+"chicken|poultry|beef|meat|fish|trout|smelt|octopus|owl|caribou|liver|steak|free range|bacon|Whale|seal|Sea lion|turkey|salmon|deer|pork",
 "(with|and) (cheese|milk|oil|margarine|whipped|tomato|onion|carrot|cream|sour|raisin|fruit|dairy|non|mayo|egg|chili|ham|honey)",
 "with (butter|peanuts|soy|fruit)",
 ]
