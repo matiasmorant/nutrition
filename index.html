@@ -222,6 +222,9 @@
             background-color: #f9fafb;
             border-bottom: 1px solid #e5e7eb;
         }
+        .tabulator .tabulator-header .tabulator-col {
+            justify-content: center;
+        } 
         .tabulator .tabulator-col-title {
             text-transform: uppercase;
             font-size: 0.75rem;
@@ -236,6 +239,7 @@
             text-align: center;
         }
         .tabulator-row .tabulator-cell {
+            font-size: 0.9rem;
             padding: 8px;
             border-right: none;
         }
@@ -963,6 +967,7 @@
                         ...this.nutrientNames.map(nutrient => {return {
                                 title: nutrient, field: nutrient, editor: "number", resizable: false,
                                 editorParams: { step: 0.01 }, sorter: "number", headerSort:false,
+                                maxWidth: 110,
                                 cellEdited: async (cell) => {
                                     await dataService.addOrUpdateFood(cell.getRow().getData());
                                 },
