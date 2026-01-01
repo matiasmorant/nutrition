@@ -1,4 +1,4 @@
-const CACHE_NAME = 'optimal-nutrition-v3';
+const CACHE_NAME = 'optimal-nutrition-v4';
 const DATA_CACHE_NAME = 'optimal-nutrition-data-v2';
 
 // Core app files that must be cached
@@ -11,7 +11,7 @@ const CORE_ASSETS = [
   './icon-512.png'
 ];
 
-// External CDN dependencies - use cache-first approach
+// External CDN dependencies
 const CDN_ASSETS = [
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/tabulator-tables@5.6.1/dist/css/tabulator_modern.min.css',
@@ -38,32 +38,22 @@ const DATA_ASSETS = [
 // Install event - cache all resources
 self.addEventListener('install', event => {
   console.log('[ServiceWorker] Installing...');
-  
   event.waitUntil(
-    // Cache core assets first (most important)
     caches.open(CACHE_NAME).then(cache => {
       console.log('[ServiceWorker] Caching core assets');
       return cache.addAll(CORE_ASSETS.map(url => new Request(url, { mode: 'no-cors' })))
         .catch(err => {
           console.warn('[ServiceWorker] Failed to cache some core assets:', err);
-          // Continue even if some assets fail
           return Promise.resolve();
         });
-    }).then(() => {
-      console.log('[ServiceWorker] Core assets cached');
-      
-      // Force the waiting service worker to become the active service worker
-      return self.skipWaiting();
-    })
+    }).then(() => self.skipWaiting())
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', event => {
   console.log('[ServiceWorker] Activating...');
-  
   const cacheWhitelist = [CACHE_NAME, DATA_CACHE_NAME];
-  
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -75,156 +65,53 @@ self.addEventListener('activate', event => {
         })
       );
     }).then(() => {
-      console.log('[ServiceWorker] Activation complete');
-      
-      // Pre-cache CDN assets in background
-      self.caches.open(CACHE_NAME).then(cache => {
+      // Pre-cache CDN and Data assets in background
+      caches.open(CACHE_NAME).then(cache => {
         CDN_ASSETS.forEach(url => {
-          fetch(url, { mode: 'cors' })
-            .then(response => {
-              if (response.ok) {
-                return cache.put(url, response);
-              }
-            })
-            .catch(err => {
-              console.warn(`[ServiceWorker] Failed to cache CDN asset ${url}:`, err);
-            });
+          fetch(url, { mode: 'cors' }).then(res => res.ok && cache.put(url, res)).catch(() => {});
         });
       });
-      
-      // Pre-cache data assets in background
-      self.caches.open(DATA_CACHE_NAME).then(cache => {
+      caches.open(DATA_CACHE_NAME).then(cache => {
         DATA_ASSETS.forEach(url => {
-          fetch(url)
-            .then(response => {
-              if (response.ok) {
-                return cache.put(url, response);
-              }
-            })
-            .catch(err => {
-              console.warn(`[ServiceWorker] Failed to cache data asset ${url}:`, err);
-            });
+          fetch(url).then(res => res.ok && cache.put(url, res)).catch(() => {});
         });
       });
-      
-      // Take control of all pages immediately
       return self.clients.claim();
     })
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Stale-While-Revalidate
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  
+
   // Skip non-GET requests
-  if (event.request.method !== 'GET') {
-    return;
-  }
-  
-  // For same-origin requests
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(event.request).then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        
-        return fetch(event.request)
-          .then(response => {
-            // Don't cache if not a success response
-            if (!response || response.status !== 200) {
-              return response;
-            }
-            
-            // Clone the response
-            const responseToCache = response.clone();
-            
-            // Determine which cache to use
-            const isDataAsset = DATA_ASSETS.some(asset => 
-              url.pathname.includes(asset.replace('./', ''))
-            );
-            const cacheToUse = isDataAsset ? DATA_CACHE_NAME : CACHE_NAME;
-            
-            // Cache the response
-            caches.open(cacheToUse).then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-            
-            return response;
-          })
-          .catch(error => {
-            console.log('[ServiceWorker] Network fetch failed:', error);
-            
-            // For HTML pages, return the cached index.html
-            if (event.request.headers.get('accept').includes('text/html')) {
-              return caches.match('./index.html');
-            }
-            
-            // For other resources, you might want to return a fallback
-            throw error;
-          });
-      })
-    );
-    return;
-  }
-  
-  // For CDN/external requests
-  if (CDN_ASSETS.some(cdnUrl => event.request.url.startsWith(cdnUrl))) {
-    event.respondWith(
-      caches.match(event.request).then(cachedResponse => {
-        // Return cached version if available
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        
-        // Otherwise fetch from network
-        return fetch(event.request)
-          .then(response => {
-            // Don't cache if not successful
-            if (!response || response.status !== 200) {
-              return response;
-            }
-            
-            // Cache the response
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-            
-            return response;
-          })
-          .catch(error => {
-            console.log('[ServiceWorker] CDN fetch failed:', error);
-            // For CDN failures, return nothing - let the app handle missing dependencies
-            throw error;
-          });
-      })
-    );
-  }
-  
-  // For other external requests (like Google Fonts)
-  if (event.request.url.startsWith('https://fonts.googleapis.com') || 
-      event.request.url.startsWith('https://fonts.gstatic.com')) {
-    event.respondWith(
-      caches.match(event.request).then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        
-        return fetch(event.request)
-          .then(response => {
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-            return response;
-          })
-          .catch(error => {
-            console.log('[ServiceWorker] Font fetch failed:', error);
-            throw error;
-          });
-      })
-    );
-  }
+  if (event.request.method !== 'GET') return;
+
+  // Determine which cache to use
+  const isDataAsset = DATA_ASSETS.some(asset => url.pathname.includes(asset.replace('./', '')));
+  const cacheToUse = isDataAsset ? DATA_CACHE_NAME : CACHE_NAME;
+
+  event.respondWith(
+    caches.open(cacheToUse).then(cache => {
+      return cache.match(event.request).then(cachedResponse => {
+        const fetchPromise = fetch(event.request).then(networkResponse => {
+          // If network request is successful, update the cache
+          if (networkResponse && networkResponse.status === 200) {
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        }).catch(err => {
+          // Fallback for HTML navigation if network fails and no cache
+          if (event.request.headers.get('accept').includes('text/html')) {
+            return caches.match('./index.html');
+          }
+          throw err;
+        });
+
+        // Return cached response immediately if it exists, otherwise wait for network
+        return cachedResponse || fetchPromise;
+      });
+    })
+  );
 });
