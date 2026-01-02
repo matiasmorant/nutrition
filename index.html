@@ -564,19 +564,19 @@
                                 </thead>
                                 <tbody>
                                     <template x-for="nutrient in nutrientNames" :key="nutrient">
-                                        <tr class="py-1">
+                                        <tr class="py-1" x-data="{ get pct() { return calculateNutrientPercentage(nutrient) } }">
                                             <td class="text-left nutrient-clickable max-w-name" @click="showNutrientContribution(nutrient)" x-text="nutrient"></td>
                                             <td x-text="(x=>x<10?x.toFixed(2):x.toFixed(0))(dietTotals[nutrient] || 0)"></td>
                                             <td>
-                                                <span x-text="calculateNutrientPercentage(nutrient).toFixed(0) + '%'"></span>
+                                                <span x-text="pct.toFixed(0) + '%'"></span>
                                                 <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
                                                     <div class="h-2.5 rounded-full" 
-                                                        :style="'width: ' + Math.min(100, calculateNutrientPercentage(nutrient)) + '%'"
+                                                        :style="'width: ' + Math.min(100, pct) + '%'"
                                                         :class="{
-                                                            'bg-green-600' : calculateNutrientPercentage(nutrient) >= 98 && calculateNutrientPercentage(nutrient) < 102,
-                                                            'bg-yellow-400': (calculateNutrientPercentage(nutrient) >=  83 && calculateNutrientPercentage(nutrient) < 98) || (calculateNutrientPercentage(nutrient) >= 102 && calculateNutrientPercentage(nutrient) < 120),
-                                                            'bg-orange-500': (calculateNutrientPercentage(nutrient) >=  67 && calculateNutrientPercentage(nutrient) < 83)||(calculateNutrientPercentage(nutrient) >= 120 && calculateNutrientPercentage(nutrient) < 150),
-                                                            'bg-red-500': (calculateNutrientPercentage(nutrient) < 67) || (calculateNutrientPercentage(nutrient) >= 150)
+                                                            'bg-green-600' : pct >= 98 && pct < 102,
+                                                            'bg-yellow-400': (pct >=  83 && pct < 98) || (pct >= 102 && pct < 120),
+                                                            'bg-orange-500': (pct >=  67 && pct < 83)||(pct >= 120 && pct < 150),
+                                                            'bg-red-500': (pct < 67) || (pct >= 150)
                                                         }">
                                                     </div>
                                                 </div>
