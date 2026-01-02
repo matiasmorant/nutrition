@@ -859,7 +859,7 @@
                 diets: [],
                 selectedDiet: null,
                 dietTimeframe: 'day',
-                showUnusedDietFoods: true,
+                showUnusedDietFoods: false,
                 dietTotals: {},
                 
                 // Chart state
@@ -1095,6 +1095,7 @@
                 removeNutrient(nutrient) {
                     this.nutrientNames = this.nutrientNames.filter(n => n !== nutrient);
                     delete this.nutrientTargets[nutrient];
+                    await this.saveTargets();
                 },
 
                 async saveTargets() { await dataService.set('nutrientTargets',this.nutrientTargets); },
