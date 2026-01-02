@@ -1639,7 +1639,6 @@
                                 }
                             }
                             importedDiet.id = Date.now().toString();
-                            importedDiet.name += " (Imported)";
                             this.diets.push(importedDiet);
                             await this.saveDiets();
                         }
