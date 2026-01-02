@@ -953,7 +953,7 @@
                         await dataService.saveFoods(this.allFoods);
                     }
                     
-                    this.nutrientTargets = { ...nutrientTree.defaultNutrientTargets, ...this.nutrientTargets };
+                    this.nutrientTargets = Object.keys(this.nutrientTargets).length ? this.nutrientTargets : { ...nutrientTree.defaultNutrientTargets };
                     await this.saveTargets();
                     
                     this.initFoodTable();
@@ -1043,7 +1043,7 @@
                         data: foods,
                         columns: columns,
                         layout: "fitDataStretch",
-                        height: "calc(100vh - 200px)",
+                        height: "calc(100vh - 198px)",
                         headerHeight: 50,
                         rowDeleted: async (row) => {
                             await this.removeFood(row.getData().name);
