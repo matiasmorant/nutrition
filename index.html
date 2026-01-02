@@ -802,7 +802,7 @@
             console.log(maxIter,error);
             if ((maxIter === 0)||(preverror && preverror-error<threshold)) {
                 if (onProgress) onProgress(100);
-                const positiveIndices = solution.reduce((acc,val,idx)=>{ if(val>1e-9)acc.push(idx);return acc; }, []);
+                const positiveIndices = solution.reduce((acc,val,idx)=>{ if(val>1e-3)acc.push(idx);return acc; }, []);
                 const subRelA = relA.map(row => positiveIndices.map(idx=>row[idx]));
                 const subSolution = ML.FCNNLS.fcnnlsVector(subRelA,b);
                 const refinedSolution = new Array(solution.length).fill(0);
@@ -1049,7 +1049,7 @@
                         data: foods,
                         columns: columns,
                         layout: "fitDataStretch",
-                        height: "calc(100vh - 195px)",
+                        height: "calc(100vh - 193px)",
                         headerHeight: 50,
                         rowDeleted: async (row) => {
                             await this.removeFood(row.getData().name);
