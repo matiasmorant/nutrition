@@ -464,6 +464,16 @@
                     <input type="text" x-model="selectedDiet.name" @change="saveDiets()" class="text-xl font-medium border-b border-gray-300 focus:border-blue-500 focus:outline-none" placeholder="Diet name">
                 </div>
                 
+                <div x-show="isOptimizing" class="fixed inset-0 bg-gray-600 bg-opacity-25 z-50 flex items-center justify-center">
+                    <div class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
+                        <p class="text-sm font-medium text-gray-700">Optimizing diet...</p>
+                        <div class="w-48 h-2 bg-gray-200 rounded-full mt-3 overflow-hidden">
+                            <div class="h-full bg-blue-500 transition-all duration-200" :style="`width: ${optimizationProgress}%`"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex justify-center"> <div>
                     <div class="timeframe-selector mb-6">
                         <span class="text-l font-medium text-gray-700">Per</span>
@@ -760,7 +770,7 @@
             });
         }
 
-        function boundls(A,c, bounds, targets=null, maxIter=200, preverror=null){
+        function boundls(A, c, bounds, { targets=null, maxIter=200, preverror=null, totalIter=200, onProgress=null }={}) {
             // A.x+c = *bounds*
             targets = targets || bounds.map(v=>v.min || 0);
             if (targets.length === 0) {alert("Please set targets for at least one nutrient.");return;}
@@ -771,11 +781,24 @@
             const solution = ML.FCNNLS.fcnnlsVector(relA, b);
             const error = math.norm(math.subtract(math.multiply(relA,solution),b));
             console.log(maxIter,error);
-            if(preverror && preverror-error<1e-4) return solution;
+            if ((maxIter === 0)||(preverror && preverror-error<1e-4)) {
+                if (onProgress) onProgress(100);
+                return solution;
+            }
+            if (onProgress) {
+                const progress = ((totalIter - maxIter) / totalIter) * 100;
+                onProgress(progress);
+            }
+
             const LHS = math.add(math.multiply(A,solution),c);
             const easier = constrain(LHS, bounds);
-            if(maxIter===0) return solution;
-            return boundls(A, c, bounds, easier, maxIter-1, error);
+            return boundls(A, c, bounds, {
+                targets: easier, 
+                maxIter: maxIter - 1, 
+                preverror: error, 
+                totalIter, 
+                onProgress
+            });
         }
 
         Object.defineProperty(Array.prototype, 'sum', {
@@ -822,6 +845,9 @@
                 editingFood: null,
                 editFoodPieChartInstance: null,
                 showZeroNutrientsInEdit: false,
+
+                isOptimizing: false,
+                optimizationProgress: 0,
 
                 // Suggest Food state
                 showSuggestModal: false,
@@ -1182,6 +1208,11 @@
 
                     if (unlocked.length === 0) {alert("No unlocked foods to optimize."); return;}
                     
+                    this.isOptimizing = true;
+                    this.optimizationProgress = 0;
+                    // Small delay to allow progress bar to show before heavy calculation
+                    await new Promise(resolve => setTimeout(resolve, 50));
+
                     const nutrientData = {};
                     for (const foodItem of dietFoods) {
                         nutrientData[foodItem.foodName] = await dataService.getFood(foodItem.foodName);
@@ -1198,13 +1229,16 @@
                     let A = nutrientNames.map(nutrient => unlocked.map(food => getA(food,nutrient) ));
 
                     try {
-                        const solution = boundls(A, lockedNutrients, bounds);
+                        const solution = boundls(A, lockedNutrients, bounds, { onProgress: p=>{ this.optimizationProgress=p; } });
                         unlocked.forEach((food, i) => {food.quantity = round(Math.max(0, solution[i]));});
                         await this.saveDiets();
-                        this.recalculateDietTotals();
+                        await this.recalculateDietTotals();
                     } catch (error) {
                         console.error("Optimization error:", error);
                         alert("Failed to optimize diet. The combination of foods and targets may not be solvable.");
+                    } finally {
+                        this.isOptimizing = false;
+                        this.optimizationProgress = 0;
                     }
                 },
                 
