@@ -1,4 +1,4 @@
-const CACHE_NAME = 'optimal-nutrition-v4'; // Incremented version
+const CACHE_NAME = 'optimal-nutrition-v5';
 const DATA_CACHE_NAME = 'optimal-nutrition-data-v2';
 
 const CORE_ASSETS = [
