@@ -382,7 +382,7 @@
 
         <div id="content-diets" class="tab-content p-6 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'diets'">
             <div x-show="!selectedDiet">
-                <div x-show="diets.length > 0" class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
+                <div x-show="diets.length > 0" class="flex flex-col sm:flex-row justify-end items-start sm:items-center mb-6 gap-2">
                     <div class="flex gap-2">
                         <button @click="createDiet()" class="blue-btn">Create Diet</button>
                         <button @click="$refs.fileInput.click()" class="blue-btn bg-green-600 hover:bg-green-700">
@@ -1092,7 +1092,7 @@
                     }
                 },
 
-                removeNutrient(nutrient) {
+                async removeNutrient(nutrient) {
                     this.nutrientNames = this.nutrientNames.filter(n => n !== nutrient);
                     delete this.nutrientTargets[nutrient];
                     await this.saveTargets();
@@ -1309,9 +1309,9 @@
                     }
                 },
                 
-                toggleNutrient(nutrient) {
+                async toggleNutrient(nutrient) {
                     if (this.nutrientNames.includes(nutrient)) {
-                        this.removeNutrient(nutrient);
+                        await this.removeNutrient(nutrient);
                     } else {
                         this.addNutrient(nutrient);
                     }
