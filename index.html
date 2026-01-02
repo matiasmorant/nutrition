@@ -955,6 +955,7 @@
                     
                     this.nutrientTargets = Object.keys(this.nutrientTargets).length ? this.nutrientTargets : { ...nutrientTree.defaultNutrientTargets };
                     await this.saveTargets();
+                    this.nutrientNames = Object.keys(this.nutrientTargets);
                     
                     this.initFoodTable();
                     
