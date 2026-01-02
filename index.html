@@ -790,9 +790,7 @@
             if (onProgress) {
                 let estimatedProgress = 0;
                 if (preverror && error < preverror) {
-                    const remainingSteps = Math.log(threshold/error)/Math.log(error/preverror);
-                    const currentStep = totalIter - maxIter;
-                    estimatedProgress = (currentStep / (currentStep+remainingSteps));
+                    estimatedProgress = Math.log(error/initialError)/Math.log(threshold/initialError);
                 } else {
                     estimatedProgress = ((totalIter - maxIter) / totalIter);
                 }
