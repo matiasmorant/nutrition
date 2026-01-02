@@ -787,7 +787,7 @@
             });
         }
 
-        function boundls(A, c, bounds, { targets=null, maxIter=200, preverror=null, totalIter=200, onProgress=null, initialError=null }={}) {
+        async function boundls(A, c, bounds, { targets=null, maxIter=200, preverror=null, totalIter=200, onProgress=null, initialError=null }={}) {
             // A.x+c = *bounds*
             targets = targets || bounds.map(v=>v.min || 0);
             if (targets.length === 0) {alert("Please set targets for at least one nutrient.");return;}
@@ -812,11 +812,12 @@
                     estimatedProgress = ((totalIter - maxIter) / totalIter);
                 }
                 onProgress(Math.min(99, Math.max(estimatedProgress*100, ((totalIter - maxIter) / totalIter) * 100)));
+                await new Promise(resolve => setTimeout(resolve, 0)); // so progress bar can repaint
             }
 
             const LHS = math.add(math.multiply(A,solution),c);
             const easier = constrain(LHS, bounds);
-            return boundls(A, c, bounds, {
+            return await boundls(A, c, bounds, {
                 targets: easier, 
                 maxIter: maxIter - 1, 
                 preverror: error, 
@@ -1254,7 +1255,7 @@
                     let A = nutrientNames.map(nutrient => unlocked.map(food => getA(food,nutrient) ));
 
                     try {
-                        const solution = boundls(A, lockedNutrients, bounds, { onProgress: p=>{ this.optimizationProgress=p; } });
+                        const solution = await boundls(A, lockedNutrients, bounds, { onProgress: p=>{ this.optimizationProgress=p; } });
                         unlocked.forEach((food, i) => {food.quantity = round(Math.max(0, solution[i]));});
                         await this.saveDiets();
                         await this.recalculateDietTotals();
