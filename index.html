@@ -570,7 +570,7 @@
                                             <td>
                                                 <span x-text="calculateNutrientPercentage(nutrient).toFixed(0) + '%'"></span>
                                                 <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                                                    <div class="bg-blue-600 h-2.5 rounded-full" 
+                                                    <div class="h-2.5 rounded-full" 
                                                         :style="'width: ' + Math.min(100, calculateNutrientPercentage(nutrient)) + '%'"
                                                         :class="{
                                                             'bg-green-600' : calculateNutrientPercentage(nutrient) >= 98 && calculateNutrientPercentage(nutrient) < 102,
