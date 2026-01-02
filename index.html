@@ -770,7 +770,7 @@
             });
         }
 
-        function boundls(A, c, bounds, { targets=null, maxIter=200, preverror=null, totalIter=200, onProgress=null }={}) {
+        function boundls(A, c, bounds, { targets=null, maxIter=200, preverror=null, totalIter=200, onProgress=null, initialError=null }={}) {
             // A.x+c = *bounds*
             targets = targets || bounds.map(v=>v.min || 0);
             if (targets.length === 0) {alert("Please set targets for at least one nutrient.");return;}
@@ -780,14 +780,23 @@
 
             const solution = ML.FCNNLS.fcnnlsVector(relA, b);
             const error = math.norm(math.subtract(math.multiply(relA,solution),b));
+            if (initialError === null) initialError = error;
+            const threshold = 1e-4;
             console.log(maxIter,error);
-            if ((maxIter === 0)||(preverror && preverror-error<1e-4)) {
+            if ((maxIter === 0)||(preverror && preverror-error<threshold)) {
                 if (onProgress) onProgress(100);
                 return solution;
             }
             if (onProgress) {
-                const progress = ((totalIter - maxIter) / totalIter) * 100;
-                onProgress(progress);
+                let estimatedProgress = 0;
+                if (preverror && error < preverror) {
+                    const remainingSteps = Math.log(threshold/error)/Math.log(error/preverror);
+                    const currentStep = totalIter - maxIter;
+                    estimatedProgress = (currentStep / (currentStep+remainingSteps));
+                } else {
+                    estimatedProgress = ((totalIter - maxIter) / totalIter);
+                }
+                onProgress(Math.min(99, Math.max(estimatedProgress*100, ((totalIter - maxIter) / totalIter) * 100)));
             }
 
             const LHS = math.add(math.multiply(A,solution),c);
@@ -797,7 +806,8 @@
                 maxIter: maxIter - 1, 
                 preverror: error, 
                 totalIter, 
-                onProgress
+                onProgress,
+                initialError
             });
         }
 
