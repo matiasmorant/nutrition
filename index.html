@@ -70,10 +70,17 @@
         .nutrient-table th, .nutrient-table td {
             padding: 3px 2px;
             text-align: right;
-            vertical-align: baseline;
+            vertical-align: middle;
         }
         .nutrient-table th:first-child, .nutrient-table td:first-child {
             text-align: left;
+            padding-right: 0px;
+        }
+        .nutrient-table th:nth-child(2), .nutrient-table td:nth-child(2) {
+            padding-left: 0px;
+        }
+        .nutrient-table td:first-child {
+            padding-top: 12px;
         }
         .nutrient-table th {
             font-weight: 600;
