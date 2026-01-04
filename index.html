@@ -1277,6 +1277,7 @@
                             solution.fill(0);
                             positiveIndices.forEach((originalIdx, subIdx) => {solution[originalIdx] = subSolution[subIdx];});
                         }
+                        this.optimizationProgress = 100; await new Promise(resolve => setTimeout(resolve, 200));
                         unlocked.forEach((food, i) => {food.quantity = round(Math.max(0, solution[i]));});
                         await this.saveDiets();
                         await this.recalculateDietTotals();
