@@ -68,7 +68,7 @@
             cursor: pointer;
         }
         .nutrient-table th, .nutrient-table td {
-            padding: 3px 8px; /* Reduced padding */
+            padding: 3px 2px;
             text-align: right;
             vertical-align: baseline;
         }
@@ -517,7 +517,7 @@
                                     <div class="flex items-center">
                                         <span @click="removeFoodFromDiet(foodItem.foodName)" class="remove-icon">&times;</span>
                                         <span @click="showFoodContribution(foodItem.foodName)" 
-                                              class="text-sm max-w-name cursor-pointer hover:text-blue-600" 
+                                              class="mr-2 text-sm max-w-name cursor-pointer hover:text-blue-600" 
                                               x-text="foodItem.foodName"></span>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -557,7 +557,7 @@
                             <table class="w-full max-w-xl nutrient-table">
                                 <thead>
                                     <tr>
-                                        <th class="text-left">Nutrient</th>
+                                        <th class="text-left w-56">Nutrient</th>
                                         <th>Total Amount</th>
                                         <th>% of Target</th>
                                     </tr>
