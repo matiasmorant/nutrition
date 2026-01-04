@@ -809,12 +809,12 @@
             console.log(maxIter,error);
             if ((maxIter === 0)||(preverror && preverror-error<threshold)) {
                 if (onProgress) onProgress(100);
-                const positiveIndices = solution.reduce((acc,val,idx)=>{ if(val>1e-3)acc.push(idx);return acc; }, []);
-                const subRelA = relA.map(row => positiveIndices.map(idx=>row[idx]));
-                const subSolution = ML.FCNNLS.fcnnlsVector(subRelA,b);
-                const refinedSolution = new Array(solution.length).fill(0);
-                positiveIndices.forEach((originalIdx, subIdx) => {refinedSolution[originalIdx] = subSolution[subIdx];});
-                return refinedSolution;
+                // const positiveIndices = solution.reduce((acc,val,idx)=>{ if(val>1e-3)acc.push(idx);return acc; }, []);
+                // const subRelA = relA.map(row => positiveIndices.map(idx=>row[idx]));
+                // const subSolution = ML.FCNNLS.fcnnlsVector(subRelA,b);
+                // const refinedSolution = new Array(solution.length).fill(0);
+                // positiveIndices.forEach((originalIdx, subIdx) => {refinedSolution[originalIdx] = subSolution[subIdx];});
+                return solution;
             }
             if (onProgress) {
                 let estimatedProgress = 0;
@@ -1269,7 +1269,14 @@
                     let A = nutrientNames.map(nutrient => unlocked.map(food => getA(food,nutrient) ));
 
                     try {
-                        const solution = await boundls(A, lockedNutrients, bounds, { onProgress: p=>{ this.optimizationProgress=p; } });
+                        let solution = await boundls(A, lockedNutrients, bounds, { onProgress: p=>{ this.optimizationProgress=p; } });
+                        const positiveIndices = solution.reduce((acc,val,idx) => {if(val>0.001)acc.push(idx);return acc;}, []);
+                        if (positiveIndices.length>0 && positiveIndices.length<0.7*solution.length) {
+                            const subA = A.map(row => positiveIndices.map(idx => row[idx]));
+                            const subSolution = await boundls(subA, lockedNutrients, bounds, {onProgress: p => { this.optimizationProgress = 0.5+0.5*p; }});
+                            solution.fill(0);
+                            positiveIndices.forEach((originalIdx, subIdx) => {solution[originalIdx] = subSolution[subIdx];});
+                        }
                         unlocked.forEach((food, i) => {food.quantity = round(Math.max(0, solution[i]));});
                         await this.saveDiets();
                         await this.recalculateDietTotals();
