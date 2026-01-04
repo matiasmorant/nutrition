@@ -36,9 +36,9 @@ const DATA_ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      // Pre-cache both CORE and CDN assets
-      const assetsToCache = [...CORE_ASSETS, ...CDN_ASSETS];
-      return cache.addAll(assetsToCache.map(url => new Request(url, { mode: 'no-cors' })));
+      // ONLY cache local core assets here
+      console.log('[SW] Pre-caching local core assets');
+      return cache.addAll(CORE_ASSETS); 
     }).then(() => self.skipWaiting())
   );
 });
@@ -66,16 +66,19 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   // 1. Cache-First Strategy for CDN Assets (Prevents network request entirely)
-  const isCDNAsset = CDN_ASSETS.some(asset => event.request.url === asset || event.request.url.startsWith(asset));
+  const isCDNAsset = CDN_ASSETS.some(asset => event.request.url.includes(asset));
   
   if (isCDNAsset) {
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {
         return cachedResponse || fetch(event.request).then(networkResponse => {
-          return caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, networkResponse.clone());
-            return networkResponse;
-          });
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
         });
       })
     );
