@@ -380,7 +380,7 @@
             </div>
         </div>
 
-        <div id="content-diets" class="tab-content p-4 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'diets'">
+        <div id="content-diets" class="tab-content p-3 mt-6 bg-white rounded-lg shadow" x-show="activeTab === 'diets'">
             <div x-show="!selectedDiet">
                 <div x-show="diets.length > 0" class="flex justify-end items-center mb-6 gap-2">
                     <div class="flex gap-2">
@@ -475,7 +475,7 @@
             <template x-if="selectedDiet"><div x-show="selectedDiet">
                 <div class="flex items-center mb-6">
                     <span @click="selectedDiet = null" class="back-arrow">←</span>
-                    <input type="text" x-model="selectedDiet.name" @change="saveDiets()" class="text-xl font-medium border-b border-gray-300 focus:border-blue-500 focus:outline-none" placeholder="Diet name">
+                    <input type="text" x-model="selectedDiet.name" @change="saveDiets()" class="text-xl font-medium border-b border-gray-300 focus:border-blue-500 focus:outline-none w-full max-w-xs sm:max-w-md" placeholder="Diet name">
                     <button @click="exportDietAsImage()" class="ml-4 p-2 text-gray-600 hover:text-blue-600 transition-colors" title="Export">
                         <i class="fas fa-download"></i>
                     </button>
@@ -517,7 +517,7 @@
                                     <div class="flex items-center">
                                         <span @click="removeFoodFromDiet(foodItem.foodName)" class="remove-icon">&times;</span>
                                         <span @click="showFoodContribution(foodItem.foodName)" 
-                                              class="text-sm font-medium max-w-name cursor-pointer hover:text-blue-600" 
+                                              class="text-sm max-w-name cursor-pointer hover:text-blue-600" 
                                               x-text="foodItem.foodName"></span>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -565,10 +565,10 @@
                                 <tbody>
                                     <template x-for="nutrient in nutrientNames" :key="nutrient">
                                         <tr class="py-1" x-data="{ get pct() { return calculateNutrientPercentage(nutrient) } }">
-                                            <td class="text-left nutrient-clickable max-w-name" @click="showNutrientContribution(nutrient)" x-text="nutrient"></td>
-                                            <td x-text="(x=>x<10?x.toFixed(2):x.toFixed(0))(dietTotals[nutrient] || 0)"></td>
+                                            <td class="text-sm text-left nutrient-clickable max-w-name" @click="showNutrientContribution(nutrient)" x-text="nutrient"></td>
+                                            <td class="text-sm" x-text="(x=>x<10?x.toFixed(2):x.toFixed(0))(dietTotals[nutrient] || 0)"></td>
                                             <td>
-                                                <span x-text="pct.toFixed(0) + '%'"></span>
+                                                <span class="text-sm" x-text="pct.toFixed(0) + '%'"></span>
                                                 <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
                                                     <div class="h-2.5 rounded-full" 
                                                         :style="'width: ' + Math.min(100, pct) + '%'"
