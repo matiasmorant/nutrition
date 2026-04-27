@@ -794,9 +794,15 @@
             });
         }
 
+        function realError(values, bounds){
+            const lim = constrain(values, bounds)
+            // const err = math.divide(values, lim); // divide by zero!
+            const err = values.map((x,i)=>lim[i]>0?x/lim[i]-1:x);
+            return math.norm(err)
+        }
         async function boundls(A, c, bounds, { targets=null, maxIter=200, preverror=null, totalIter=200, onProgress=null, initialError=null }={}) {
             // A.x+c = *bounds*
-            targets = targets || bounds.map(v=>v.min || 0);
+            targets = targets || bounds.map(v=>/*v.min || 0*/(v.isRange && v.max)?v.min**.7*v.max**.3:(v.min||0));
             if (targets.length === 0) {alert("Please set targets for at least one nutrient.");return;}
 
             const relA = targets.map((target,i) => A[i].map(x=>x/(target > 0 ? target : 1) ));
@@ -805,8 +811,9 @@
             const solution = ML.FCNNLS.fcnnlsVector(relA, b);
             const error = math.norm(math.subtract(math.multiply(relA,solution),b));
             if (initialError === null) initialError = error;
+            const LHS = math.add(math.multiply(A,solution),c);
             const threshold = 1e-4;
-            console.log(maxIter,error);
+            console.log(maxIter,error,realError(LHS,bounds));
             if ((maxIter === 0)||(preverror && preverror-error<threshold)) {
                 if (onProgress) onProgress(100);
                 // const positiveIndices = solution.reduce((acc,val,idx)=>{ if(val>1e-3)acc.push(idx);return acc; }, []);
@@ -827,8 +834,11 @@
                 await new Promise(resolve => setTimeout(resolve, 0)); // so progress bar can repaint
             }
 
-            const LHS = math.add(math.multiply(A,solution),c);
-            const easier = constrain(LHS, bounds);
+            const cnstr = x=>constrain(x,bounds);
+            const err = math.subtract(LHS,targets);
+            // const easier = cnstr(LHS);
+            // const easier = cnstr(math.add(LHS,math.multiply(.5,err)));
+            const easier = cnstr(math.subtract(cnstr(math.add(LHS,err)), err));
             return await boundls(A, c, bounds, {
                 targets: easier, 
                 maxIter: maxIter - 1, 
