@@ -18,7 +18,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/ml-matrix/matrix.umd.min.js"></script>
-    <script src="https://www.lactame.com/lib/ml/6.0.0/ml.min.js"></script>
+    <script src="https://www.lactame.com/lib/ml/8.0.0/ml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -800,7 +800,7 @@
             const err = values.map((x,i)=>lim[i]>0?x/lim[i]-1:x);
             return math.norm(err)
         }
-        async function boundls(A, c, bounds, { targets=null, maxIter=200, preverror=null, totalIter=200, onProgress=null, initialError=null }={}) {
+        async function boundls(A, c, bounds, { targets=null, maxIter=100, nonImprovingIter=5, best=null, preverror=null, prevrealerror=null, totalIter=200, onProgress=null, initialError=null }={}) {
             // A.x+c = *bounds*
             targets = targets || bounds.map(v=>/*v.min || 0*/(v.isRange && v.max)?v.min**.7*v.max**.3:(v.min||0));
             if (targets.length === 0) {alert("Please set targets for at least one nutrient.");return;}
@@ -808,20 +808,23 @@
             const relA = targets.map((target,i) => A[i].map(x=>x/(target > 0 ? target : 1) ));
             const b = targets.map((target,i) => (target > 0 ? 1 - c[i] / target : -c[i]) );
 
-            const solution = ML.FCNNLS.fcnnlsVector(relA, b);
+            const solution = ML.FCNNLS.fcnnlsVector(relA, b).K.to1DArray();
             const error = math.norm(math.subtract(math.multiply(relA,solution),b));
             if (initialError === null) initialError = error;
             const LHS = math.add(math.multiply(A,solution),c);
             const threshold = 1e-4;
-            console.log(maxIter,error,realError(LHS,bounds));
-            if ((maxIter === 0)||(preverror && preverror-error<threshold)) {
+            const realerror=realError(LHS,bounds);
+            console.log(maxIter,error,realerror);
+            if(!best || best.error>realerror) best={solution, error:realerror};
+            const notImproved=(preverror && preverror-error<threshold)&&(prevrealerror && prevrealerror-realerror<threshold);
+            if ((maxIter === 0)||(best.error<.01)||((nonImprovingIter==0)&&notImproved)) {
                 if (onProgress) onProgress(100);
                 // const positiveIndices = solution.reduce((acc,val,idx)=>{ if(val>1e-3)acc.push(idx);return acc; }, []);
                 // const subRelA = relA.map(row => positiveIndices.map(idx=>row[idx]));
                 // const subSolution = ML.FCNNLS.fcnnlsVector(subRelA,b);
                 // const refinedSolution = new Array(solution.length).fill(0);
                 // positiveIndices.forEach((originalIdx, subIdx) => {refinedSolution[originalIdx] = subSolution[subIdx];});
-                return solution;
+                return best;
             }
             if (onProgress) {
                 let estimatedProgress = 0;
@@ -840,9 +843,12 @@
             // const easier = cnstr(math.add(LHS,math.multiply(.5,err)));
             const easier = cnstr(math.subtract(cnstr(math.add(LHS,err)), err));
             return await boundls(A, c, bounds, {
+                best,
                 targets: easier, 
                 maxIter: maxIter - 1, 
+                nonImprovingIter: nonImprovingIter-(notImproved?1:0),
                 preverror: error, 
+                prevrealerror: realerror, 
                 totalIter, 
                 onProgress,
                 initialError
@@ -1279,16 +1285,16 @@
                     let A = nutrientNames.map(nutrient => unlocked.map(food => getA(food,nutrient) ));
 
                     try {
-                        let solution = await boundls(A, lockedNutrients, bounds, { onProgress: p=>{ this.optimizationProgress=p; } });
-                        const positiveIndices = solution.reduce((acc,val,idx) => {if(val>0.001)acc.push(idx);return acc;}, []);
-                        if (positiveIndices.length>0 && positiveIndices.length<0.7*solution.length) {
+                        let best = await boundls(A, lockedNutrients, bounds, { onProgress: p=>{ this.optimizationProgress=p; } });
+                        const positiveIndices = best.solution.reduce((acc,val,idx) => {if(val>0.001)acc.push(idx);return acc;}, []);
+                        if (best.error>.01 && positiveIndices.length>0 && positiveIndices.length<0.7*best.solution.length) {
                             const subA = A.map(row => positiveIndices.map(idx => row[idx]));
-                            const subSolution = await boundls(subA, lockedNutrients, bounds, {onProgress: p => { this.optimizationProgress = 0.5+0.5*p; }});
-                            solution.fill(0);
-                            positiveIndices.forEach((originalIdx, subIdx) => {solution[originalIdx] = subSolution[subIdx];});
+                            const subBest = await boundls(subA, lockedNutrients, bounds, {onProgress: p => { this.optimizationProgress = 0.5+0.5*p; }});
+                            best.solution.fill(0);
+                            positiveIndices.forEach((originalIdx, subIdx) => {best.solution[originalIdx] = subBest.solution[subIdx];});
                         }
                         this.optimizationProgress = 100; await new Promise(resolve => setTimeout(resolve, 200));
-                        unlocked.forEach((food, i) => {food.quantity = round(Math.max(0, solution[i]));});
+                        unlocked.forEach((food, i) => {food.quantity = round(Math.max(0, best.solution[i]));});
                         await this.saveDiets();
                         await this.recalculateDietTotals();
                     } catch (error) {
