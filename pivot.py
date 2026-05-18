@@ -7,10 +7,92 @@ from collections import Counter
 from tqdm import tqdm
 from glom import glom, Iter, T, Fold, Flatten, Merge
 
+def geomean(x): return np.exp(np.mean(np.log(x)))
+
+def fix_protein(df):
+  p,n='Protein (g)','Nitrogen (g)'
+  prot=df.reindex(columns=[p,n])
+  df[p]=prot[p].fillna(prot[n]*6.25)
+
+def fix_carb(df):
+  carb=[
+  'Carbohydrate (g)' ,
+  'Sugars (g)',
+  'Fructose (g)',
+  'Galactose (g)',
+  'Glucose (g)',
+  'Lactose (g)',
+  'Maltose (g)',
+  'Sucrose (g)',
+  'Fiber, dietary (g)',
+  'Fiber, soluble (g)',
+  'Beta-glucan (g)',
+  'Fiber, insoluble (g)',
+  'High Molecular Weight Dietary Fiber (HMWDF) (g)',
+  'Resistant starch (g)',
+  'Low Molecular Weight Dietary Fiber (LMWDF) (g)',
+  'Starch (g)',
+  'Raffinose (g)',
+  'Stachyose (g)',
+  'Verbascose (g)',
+  ]
+  carb=df.reindex(columns=carb)
+  colsum=lambda x: carb[x].sum(axis=1)
+  carb['Sugars (g)']=carb['Sugars (g)'].fillna(colsum([
+    'Fructose (g)',
+    'Galactose (g)',
+    'Glucose (g)',
+    'Lactose (g)',
+    'Maltose (g)',
+    'Sucrose (g)',
+  ]))
+  carb['Fiber, dietary (g)']=carb['Fiber, dietary (g)'].fillna(
+    pd.DataFrame([
+      colsum([
+        'Fiber, soluble (g)',
+        'Fiber, insoluble (g)'
+      ]),
+      colsum([
+        'High Molecular Weight Dietary Fiber (HMWDF) (g)',
+        'Low Molecular Weight Dietary Fiber (LMWDF) (g)',
+      ])
+    ]).apply(geomean))
+  carb['Carbohydrate (g)']=carb['Carbohydrate (g)'].fillna(colsum([
+    'Sugars (g)',
+    'Fiber, dietary (g)',
+    'Starch (g)',
+    'Raffinose (g)',
+    'Stachyose (g)',
+    'Verbascose (g)'
+  ]))
+  df['Sugars (g)'         ]=carb['Sugars (g)']
+  df['Fiber, dietary (g)' ]=carb['Fiber, dietary (g)']
+  df['Carbohydrate (g)'   ]=carb['Carbohydrate (g)']
+
+  # carb=[
+  # 'Beta-glucan (g)',
+  # 'Resistant starch (g)',
+  # ]
+  #TODO fiber calorie doesn't count 4 as carb
+
+def fix_calorie(df):
+  k = 4.184 # cal to J
+  kcal,kj,spec,gen='Energy (KCAL)', 'Energy (kJ)','Energy (Atwater Specific Factors) (KCAL)','Energy (Atwater General Factors) (KCAL)'
+  c,f,p='Carbohydrate (g)', 'Fat (g)', 'Protein (g)'
+  cal=df.reindex(columns=[kcal,kj,spec,gen,c,f,p])
+  cal[kj]/=k
+  eqcal=cal[[kcal,kj]].apply(geomean,axis=1)\
+    .fillna(cal[spec])\
+    .fillna(cal[gen])\
+    .fillna(cal[[c,f,p]].fillna(0).dot([4,9,4]))
+
+  df['Energy (KCAL)' ]=eqcal
+  df['Energy (kJ)'   ]=eqcal*k
+
 def merge_foods(names, df, newname=None):
   names=[x for x in names if x in df.index]
   if not names: return df
-  newfood=df.loc[names].apply(lambda x: np.exp(np.log(x[x>0]).mean()))
+  newfood=df.loc[names].apply(lambda x: geomean(x[x>0]))
   newfood.name= newname or names[0]
   return pd.concat([df.drop(index=names), newfood.to_frame().T])
 
@@ -22,7 +104,7 @@ def merge_sets(sets):
     merged.append(overlap)
   return merged
 
-# mergeSets : [], / (s,m)
+# mergeSets : [], / [s m]
 #   groups : m G &s#>0
 #   groups0 ,(groups1,s /|)
 
@@ -69,6 +151,7 @@ def nutrientmap(n):
     ', by difference':'',
     ', by summation':'',
     'Sugars, Total'             :'Sugars',
+    'Total Sugars'              :'Sugars',
     'Total lipid (fat)'         :'Fat',
     'Thiamin'          :'Vitamin B1, Thiamin',
     'Riboflavin'       :'Vitamin B2, Riboflavin',
@@ -102,7 +185,8 @@ def nutrientmap(n):
     'Sodium, Na'    :'Sodium',
     'Sulfur, S'     :'Sulfur',
     'Zinc, Zn'      :'Zinc',
-    'Fiber, total dietary':'Fiber, dietary',
+    'Fiber, total dietary'              :'Fiber, dietary',
+    'Total dietary fiber (AOAC 2011.25)':'Fiber, dietary',
     'Fatty acids, total monounsaturated':'Fatty acids, monounsaturated',
     'Fatty acids, total polyunsaturated':'Fatty acids, polyunsaturated',
     'Fatty acids, total saturated':'Fatty acids, saturated',
@@ -214,8 +298,12 @@ def pivotJSON():
     }
     data=data[data.apply(lambda x: (x['category'] in categories) and pd.notna(x['food']) and not re.match(deleteRe,x['food'],re.I), axis=1)]
     data=data.rename(columns=nutrientmap)
+    data=data.set_index('food').drop(columns=['category'])
+    fix_carb(data)
+    fix_protein(data)
+    fix_calorie(data)
 
-    return data.set_index('food').drop(columns=['category'])
+    return data
 
 def pivot(folder):
   print(f'Pivoting {folder}')
@@ -260,6 +348,9 @@ def pivot(folder):
   big.loc[[mws for mws,mwos in matches],'Sodium (mg)']=np.nan
   for mws,mwos in matches: big=merge_foods([mws,mwos], big, re.sub(r'(, )?'+reNo,'',mwos))
 
+  fix_carb(big)
+  fix_protein(big)
+  fix_calorie(big)
   return big
 
 big=pd.concat([
@@ -277,10 +368,11 @@ def _normalizeFoodName(x):
   x=x[0].upper()+x[1:].lower()
   x=replace(foodreplace,x)
   x=re.sub(r', raw$','',x)
-  x=re.sub(r', dried$',', dry',x)
+  x=re.sub(r',? dried$',', dry',x)
   x=re.sub(r'Oil, ([\w\s]+)($|,)',r'\1 oil\2',x)
   x=re.sub(r'Seeds, ([\w\s]+)($|,)',r'\1\2',x)
   x=re.sub(r'Nuts, ([\w\s]{4,})',r'\1',x)
+  x=re.sub(r'yolks','yolk',x)
   return x.strip()
 normalizeFoodName=lambda x: _normalizeFoodName(_normalizeFoodName(x))
 

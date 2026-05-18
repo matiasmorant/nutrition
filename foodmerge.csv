@@ -2031,7 +2031,7 @@ Cheese souffle,
 "Cheese, swiss, reduced sodium",
 "Cheese, tilsit",
 "Cheese, white, queso blanco",
-Cheese; american,
+Cheese; american,"Cheese, american"
 "Cherimoya, raw",
 "Cherries, canned",
 "Cherries, dark red, sweet, raw",
@@ -2645,9 +2645,9 @@ Eggplant dip,
 "Eggs, whites",
 "Eggs, whole",
 "Eggs, yolk",
-Eggs; whites,
-Eggs; whole,
-Eggs; yolk,
+Eggs; whites,"Eggs, whites"
+Eggs; whole,"Eggs, whole"
+Eggs; yolk,"Eggs, yolk"
 "Einkorn, grain, dry, raw",
 "Einkorn, grain, wheat berry, dry, raw",
 "Elderberries, raw",
@@ -4947,8 +4947,8 @@ Salsa,
 "Salt, iodized",
 "Salt, not iodized",
 "Salt, table",
-"Salt, table, iodized",
-Salt; iodized,
+"Salt, table, iodized","Salt, iodized"
+Salt; iodized,"Salt, iodized"
 Samosa,
 Sandwich spread,
 "Sandwich spread, with chopped pickle, regular, unspecified oils",
