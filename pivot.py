@@ -404,7 +404,7 @@ big=big.drop(index=foodsdelete, errors='ignore')
 big=big.sort_index()
 
 def digits_round(x,N):return round(x, N - int(np.floor(np.log10(abs(x))))) if x>0 else 0.0
-big=big.applymap(lambda x: digits_round(x,2), na_action='ignore')
+big=big.map(lambda x: digits_round(x,2), na_action='ignore')
 
 big=find_and_merge(big)
 
